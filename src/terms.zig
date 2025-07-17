@@ -43,13 +43,13 @@ pub const Term = struct {
     /// - Pneumonically based on "mandatory/mandate"
     pub fn man(self: Term) Term {
         return struct {
-            fn newEvalFn(actual: anytype) bool {
+            fn eval(actual: anytype) bool {
                 if (!self.eval(actual)) unreachable;
                 return true;
             }
 
             fn impl() Term {
-                return .{ .eval = newEvalFn };
+                return .{ .eval = eval };
             }
         }.impl();
     }
@@ -57,12 +57,12 @@ pub const Term = struct {
     /// Evaluate term at index. Assumes `actual` is indexable.
     pub fn at(self: Term, index: usize) Term {
         return struct {
-            fn newEvalFn(actual: anytype) bool {
+            fn eval(actual: anytype) bool {
                 return self.eval(actual[index]);
             }
 
             fn impl() Term {
-                return .{ .eval = newEvalFn };
+                return .{ .eval = eval };
             }
         }.impl();
     }
@@ -70,12 +70,12 @@ pub const Term = struct {
     /// Negates evaluation result of term.
     pub fn not(self: Term) Term {
         return struct {
-            fn newEvalFn(actual: anytype) bool {
+            fn eval(actual: anytype) bool {
                 return !self.eval(actual);
             }
 
             fn impl() Term {
-                return .{ .eval = newEvalFn };
+                return .{ .eval = eval };
             }
         }.impl();
     }
@@ -85,12 +85,12 @@ pub const Term = struct {
     /// - Pneumonically based on "necessarily/necessary"
     pub fn nec(self: Term, term: Term) Term {
         return struct {
-            fn newEvalFn(actual: anytype) bool {
+            fn eval(actual: anytype) bool {
                 return self.eval(actual) and term.eval(actual);
             }
 
             fn impl() Term {
-                return .{ .eval = newEvalFn };
+                return .{ .eval = eval };
             }
         }.impl();
     }
@@ -100,12 +100,12 @@ pub const Term = struct {
     /// - Pneumonically based on "optionally/optional/opt-in"
     pub fn opt(self: Term, term: Term) Term {
         return struct {
-            fn newEvalFn(args: anytype) bool {
+            fn eval(args: anytype) bool {
                 return self.eval(args) or term.eval(args);
             }
 
             fn impl() Term {
-                return .{ .eval = newEvalFn };
+                return .{ .eval = eval };
             }
         }.impl();
     }
@@ -115,12 +115,12 @@ pub const Term = struct {
 /// - Pneumonically based on "necessarily/necessary"
 pub fn nec(term0: Term, term1: Term) Term {
     return struct {
-        fn newEvalFn(value: anytype) bool {
+        fn eval(value: anytype) bool {
             return term0.eval(value) and term1.eval(value);
         }
 
         fn impl() Term {
-            return .{ .eval = newEvalFn };
+            return .{ .eval = eval };
         }
     }.impl();
 }
@@ -129,12 +129,12 @@ pub fn nec(term0: Term, term1: Term) Term {
 /// - Pneumonically based on "optionally/optional/opt-in"
 pub fn opt(term0: Term, term1: Term) Term {
     return struct {
-        fn newEvalFn(value: anytype) bool {
+        fn eval(value: anytype) bool {
             return term0.eval(value) or term1.eval(value);
         }
 
         fn impl() Term {
-            return .{ .eval = newEvalFn };
+            return .{ .eval = eval };
         }
     }.impl();
 }
@@ -147,13 +147,13 @@ pub fn opt(term0: Term, term1: Term) Term {
 /// is expected to be equal to `bool`.
 pub fn Bool(expect: parametrics.Bool) Term {
     return struct {
-        fn evalFn(actual: anytype) bool {
+        fn eval(actual: anytype) bool {
             const e = (expect orelse return true);
             return e == actual;
         }
 
         fn impl() Term {
-            return .{ .eval = evalFn };
+            return .{ .eval = eval };
         }
     }.impl();
 }
@@ -172,7 +172,7 @@ pub fn Bool(expect: parametrics.Bool) Term {
 /// When defined, checks if `actual` is evenly divisible by `div`.
 pub fn Int(params: parametrics.Int) Term {
     return struct {
-        fn evalFn(actual: anytype) bool {
+        fn eval(actual: anytype) bool {
             const min = (params.min orelse actual) <= actual;
             const max = actual <= (params.max orelse actual);
             const div = actual % (params.div orelse actual) == 0;
@@ -180,7 +180,7 @@ pub fn Int(params: parametrics.Int) Term {
         }
 
         fn impl() Term {
-            return .{ .eval = evalFn };
+            return .{ .eval = eval };
         }
     }.impl();
 }
@@ -199,7 +199,7 @@ pub fn Int(params: parametrics.Int) Term {
 /// `err` is used in `std.math.approxEqAbs(...)` when determining equality on interval endpoints
 pub fn Float(params: parametrics.Int) Term {
     return struct {
-        fn evalFn(actual: anytype) bool {
+        fn eval(actual: anytype) bool {
             const min = (params.min orelse actual) < actual or std.math.approxEqAbs(
                 comptime_float,
                 params.min orelse actual,
@@ -216,7 +216,7 @@ pub fn Float(params: parametrics.Int) Term {
         }
 
         fn impl() Term {
-            return .{ .eval = evalFn };
+            return .{ .eval = eval };
         }
     }.impl();
 }
@@ -252,21 +252,28 @@ pub fn Filter(comptime T: type) fn (parametrics.Filter(T)) Term {
     return struct {
         pub fn define(params: parametrics.Filter(T)) Term {
             return struct {
-                fn evalFn(actual: anytype) bool {
+                fn eval(actual: anytype) bool {
+                    // Check if used field has explicit setting in params
                     if (@field(params, @tagName(actual))) |field| {
-                        // current enum value has explicit setting
+                        // Current enum value has explicit setting
                         return field;
                     }
 
+                    // Iterate remaining fields of params
                     inline for (std.meta.fields(@TypeOf(params))) |field| {
-                        // another enum value is explicitly enabled
-                        if (@field(params, field.name)) |f| if (f) return false;
+                        // Check if current param field has explicit setting
+                        if (@field(params, field.name)) |f| {
+                            // Return false if param field is set to true and unused.
+                            if (f) return false;
+                        }
                     }
+
+                    // Assume no violations
                     return true;
                 }
 
                 fn impl() Term {
-                    return .{ .eval = evalFn };
+                    return .{ .eval = eval };
                 }
             }.impl();
         }
@@ -276,6 +283,9 @@ pub fn Filter(comptime T: type) fn (parametrics.Filter(T)) Term {
 const SupportedInfo = enum {
     Int,
     Float,
+    Pointer,
+    Array,
+    Vector,
 };
 
 /// Special case implementation to parameterize an arguments `std.builtin.Type` definition,
@@ -308,30 +318,38 @@ const SupportedInfo = enum {
 pub fn Info(comptime T: SupportedInfo) fn (switch (T) {
     .Int => parametrics.Fields(std.builtin.Type.Int),
     .Float => parametrics.Fields(std.builtin.Type.Float),
+    .Array => parametrics.Fields(std.builtin.Type.Array),
+    .Pointer => parametrics.Fields(std.builtin.Type.Pointer),
+    .Vector => parametrics.Fields(std.builtin.Type.Vector),
 }) Term {
     const PInfo = switch (T) {
         .Int => parametrics.Fields(std.builtin.Type.Int),
         .Float => parametrics.Fields(std.builtin.Type.Float),
+        .Array => parametrics.Fields(std.builtin.Type.Array),
+        .Pointer => parametrics.Fields(std.builtin.Type.Pointer),
+        .Vector => parametrics.Fields(std.builtin.Type.Vector),
     };
 
     const TInfo = switch (T) {
         .Int => std.builtin.Type.Int,
         .Float => std.builtin.Type.Float,
+        .Array => std.builtin.Type.Array,
+        .Pointer => std.builtin.Type.Pointer,
+        .Vector => std.builtin.Type.Vector,
     };
 
     return struct {
         fn define(params: PInfo) Term {
             return struct {
-                fn evalFn(actual: anytype) bool {
+                fn eval(actual: anytype) bool {
+                    // Pass type info of actual value
                     return Fields(TInfo)(params).eval(switch (@typeInfo(@TypeOf(actual))) {
                         inline else => |info| info,
                     });
                 }
 
                 fn impl() Term {
-                    return .{
-                        .eval = evalFn,
-                    };
+                    return .{ .eval = eval };
                 }
             }.impl();
         }
@@ -390,31 +408,34 @@ test Info {
 /// All fields must evaluate to true for final evaluation result to be true
 pub fn Fields(comptime T: type) fn (parametrics.Fields(T)) Term {
     return struct {
-        fn define(expect: parametrics.Fields(T)) Term {
+        fn define(params: parametrics.Fields(T)) Term {
             return struct {
-                fn evalFn(actual: anytype) bool {
+                fn eval(actual: anytype) bool {
                     var valid = true;
 
                     inline for (std.meta.fields(T)) |field| {
-                        if (!@hasField(@TypeOf(expect), field.name)) continue;
-                        const e = @field(expect, field.name);
+                        // Check if param has current field
+                        if (!@hasField(@TypeOf(params), field.name)) continue;
+                        const param_field = @field(params, field.name);
 
+                        // Check if actual value can contain fields
                         switch (@typeInfo(@TypeOf(actual))) {
-                            inline else => |info| if (@TypeOf(info) == void) continue,
+                            .@"struct", .@"union" => {},
+                            else => continue,
                         }
 
-                        const a = @field(actual, field.name);
+                        const actual_field = @field(actual, field.name);
 
                         valid = valid and switch (@typeInfo(field.type)) {
-                            .int, .comptime_int => Int(e).eval(a),
-                            .float, .comptime_float => Float(e).eval(a),
-                            .@"enum" => Filter(field.type)(e).eval(a),
-                            .@"struct" => Fields(field.type)(e).eval(a),
-                            .@"union" => Fields(field.type)(e).eval(a),
-                            .pointer => Fields(field.type)(e).eval(a),
-                            .optional => Fields(field.type)(e).eval(a),
-                            .vector => Fields(field.type)(e).eval(a),
-                            .array => Fields(field.type)(e).eval(a),
+                            .int, .comptime_int => Int(param_field).eval(actual_field),
+                            .float, .comptime_float => Float(param_field).eval(actual_field),
+                            .@"enum" => Filter(field.type)(param_field).eval(actual_field),
+                            .@"struct" => Fields(field.type)(param_field).eval(actual_field),
+                            .@"union" => Fields(field.type)(param_field).eval(actual_field),
+                            .pointer => Fields(field.type)(param_field).eval(actual_field),
+                            .optional => Fields(field.type)(param_field).eval(actual_field),
+                            .vector => Fields(field.type)(param_field).eval(actual_field),
+                            .array => Fields(field.type)(param_field).eval(actual_field),
                             else => unreachable,
                         };
                     }
@@ -422,9 +443,7 @@ pub fn Fields(comptime T: type) fn (parametrics.Fields(T)) Term {
                 }
 
                 fn impl() Term {
-                    return .{
-                        .eval = evalFn,
-                    };
+                    return .{ .eval = eval };
                 }
             }.impl();
         }
@@ -487,10 +506,15 @@ test Fields {
 pub fn Sign(comptime term: Term) fn (actual: anytype) fn (comptime return_type: type) type {
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
-            if (!term.eval(actual))
-                if (term.onFail) |onFail|
+            if (!term.eval(actual)) {
+                // Check if onFail function is defined.
+                if (term.onFail) |onFail| {
                     onFail(actual);
-
+                } else {
+                    // Exit if contract validation fails
+                    unreachable;
+                }
+            }
             return struct {
                 pub fn returns(comptime ret_type: type) type {
                     return ret_type;
@@ -506,4 +530,6 @@ test Sign {
     const return_type = @as(@TypeOf(void), void);
 
     _ = Sign(term_value)(argument_value)(return_type);
+    const Signed = Sign(term_value);
+    _ = Signed(argument_value)(return_type);
 }
