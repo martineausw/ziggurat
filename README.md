@@ -70,7 +70,22 @@ const Term type = struct {
 
 ### Term Implementation
 
-`Int` is provided as an approximate example implementation of `Term`, though negligibly different.
+Here is an example implementation of a `Term` type.
+
+```zig
+const Int: Term = .{
+    .eval = struct {
+        fn eval(actual: anytype) bool {
+            return switch (@typeInfo(@TypeOf(actual))) {
+                .int => true,
+                else => false,
+            };
+        }
+    }.eval
+}
+```
+
+Included `Term` types often include parameter types to automate away some boilerplate by making assumptions about how the library will be used (based entirely on how I am currently using it). This part of the codebase is very much a WIP. Feel free to ignore these if it doesn't fit your needs.
 
 ```zig
 fn Int(expected_value_or_params: IntParams) Term {
@@ -81,7 +96,7 @@ fn Int(expected_value_or_params: IntParams) Term {
 }
 ```
 
-The `impl` function is ultimately unnecessary in name and structure, but I am partial to it's compartmentalized nature.
+The `impl` function is ultimately unnecessary in name and structure, but I am partial to it's compartmentalized nature when defining more complex types.
 
 ### Parameters
 
