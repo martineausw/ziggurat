@@ -130,6 +130,12 @@ pub fn Bool(expect: Params.Bool) Term {
     }.impl();
 }
 
+test Bool {
+    _ = Bool(@as(?bool, null));
+    _ = Bool(@as(?bool, false));
+    _ = Bool(@as(?bool, true));
+}
+
 /// Special case implementation for integer types.
 ///
 /// Checks `actual` against `parametrics.Int` fields, if specified (not null):
@@ -157,6 +163,14 @@ pub fn Int(params: Params.Int) Term {
     }.impl();
 }
 
+test Int {
+    _ = Int(.{
+        .min = @as(?comptime_int, null),
+        .max = @as(?comptime_int, null),
+        .div = @as(?comptime_int, null),
+    });
+}
+
 /// Special case implementation for floating point types.
 ///
 /// Checks `actual` against `parametrics.Float` fields, if specified (not null):
@@ -169,7 +183,7 @@ pub fn Int(params: Params.Int) Term {
 /// Always evaluates to true if `min` nor `max` are specified.
 ///
 /// `err` is used in `std.math.approxEqAbs(...)` when determining equality on interval endpoints
-pub fn Float(params: Params.Int) Term {
+pub fn Float(params: Params.Float) Term {
     return struct {
         fn eval(actual: anytype) bool {
             const min = (params.min orelse actual) < actual or std.math.approxEqAbs(
@@ -191,6 +205,14 @@ pub fn Float(params: Params.Int) Term {
             return .{ .eval = eval };
         }
     }.impl();
+}
+
+test Float {
+    _ = Float(.{
+        .min = @as(?comptime_float, null),
+        .max = @as(?comptime_float, null),
+        .err = @as(comptime_float, 0.001),
+    });
 }
 
 /// Special case implementation for `enum` types
@@ -250,6 +272,16 @@ pub fn Filter(comptime T: type) fn (Params.Filter(T)) Term {
             }.impl();
         }
     }.define;
+}
+
+test Filter {
+    _ = Filter(enum { a, b, c, d, e })(.{
+        .a = @as(?bool, null),
+        .b = @as(?bool, null),
+        .c = @as(?bool, null),
+        .d = @as(?bool, null),
+        .e = @as(?bool, null),
+    });
 }
 
 const SupportedInfo = enum {
@@ -342,6 +374,7 @@ test Info {
     //
     // ...
     // }
+
     const IntInfo = std.builtin.Type.Int;
 
     const IntInfoParams: Params.Fields(IntInfo) = .{
@@ -502,6 +535,7 @@ test Sign {
     const return_type = @as(@TypeOf(void), void);
 
     _ = Sign(term_value)(argument_value)(return_type);
+
     const Signed = Sign(term_value);
     _ = Signed(argument_value)(return_type);
 }
