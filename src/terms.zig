@@ -7,7 +7,7 @@
 //! and aggregate types (e.g. `struct`, `union`, ...)
 const std = @import("std");
 
-const parametrics = @import("params.zig");
+const Params = @import("params.zig");
 
 /// `Term` abstract
 ///
@@ -111,41 +111,13 @@ pub const Term = struct {
     }
 };
 
-/// Boolean AND evaluation results of both terms
-/// - Pneumonically based on "necessarily/necessary"
-pub fn nec(term0: Term, term1: Term) Term {
-    return struct {
-        fn eval(value: anytype) bool {
-            return term0.eval(value) and term1.eval(value);
-        }
-
-        fn impl() Term {
-            return .{ .eval = eval };
-        }
-    }.impl();
-}
-
-/// Boolean OR evaluation results of both terms
-/// - Pneumonically based on "optionally/optional/opt-in"
-pub fn opt(term0: Term, term1: Term) Term {
-    return struct {
-        fn eval(value: anytype) bool {
-            return term0.eval(value) or term1.eval(value);
-        }
-
-        fn impl() Term {
-            return .{ .eval = eval };
-        }
-    }.impl();
-}
-
 /// Special case implementation for boolean types.
 ///
 /// Checks `actual` against `?bool` value, if specified (not null):
 ///
 /// Always evaluates to true if set to null, otherwise, `actual`
 /// is expected to be equal to `bool`.
-pub fn Bool(expect: parametrics.Bool) Term {
+pub fn Bool(expect: Params.Bool) Term {
     return struct {
         fn eval(actual: anytype) bool {
             const e = (expect orelse return true);
@@ -170,7 +142,7 @@ pub fn Bool(expect: parametrics.Bool) Term {
 /// Always evaluates to true if no parameters are specified.
 ///
 /// When defined, checks if `actual` is evenly divisible by `div`.
-pub fn Int(params: parametrics.Int) Term {
+pub fn Int(params: Params.Int) Term {
     return struct {
         fn eval(actual: anytype) bool {
             const min = (params.min orelse actual) <= actual;
@@ -197,7 +169,7 @@ pub fn Int(params: parametrics.Int) Term {
 /// Always evaluates to true if `min` nor `max` are specified.
 ///
 /// `err` is used in `std.math.approxEqAbs(...)` when determining equality on interval endpoints
-pub fn Float(params: parametrics.Int) Term {
+pub fn Float(params: Params.Int) Term {
     return struct {
         fn eval(actual: anytype) bool {
             const min = (params.min orelse actual) < actual or std.math.approxEqAbs(
@@ -248,9 +220,9 @@ pub fn Float(params: parametrics.Int) Term {
 ///     }
 /// ```
 ///
-pub fn Filter(comptime T: type) fn (parametrics.Filter(T)) Term {
+pub fn Filter(comptime T: type) fn (Params.Filter(T)) Term {
     return struct {
-        pub fn define(params: parametrics.Filter(T)) Term {
+        pub fn define(params: Params.Filter(T)) Term {
             return struct {
                 fn eval(actual: anytype) bool {
                     // Check if used field has explicit setting in params
@@ -316,18 +288,18 @@ const SupportedInfo = enum {
 ///
 /// See `parametrics` and `std.builtin.Type` for additional context.
 pub fn Info(comptime T: SupportedInfo) fn (switch (T) {
-    .Int => parametrics.Fields(std.builtin.Type.Int),
-    .Float => parametrics.Fields(std.builtin.Type.Float),
-    .Array => parametrics.Fields(std.builtin.Type.Array),
-    .Pointer => parametrics.Fields(std.builtin.Type.Pointer),
-    .Vector => parametrics.Fields(std.builtin.Type.Vector),
+    .Int => Params.Fields(std.builtin.Type.Int),
+    .Float => Params.Fields(std.builtin.Type.Float),
+    .Array => Params.Fields(std.builtin.Type.Array),
+    .Pointer => Params.Fields(std.builtin.Type.Pointer),
+    .Vector => Params.Fields(std.builtin.Type.Vector),
 }) Term {
     const PInfo = switch (T) {
-        .Int => parametrics.Fields(std.builtin.Type.Int),
-        .Float => parametrics.Fields(std.builtin.Type.Float),
-        .Array => parametrics.Fields(std.builtin.Type.Array),
-        .Pointer => parametrics.Fields(std.builtin.Type.Pointer),
-        .Vector => parametrics.Fields(std.builtin.Type.Vector),
+        .Int => Params.Fields(std.builtin.Type.Int),
+        .Float => Params.Fields(std.builtin.Type.Float),
+        .Array => Params.Fields(std.builtin.Type.Array),
+        .Pointer => Params.Fields(std.builtin.Type.Pointer),
+        .Vector => Params.Fields(std.builtin.Type.Vector),
     };
 
     const TInfo = switch (T) {
@@ -372,12 +344,12 @@ test Info {
     // }
     const IntInfo = std.builtin.Type.Int;
 
-    const IntInfoParams: parametrics.Fields(IntInfo) = .{
-        .signedness = @as(parametrics.Filter(std.builtin.Signedness), .{
+    const IntInfoParams: Params.Fields(IntInfo) = .{
+        .signedness = @as(Params.Filter(std.builtin.Signedness), .{
             .signed = null,
             .unsigned = null,
         }),
-        .bits = @as(parametrics.Int, .{
+        .bits = @as(Params.Int, .{
             .min = null,
             .max = null,
             .div = null,
@@ -406,9 +378,9 @@ test Info {
 /// ```
 ///
 /// All fields must evaluate to true for final evaluation result to be true
-pub fn Fields(comptime T: type) fn (parametrics.Fields(T)) Term {
+pub fn Fields(comptime T: type) fn (Params.Fields(T)) Term {
     return struct {
-        fn define(params: parametrics.Fields(T)) Term {
+        fn define(params: Params.Fields(T)) Term {
             return struct {
                 fn eval(actual: anytype) bool {
                     var valid = true;
@@ -461,25 +433,25 @@ test Fields {
         },
     };
 
-    const FooParams: parametrics.Fields(Foo) = .{
+    const FooParams: Params.Fields(Foo) = .{
         .bar = @as(?bool, null),
-        .zig = @as(parametrics.Int, .{
+        .zig = @as(Params.Int, .{
             .min = @as(?comptime_int, null),
             .max = @as(?comptime_int, null),
             .div = @as(?comptime_int, null),
         }),
-        .zag = @as(parametrics.Float, .{
+        .zag = @as(Params.Float, .{
             .min = @as(?comptime_float, null),
             .max = @as(?comptime_float, null),
             .err = @as(comptime_float, 0.001),
         }),
-        .fizz = @as(parametrics.Fields(struct { buzz: usize, fizzbuzz: *const usize }), .{
-            .buzz = @as(parametrics.Int, .{
+        .fizz = @as(Params.Fields(struct { buzz: usize, fizzbuzz: *const usize }), .{
+            .buzz = @as(Params.Int, .{
                 .min = @as(?comptime_int, null),
                 .max = @as(?comptime_int, null),
                 .div = @as(?comptime_int, null),
             }),
-            .fizzbuzz = @as(parametrics.Int, .{}),
+            .fizzbuzz = @as(Params.Int, .{}),
         }),
     };
 
