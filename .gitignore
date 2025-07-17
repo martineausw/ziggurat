@@ -1,0 +1,8 @@
+# OS
+
+.DS_STORE
+
+# zig
+
+.zig-cache
+zig-out
