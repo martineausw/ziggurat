@@ -1,0 +1,5 @@
+{"rule":"EN_A_VS_AN","sentence":"^\\QA \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q is an abstract class that requires an \\E(?:Dummy|Ina|Jimmy-)[0-9]+\\Q function.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QThis continues recursively until all parameteritiz-able types are defined.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qziggurat makes generous use of closures.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QMicrolibrary to introduce type constraints in zig 0.14.1.\\E$"}
+{"rule":"UPPERCASE_SENTENCE_START","sentence":"^\\Qziggurat\\E$"}

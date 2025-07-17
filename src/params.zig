@@ -50,6 +50,12 @@ pub fn Filter(comptime T: type) type {
     } });
 }
 
+pub fn Field(comptime T: type) type {
+    return struct {
+        expr: *const fn (comptime T) T,
+    };
+}
+
 /// Creates a struct type where fields of argument are converted
 /// to its 'parametric' equivalent
 pub fn Fields(comptime T: type) type {
