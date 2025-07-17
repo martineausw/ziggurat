@@ -1,4 +1,6 @@
-//! Parameter definitions and generation to be used in Terms
+//! Parameter definitions and generation to be used in Terms.
+//!
+//!
 const std = @import("std");
 const meta = std.meta;
 

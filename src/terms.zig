@@ -456,7 +456,7 @@ test "some floats" {
         .max = @as(?comptime_float, 0),
     });
 
-    try std.testing.expect(true == ApproxZero.eval(0));
+    try std.testing.expect(true == ApproxZero.eval(0.0));
     try std.testing.expect(true == ApproxZero.eval(-0.001));
     try std.testing.expect(true == ApproxZero.eval(0.001));
 
@@ -466,7 +466,7 @@ test "some floats" {
         .err = @as(comptime_float, 0),
     });
 
-    try std.testing.expect(true == ExactlyZero.eval(0));
+    try std.testing.expect(true == ExactlyZero.eval(0.0));
     try std.testing.expect(false == ExactlyZero.eval(-0.001));
     try std.testing.expect(false == ExactlyZero.eval(0.001));
 }
