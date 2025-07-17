@@ -20,7 +20,7 @@ ziggurat makes generous use of closures. This is done by returning function poin
 
 I justified this decision because the declarative seemed more sensible then an imperative approach, it was easier to wrap (ha) my head around, also I appreciate the aesthetics.
 
-```
+```zig
 fn foo() fn () void { // returns signature of enclosed function
     return struct {
         fn bar() void {
@@ -36,7 +36,7 @@ const bar = foo(); // @as(fn () void, bar)
 
 That out of the way, hopefully this isn't terribly intimidating:
 
-```
+```zig
 fn foo(actual_value: anytype) Sign(some_term)(actual_value)(void) { ... }
 ```
 
@@ -44,7 +44,7 @@ fn foo(actual_value: anytype) Sign(some_term)(actual_value)(void) { ... }
 
 A `Term` is an abstract class that requires an `eval` function. `eval` is invoked by `Sign` and other `Term` instances.
 
-```
+```zig
 const Term type = struct {
     eval: *const fn (value: anytype) bool,
     ...
@@ -55,7 +55,7 @@ const Term type = struct {
 
 `Int` is provided as an approximate example implementation of `Term`, though negligably different.
 
-```
+```zig
 fn Int(expected_value_or_params: IntParams) Term {
     return struct {
         fn eval(actual_value: anytype) bool { ... }
@@ -70,7 +70,7 @@ The `impl` function is ultimately unnecessary in name and structure, but I am pa
 
 `Term` implementations included in the library accept "parameters" as rules to check actual values against. Parameterized definitions of primitive type classes (e.g. `Int`, `Float`) are included in `parameters.zig` and are concretely defined.
 
-```
+```zig
 const IntParams = struct {
     min: ?comptime_int = null,
     max: ?comptime_int = null,
