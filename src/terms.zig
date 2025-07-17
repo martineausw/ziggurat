@@ -120,6 +120,10 @@ pub const Term = struct {
 pub fn Bool(expect: Params.Bool) Term {
     return struct {
         fn eval(actual: anytype) bool {
+            switch (@typeInfo(@TypeOf(actual))) {
+                .bool => {},
+                else => unreachable,
+            }
             const e = (expect orelse return true);
             return e == actual;
         }
@@ -151,6 +155,13 @@ test Bool {
 pub fn Int(params: Params.Int) Term {
     return struct {
         fn eval(actual: anytype) bool {
+            switch (@typeInfo(@TypeOf(actual))) {
+                .int, .comptime_int => {},
+                else => unreachable,
+            }
+
+            if (params.type) |t| if (t != @TypeOf(actual)) return false;
+
             const min = (params.min orelse actual) <= actual;
             const max = actual <= (params.max orelse actual);
             const div = actual % (params.div orelse actual) == 0;
@@ -186,12 +197,20 @@ test Int {
 pub fn Float(params: Params.Float) Term {
     return struct {
         fn eval(actual: anytype) bool {
+            switch (@typeInfo(@TypeOf(actual))) {
+                .float, .comptime_float => {},
+                else => unreachable,
+            }
+
+            if (params.type) |t| if (t != @TypeOf(actual)) return false;
+
             const min = (params.min orelse actual) < actual or std.math.approxEqAbs(
                 comptime_float,
                 params.min orelse actual,
                 actual,
                 params.err,
             );
+
             const max = actual < (params.min orelse actual) or std.math.approxEqAbs(
                 comptime_float,
                 params.max orelse actual,
@@ -247,6 +266,7 @@ pub fn Filter(comptime T: type) fn (Params.Filter(T)) Term {
         pub fn define(params: Params.Filter(T)) Term {
             return struct {
                 fn eval(actual: anytype) bool {
+
                     // Check if used field has explicit setting in params
                     if (@field(params, @tagName(actual))) |field| {
                         // Current enum value has explicit setting
@@ -538,4 +558,139 @@ test Sign {
 
     const Signed = Sign(term_value);
     _ = Signed(argument_value)(return_type);
+}
+
+test "some ints" {
+    const Default: Term = Int(.{
+        .min = @as(?comptime_int, null),
+        .max = @as(?comptime_int, null),
+        .div = @as(?comptime_int, null),
+    });
+
+    try std.testing.expect(true == Default.eval(0));
+    try std.testing.expect(true == Default.eval(1));
+
+    const EvenInt: Term = Int(.{
+        .div = @as(?comptime_int, 2),
+    });
+
+    try std.testing.expect(true == EvenInt.eval(0));
+    try std.testing.expect(false == EvenInt.eval(1));
+
+    const ZeroOrOne = Int(.{
+        .min = @as(?comptime_int, 0),
+        .max = @as(?comptime_int, 1),
+    });
+
+    try std.testing.expect(true == ZeroOrOne.eval(0));
+    try std.testing.expect(true == ZeroOrOne.eval(1));
+
+    const OnlyZero = Int(.{
+        .min = 0,
+        .max = 0,
+    });
+
+    try std.testing.expect(true == OnlyZero.eval(0));
+    try std.testing.expect(false == OnlyZero.eval(1));
+}
+
+test "some floats" {
+    const DefaultFloat: Term = Float(.{
+        .min = @as(?comptime_float, null),
+        .max = @as(?comptime_float, null),
+        .err = @as(comptime_float, 0.001),
+    });
+
+    try std.testing.expect(true == DefaultFloat.eval(-0.5));
+    try std.testing.expect(true == DefaultFloat.eval(0.5));
+
+    const ApproxZero: Term = Float(.{
+        .min = @as(?comptime_float, 0),
+        .max = @as(?comptime_float, 0),
+    });
+
+    try std.testing.expect(true == ApproxZero.eval(0));
+    try std.testing.expect(true == ApproxZero.eval(-0.001));
+    try std.testing.expect(true == ApproxZero.eval(0.001));
+
+    const ExactlyZero: Term = Float(.{
+        .min = @as(?comptime_float, 0),
+        .max = @as(?comptime_float, 0),
+        .err = @as(comptime_float, 0),
+    });
+
+    try std.testing.expect(true == ExactlyZero.eval(0));
+    try std.testing.expect(false == ExactlyZero.eval(-0.001));
+    try std.testing.expect(false == ExactlyZero.eval(0.001));
+}
+
+test "some bools" {
+    const DefaultBool = Bool(@as(?bool, null));
+    try std.testing.expect(true == DefaultBool.eval(false));
+    try std.testing.expect(true == DefaultBool.eval(true));
+
+    const OnlyTrue = Bool(@as(?bool, true));
+    try std.testing.expect(false == OnlyTrue.eval(false));
+    try std.testing.expect(true == OnlyTrue.eval(true));
+
+    const OnlyFalse = Bool(@as(?bool, false));
+    try std.testing.expect(true == OnlyFalse.eval(false));
+    try std.testing.expect(false == OnlyFalse.eval(true));
+}
+
+test "some fields" {
+    const DefaultFields = Fields(struct {})(void{});
+
+    try std.testing.expect(true == DefaultFields.eval(void));
+
+    const OneField = Fields(struct { x: u8 })(.{});
+
+    try std.testing.expect(true == OneField.eval(.{ .x = 1 }));
+    try std.testing.expect(true == OneField.eval(.{ .x = 1 }));
+
+    const NestedFields = Fields(struct {
+        x: struct {
+            y: struct {
+                z: u8 = 0,
+            },
+        },
+    })(.{
+        .x = .{
+            .y = .{
+                .z = .{
+                    .min = 0,
+                    .max = 0,
+                },
+            },
+        },
+    });
+    try std.testing.expect(true == NestedFields.eval(.{ .x = .{ .y = .{ .z = 0 } } }));
+    try std.testing.expect(false == NestedFields.eval(.{ .x = .{ .y = .{ .z = 1 } } }));
+}
+
+test "some filters" {
+    const DefaultFilter = Filter(enum {})(void{});
+
+    try std.testing.expect(true == DefaultFilter.eval(void));
+
+    const OneFilter = Filter(enum { a })(.{ .a = @as(?bool, null) });
+
+    try std.testing.expect(true == OneFilter.eval(enum { a }.a));
+
+    const OneFilterExplicitUse = Filter(enum { a })(.{ .a = @as(?bool, true) });
+
+    try std.testing.expect(true == OneFilterExplicitUse.eval(enum { a }.a));
+
+    const OneFilterExplicitNoUse = Filter(enum { a })(.{ .a = @as(?bool, false) });
+
+    try std.testing.expect(false == OneFilterExplicitNoUse.eval(enum { a }.a));
+}
+
+test "some signs" {
+    const AnyInteger = Int(.{});
+    const SignedAnyInteger = Sign(AnyInteger);
+    try std.testing.expect(void == SignedAnyInteger(1)(void));
+    try std.testing.expect(u8 == SignedAnyInteger(2)(u8));
+
+    // try std.testing.expect(void == SignedAnyInteger(false)(void));
 }

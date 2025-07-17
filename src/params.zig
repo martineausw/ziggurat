@@ -8,6 +8,7 @@ const Type = std.builtin.Type;
 /// inclusive min and max values with a divisible
 /// field, `step`
 pub const Int = struct {
+    type: ?type = null,
     min: ?comptime_int = null,
     max: ?comptime_int = null,
     div: ?comptime_int = null,
@@ -16,6 +17,7 @@ pub const Int = struct {
 /// Parametric specification of a float with
 /// inclusive min and max values and a tolerance field, `err`
 pub const Float = struct {
+    type: ?type = null,
     min: ?comptime_float = null,
     max: ?comptime_float = null,
     err: comptime_float = 0.001,
@@ -92,21 +94,15 @@ pub fn Fields(comptime T: type) type {
                     if (paratype == void) continue;
 
                     const new_default_value_ptr: ?*const anyopaque = switch (@typeInfo(field.type)) {
-                        .int,
-                        .float,
-                        .comptime_int,
-                        .comptime_float,
-                        => @ptrCast(@as(*const Number(field.type), &.{})),
+                        .comptime_int, .int => @ptrCast(@as(*const Int, &.{})),
+                        .comptime_float, .float => @ptrCast(@as(*const Float, &.{})),
                         .bool => @ptrCast(@as(*const Bool, &null)),
                         .@"struct" => @ptrCast(@as(*const (Fields(field.type)), &.{})),
                         .@"union" => @ptrCast(@as(*const (Fields(field.type)), &.{})),
                         .@"enum" => @ptrCast(@as(*const Filter(field.type), &.{})),
                         .pointer => switch (@typeInfo(@typeInfo(field.type).pointer.child)) {
-                            .int,
-                            .float,
-                            .comptime_int,
-                            .comptime_float,
-                            => @ptrCast(@as(*const Number(@typeInfo(field.type).pointer.child), &.{})),
+                            .comptime_int, .int => @ptrCast(@as(*const Int, &.{ .type = @typeInfo(field.type).pointer.child })),
+                            .comptime_float, .float => @ptrCast(@as(*const Float, &.{ .type = @typeInfo(field.type).pointer.child })),
                             .bool => @ptrCast(@as(*const Bool, &null)),
                             .@"struct" => @ptrCast(@as(*const Fields(@typeInfo(field.type).pointer.child), &.{})),
                             .@"union" => @ptrCast(@as(*const Fields(@typeInfo(field.type).pointer.child), &.{})),
@@ -134,11 +130,8 @@ pub fn Fields(comptime T: type) type {
 
 fn Value(comptime T: type) type {
     return switch (@typeInfo(T)) {
-        .int,
-        .float,
-        .comptime_int,
-        .comptime_float,
-        => Number(T),
+        .comptime_int, .int => Int,
+        .comptime_float, .float => Float,
         .bool => Bool,
         .pointer => |info| switch (@typeInfo(info.child)) {
             .@"opaque" => void,
