@@ -6,3 +6,7 @@
 
 .zig-cache
 zig-out
+
+# VSCode
+
+.vscode
