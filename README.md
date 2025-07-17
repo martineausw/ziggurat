@@ -10,6 +10,8 @@ The goal of ziggurat is to be able to comprehensibly define arbitrarily complex 
 
 The essence of the library is within `contract.zig` and all other parts can be considered supplemental which are most likely to change. `contract.zig` stands to change if effective generalizations are discovered in service of reducing complexity or if deemed absolutely necessary for a better development experience.
 
+Given with how the `Term` is defined, the library may also have applications writing tests.
+
 ### Remarks
 
 In any case, this is an attempt at the ideas discussed in the brainstorming thread who are all far smarter than I am. This approach tries to rectify architectural shortcomings of the minimalist approach such as losing information on errors, which I haven't settled into a solution yet, as well as take inspiration from, dare I say, the quality of life features found in C++ or Typescript.
@@ -119,9 +121,11 @@ If a `struct` is a set of field names, then `Fields` creates a subset of the ori
 
 ## Goals
 
--   [-] Tests
+-   [ ] Tests
+
     -   [x] terms
     -   [ ] params
+
 -   [ ] Traceable error output
 -   [ ] Failure behavior configuration
 -   [ ] Simplify
