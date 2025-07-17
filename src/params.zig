@@ -25,19 +25,6 @@ pub const Float = struct {
 
 pub const Bool = ?bool;
 
-/// Type based on a number primitive
-///
-/// See:
-/// - `ParametricInt`
-/// - `ParametricFloat`
-pub fn Number(comptime T: type) type {
-    return switch (@typeInfo(T)) {
-        .comptime_int, .int => Int,
-        .comptime_float, .float => Float,
-        else => unreachable,
-    };
-}
-
 /// Creates a type where fields of input type are converted
 /// to `?bool` to explicitly specify allowance of enum values
 pub fn Filter(comptime T: type) type {
