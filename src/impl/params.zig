@@ -1,6 +1,5 @@
-//! Parameter definitions and generation to be used in Terms.
-//!
-//!
+//! Parameter definitions and generation to be used in Terms
+//! to automate away some boilerplate
 const std = @import("std");
 const meta = std.meta;
 

@@ -19,9 +19,13 @@ pub const Term = struct {
     /// `Sign` expects final evaluation result to be true in order to continue.
     eval: *const fn (actual: anytype) bool,
 
-    /// Optional function pointer invoked by `Sign` or other `Term` wrappers
+    /// Optional function pointer invoked by `Sign` or other `Term` implementations
+    /// when `eval` returns true.
+    onPass: ?*const fn (actual: anytype) void = null,
+
+    /// Optional function pointer invoked by `Sign` or other `Term` implementations
     /// when `eval` returns false.
-    onFail: ?*const fn (args: anytype) void = null,
+    onFail: ?*const fn (actual: anytype) void = null,
 
     /// Internal dispatch of `eval` function pointer necessary for interface
     /// pattern.
@@ -159,17 +163,18 @@ test Term {
 /// Wraps the final term and invoked at return value position of a function signature.
 ///
 /// Term must evaluate to true to continue.
-pub fn Sign(comptime term: Term) fn (actual: anytype) fn (comptime return_type: type) type {
+pub fn Sign(term: Term) fn (actual: anytype) fn (comptime return_type: type) type {
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
-            if (!term.eval(actual)) {
-                // Check if onFail function is defined.
+            const result = term.eval(actual);
+            if (result) {
+                if (term.onPass) |onPass| {
+                    onPass(actual);
+                }
+            } else {
                 if (term.onFail) |onFail| {
                     onFail(actual);
-                } else {
-                    // Exit if contract validation fails
-                    unreachable;
-                }
+                } else unreachable;
             }
             return struct {
                 pub fn returns(comptime ret_type: type) type {

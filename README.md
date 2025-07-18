@@ -68,11 +68,7 @@ const Term type = struct {
 }
 ```
 
-### Sign Function
-
-`Sign` is a function invokes the evaluation of a `Term`. Complex `Term`s are intended to be composed into a single instance.
-
-### Term Implementation
+#### Implementation Examples
 
 Here is an example implementation of a `Term` type.
 
@@ -106,6 +102,31 @@ const OddInt: Term = .{
 ```
 
 Feel free to go crazy.
+
+### Sign Function
+
+`Sign` is a function invokes the evaluation of a `Term`. Complex `Term`s are intended to be composed into a single instance.
+
+```zig
+pub fn Sign(term: Term) fn (actual: anytype) fn (comptime return_type: type) type {
+    return struct {
+        fn validate(actual: anytype) fn (comptime return_type: type) type {
+            const result = term.eval(actual);
+            if (result) {
+                // on pass
+            } else {
+                // on fail
+            }
+            return struct {
+                fn returns(comptime ret_type: type) type {
+                    return ret_type;
+                }
+            }.returns;
+        }
+    }.validate;
+}
+
+```
 
 ## Appendix
 

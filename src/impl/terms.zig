@@ -3,9 +3,9 @@
 //! and aggregate types (e.g. `struct`, `union`, ...)
 const std = @import("std");
 
-const Params = @import("params.zig");
-const Term = @import("../contract.zig").Term;
-const Sign = @import("../contract.zig").Sign;
+const Params = @import("params");
+const Term = @import("contract").Term;
+const Sign = @import("contract").Sign;
 
 /// Special case implementation for boolean types.
 ///
