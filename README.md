@@ -1,5 +1,7 @@
 # ziggurat
 
+![zig 0.14.1](https://img.shields.io/badge/zig-0.14.1-brightgreen)
+
 Microlibrary to introduce type constraints in zig 0.14.1.
 
 Inspired off of [this brainstorming thread](https://ziggit.dev/t/implementing-generic-concepts-on-function-declarations/1490).
