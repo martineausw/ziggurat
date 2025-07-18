@@ -4,8 +4,8 @@
 const std = @import("std");
 
 const Params = @import("params.zig");
-const Term = @import("contract.zig").Term;
-const Sign = @import("contract.zig").Sign;
+const Term = @import("../contract.zig").Term;
+const Sign = @import("../contract.zig").Sign;
 
 /// Special case implementation for boolean types.
 ///
