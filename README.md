@@ -87,6 +87,26 @@ const Int: Term = .{
 }
 ```
 
+Here's an implementation that only accepts odd integer values:
+
+```zig
+const OddInt: Term = .{
+    .eval = struct {
+        fn eval(actual: anytype) bool {
+            return switch (@typeInfo(@TypeOf(actual))) {
+                .comptime_int => @mod(actual, 2) == 1,
+                .int => actual % 2 == 1,
+                else => false,
+            }
+        }
+    }.eval
+}
+```
+
+Feel free to go crazy.
+
+## Appendix
+
 Included `Term` types often include parameter types to automate away some boilerplate by making assumptions about how the library will be used (based entirely on how I am currently using it). This part of the codebase is very much a WIP. Feel free to ignore these if it doesn't fit your needs.
 
 ```zig
