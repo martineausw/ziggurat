@@ -7,6 +7,53 @@ const Params = @import("params");
 const Term = @import("contract").Term;
 const Sign = @import("contract").Sign;
 
+pub fn implements(comptime expect: type) Term {
+    return .{
+        .eval = struct {
+            fn eval(actual: anytype) bool {
+                const actual_info = @typeInfo(@TypeOf(actual)).@"struct";
+
+                inline for (actual_info.fields) |field| {
+                    if (!@hasField(expect, field.name)) {
+                        continue;
+                    }
+
+                    const expect_fn_info = switch (@typeInfo(@field(expect, field.name).type)) {
+                        .pointer => |info| switch (@typeInfo(info.child)) {
+                            .@"fn" => |func| func,
+                            else => continue,
+                        },
+                        else => continue,
+                    };
+
+                    const actual_fn_info = switch (@typeInfo(field.type)) {
+                        .pointer => |info| switch (@typeInfo(info.child)) {
+                            .@"fn" => |func| func,
+                            else => continue,
+                        },
+                        else => continue,
+                    };
+
+                    if (expect_fn_info.calling_convention != actual_fn_info.calling_convention) return false;
+                    if (expect_fn_info.is_generic != actual_fn_info.is_generic) return false;
+                    if (expect_fn_info.is_var_args != actual_fn_info.is_var_args) return false;
+                    if (expect_fn_info.return_type != actual_fn_info.return_type) return false;
+
+                    // pointer type - check for deep equality
+                    inline for (0..expect_fn_info.params.len) |i| {
+                        const expect_param = expect_fn_info.params[i];
+                        const actual_param = actual_fn_info.params[i];
+
+                        if (expect_param.is_generic != actual_param.is_generic) return false;
+                        if (expect_param.is_noalias != actual_param.is_noalias) return false;
+                        if (expect_param.type != actual_param.type) return false;
+                    }
+                }
+            }
+        }.eval,
+    };
+}
+
 /// Special case implementation for boolean types.
 ///
 /// Checks `actual` against `?bool` value, if specified (not null):
@@ -516,9 +563,9 @@ test "some fields" {
 }
 
 test "some filters" {
-    const DefaultFilter = Filter(enum {})(void{});
+    const DefaultFilter = Filter(enum { x })(.{});
 
-    try std.testing.expect(true == DefaultFilter.eval(void));
+    try std.testing.expect(true == DefaultFilter.eval((enum { x }).x));
 
     const OneFilter = Filter(enum { a })(.{ .a = @as(?bool, null) });
 
