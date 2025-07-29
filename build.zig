@@ -26,13 +26,19 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/impl/terms.zig"),
         .target = target,
         .optimize = optimize,
-        .imports = &.{.{ .name = "contract", .module = contract_mod }},
     });
 
-    const impl_mod = b.createModule(.{ .root_source_file = b.path("src/impl.zig"), .target = target, .optimize = optimize, .imports = &.{
-        .{ .name = "params", .module = params_mod },
-        .{ .name = "terms", .module = terms_mod },
-    } });
+    const impl_mod = b.createModule(.{
+        .root_source_file = b.path("src/impl.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    terms_mod.addImport("contract", contract_mod);
+    terms_mod.addImport("params", params_mod);
+
+    impl_mod.addImport("terms", terms_mod);
+    impl_mod.addImport("params", params_mod);
 
     lib_mod.addImport("impl", impl_mod);
     lib_mod.addImport("contract", contract_mod);
@@ -50,8 +56,22 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
 
+    const params_unit_tests = b.addTest(.{
+        .root_module = params_mod,
+        .target = target,
+    });
+
+    const terms_unit_tests = b.addTest(.{
+        .root_module = terms_mod,
+        .target = target,
+    });
+
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
+    const run_terms_unit_tests = b.addRunArtifact(terms_unit_tests);
+    const run_params_unit_tests = b.addRunArtifact(params_unit_tests);
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_lib_unit_tests.step);
+    test_step.dependOn(&run_terms_unit_tests.step);
+    test_step.dependOn(&run_params_unit_tests.step);
 }
