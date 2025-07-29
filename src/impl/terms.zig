@@ -7,7 +7,7 @@ const Params = @import("params");
 const Term = @import("contract").Term;
 const Sign = @import("contract").Sign;
 
-pub fn implements(comptime expect: type) Term {
+pub fn Implements(comptime expect: type) Term {
     return .{
         .eval = struct {
             fn eval(actual: anytype) bool {
@@ -52,6 +52,10 @@ pub fn implements(comptime expect: type) Term {
             }
         }.eval,
     };
+}
+
+test Implements {
+    try std.testing.expect(false);
 }
 
 /// Special case implementation for boolean types.
