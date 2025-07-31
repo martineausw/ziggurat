@@ -1,6 +1,9 @@
 //! Consists of `Term` abstract and `Sign` function to introduce type
 //! constraints within function signatures
+
 const std = @import("std");
+const testing = std.testing;
+
 /// `Term` abstract
 ///
 /// Defines a condition that is evaluated when supplied with an argument.
@@ -11,6 +14,7 @@ const std = @import("std");
 /// through all evaluation steps. `actual` may or may not be indexable and
 /// may have meta-data, as given by `@typeInfo(...)`.
 pub const Term = struct {
+    name: []const u8,
     /// Function pointer that is invoked by `Sign` or other `Term` wrappers.
     ///
     /// `actual: anytype` argument to be evaluated
@@ -26,85 +30,6 @@ pub const Term = struct {
     /// Optional function pointer invoked by `Sign` or other `Term` implementations
     /// when `eval` returns false.
     onFail: ?*const fn (actual: anytype) void = null,
-
-    /// Internal dispatch of `eval` function pointer necessary for interface
-    /// pattern.
-    fn evalFn(self: Term, actual: anytype) bool {
-        return self.eval(actual);
-    }
-
-    /// Assert term evaluates to true. Abandons control flow when evaluation
-    /// result is false.
-    ///
-    /// - Pneumonically based on "mandatory/mandate"
-    pub fn man(self: Term) Term {
-        return struct {
-            fn eval(actual: anytype) bool {
-                if (!self.eval(actual)) unreachable;
-                return true;
-            }
-
-            fn impl() Term {
-                return .{ .eval = eval };
-            }
-        }.impl();
-    }
-
-    /// Evaluate term at index. Assumes `actual` is indexable.
-    pub fn at(self: Term, index: usize) Term {
-        return struct {
-            fn eval(actual: anytype) bool {
-                return self.eval(actual[index]);
-            }
-
-            fn impl() Term {
-                return .{ .eval = eval };
-            }
-        }.impl();
-    }
-
-    /// Negates evaluation result of term.
-    pub fn not(self: Term) Term {
-        return struct {
-            fn eval(actual: anytype) bool {
-                return !self.eval(actual);
-            }
-
-            fn impl() Term {
-                return .{ .eval = eval };
-            }
-        }.impl();
-    }
-
-    /// Boolean AND operation of evaluation results.
-    ///
-    /// - Pneumonically based on "necessarily/necessary"
-    pub fn nec(self: Term, term: Term) Term {
-        return struct {
-            fn eval(actual: anytype) bool {
-                return self.eval(actual) and term.eval(actual);
-            }
-
-            fn impl() Term {
-                return .{ .eval = eval };
-            }
-        }.impl();
-    }
-
-    /// Boolean OR operation of evaluation results
-    ///
-    /// - Pneumonically based on "optionally/optional/opt-in"
-    pub fn opt(self: Term, term: Term) Term {
-        return struct {
-            fn eval(args: anytype) bool {
-                return self.eval(args) or term.eval(args);
-            }
-
-            fn impl() Term {
-                return .{ .eval = eval };
-            }
-        }.impl();
-    }
 };
 
 test Term {
@@ -117,33 +42,30 @@ test Term {
         }
 
         fn impl() Term {
-            return .{ .eval = eval };
+            return .{
+                .name = "example int term",
+                .eval = eval,
+            };
         }
     }.impl();
 
-    const ExampleBoolTerm = Term{ .eval = struct {
-        fn eval(actual: anytype) bool {
-            return switch (@typeInfo(@TypeOf(actual))) {
-                .bool => true,
-                else => false,
-            };
-        }
-    }.eval };
+    const ExampleBoolTerm = Term{
+        .name = "example bool term",
+        .eval = struct {
+            fn eval(actual: anytype) bool {
+                return switch (@typeInfo(@TypeOf(actual))) {
+                    .bool => true,
+                    else => false,
+                };
+            }
+        }.eval,
+    };
 
-    const ExampleBoolOrIntTerm = Term.opt(ExampleBoolTerm, ExampleIntTerm);
-    const ImpossibleBoolAndInt = ExampleBoolTerm.nec(ExampleIntTerm);
+    try testing.expect(true == ExampleIntTerm.eval(@as(u32, 0)));
+    try testing.expect(false == ExampleIntTerm.eval(@as(bool, false)));
 
-    try std.testing.expect(true == ExampleIntTerm.eval(@as(u32, 0)));
-    try std.testing.expect(false == ExampleIntTerm.eval(@as(bool, false)));
-
-    try std.testing.expect(false == ExampleBoolTerm.eval(@as(u32, 0)));
-    try std.testing.expect(true == ExampleBoolTerm.eval(@as(bool, false)));
-
-    try std.testing.expect(true == ExampleBoolOrIntTerm.eval(@as(bool, false)));
-    try std.testing.expect(true == ExampleBoolOrIntTerm.eval(@as(u32, 0)));
-
-    try std.testing.expect(false == ImpossibleBoolAndInt.eval(@as(bool, false)));
-    try std.testing.expect(false == ImpossibleBoolAndInt.eval(@as(u32, 0)));
+    try testing.expect(false == ExampleBoolTerm.eval(@as(u32, 0)));
+    try testing.expect(true == ExampleBoolTerm.eval(@as(bool, false)));
 }
 
 /// Example:
@@ -174,7 +96,9 @@ pub fn Sign(term: Term) fn (actual: anytype) fn (comptime return_type: type) typ
             } else {
                 if (term.onFail) |onFail| {
                     onFail(actual);
-                } else unreachable;
+                } else {
+                    @compileError("violated term: " ++ term.name);
+                }
             }
             return struct {
                 pub fn returns(comptime ret_type: type) type {
@@ -195,7 +119,10 @@ test Sign {
         }
 
         fn impl() Term {
-            return .{ .eval = eval };
+            return .{
+                .name = "example int term",
+                .eval = eval,
+            };
         }
     }.impl();
 
@@ -207,4 +134,36 @@ test Sign {
 
     const Signed = Sign(term_value);
     _ = Signed(argument_value)(return_type);
+}
+
+test "some test" {
+    std.testing.log_level = .err;
+    const AlwaysFalse = Term{
+        .name = "AlwaysFalse",
+        .eval = struct {
+            fn eval(_: anytype) bool {
+                return false;
+            }
+        }.eval,
+    };
+
+    const AlwaysTrue = Term{
+        .name = "AlwaysTrue",
+        .eval = struct {
+            fn eval(_: anytype) bool {
+                return true;
+            }
+        }.eval,
+    };
+
+    const AlwaysTrueOrAlwaysFalse = Term{
+        .name = AlwaysFalse.name ++ " and " ++ AlwaysTrue.name,
+        .eval = struct {
+            fn eval(_: anytype) bool {
+                return AlwaysTrue.eval(0) and AlwaysFalse.eval(0);
+            }
+        }.eval,
+    };
+
+    _ = Sign(AlwaysTrueOrAlwaysFalse)(0)(void);
 }

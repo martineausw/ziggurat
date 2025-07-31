@@ -14,6 +14,7 @@ const Sign = @import("contract").Sign;
 /// expected type and actual argument.
 pub fn Implements(comptime expect: type) Term {
     return .{
+        .name = "implements " ++ @typeName(expect),
         .eval = struct {
             fn eval(actual: anytype) bool {
                 const expect_info = @typeInfo(expect).@"struct";
@@ -103,7 +104,10 @@ pub fn Bool(expect: Params.Bool) Term {
         }
 
         fn impl() Term {
-            return .{ .eval = eval };
+            return .{
+                .name = "bool",
+                .eval = eval,
+            };
         }
     }.impl();
 }
@@ -143,7 +147,10 @@ pub fn Int(params: Params.Int) Term {
         }
 
         fn impl() Term {
-            return .{ .eval = eval };
+            return .{
+                .name = "int",
+                .eval = eval,
+            };
         }
     }.impl();
 }
@@ -195,7 +202,10 @@ pub fn Float(params: Params.Float) Term {
         }
 
         fn impl() Term {
-            return .{ .eval = eval };
+            return .{
+                .name = "float",
+                .eval = eval,
+            };
         }
     }.impl();
 }
@@ -261,7 +271,10 @@ pub fn Filter(comptime T: type) fn (Params.Filter(T)) Term {
                 }
 
                 fn impl() Term {
-                    return .{ .eval = eval };
+                    return .{
+                        .name = "filter " ++ @typeName(T),
+                        .eval = eval,
+                    };
                 }
             }.impl();
         }
@@ -347,7 +360,10 @@ pub fn Info(comptime T: SupportedInfo) fn (switch (T) {
                 }
 
                 fn impl() Term {
-                    return .{ .eval = eval };
+                    return .{
+                        .name = @typeName(TInfo),
+                        .eval = eval,
+                    };
                 }
             }.impl();
         }
@@ -442,7 +458,10 @@ pub fn Fields(comptime T: type) fn (Params.Fields(T)) Term {
                 }
 
                 fn impl() Term {
-                    return .{ .eval = eval };
+                    return .{
+                        .name = "fields " ++ @typeName(T),
+                        .eval = eval,
+                    };
                 }
             }.impl();
         }

@@ -66,12 +66,19 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
 
+    const contract_unit_tests = b.addTest(.{
+        .root_module = contract_mod,
+        .target = target,
+    });
+
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
     const run_terms_unit_tests = b.addRunArtifact(terms_unit_tests);
     const run_params_unit_tests = b.addRunArtifact(params_unit_tests);
+    const run_contract_unit_tests = b.addRunArtifact(contract_unit_tests);
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_lib_unit_tests.step);
     test_step.dependOn(&run_terms_unit_tests.step);
     test_step.dependOn(&run_params_unit_tests.step);
+    test_step.dependOn(&run_contract_unit_tests.step);
 }
