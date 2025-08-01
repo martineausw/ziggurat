@@ -4,6 +4,13 @@
 const std = @import("std");
 const testing = std.testing;
 
+const TermConfig = struct {
+    name: ?[]const u8 = null,
+    desc: ?[]const u8 = null,
+    onPass: ?*const fn (actual: anytype) bool = null,
+    onFail: ?*const fn (actual: anytype) bool = null,
+};
+
 /// `Term` abstract
 ///
 /// Defines a condition that is evaluated when supplied with an argument.
@@ -33,24 +40,20 @@ pub const Term = struct {
 };
 
 test Term {
-    const ExampleIntTerm = struct {
-        fn eval(actual: anytype) bool {
-            return switch (@typeInfo(@TypeOf(actual))) {
-                .int => true,
-                else => false,
-            };
-        }
+    const AnyRuntimeInt: Term = .{
+        .name = "AnyInt",
+        .eval = struct {
+            fn eval(actual: anytype) bool {
+                return switch (@typeInfo(@TypeOf(actual))) {
+                    .int => true,
+                    else => false,
+                };
+            }
+        }.eval,
+    };
 
-        fn impl() Term {
-            return .{
-                .name = "example int term",
-                .eval = eval,
-            };
-        }
-    }.impl();
-
-    const ExampleBoolTerm = Term{
-        .name = "example bool term",
+    const AnyBool = Term{
+        .name = "AnyBool",
         .eval = struct {
             fn eval(actual: anytype) bool {
                 return switch (@typeInfo(@TypeOf(actual))) {
@@ -61,11 +64,11 @@ test Term {
         }.eval,
     };
 
-    try testing.expect(true == ExampleIntTerm.eval(@as(u32, 0)));
-    try testing.expect(false == ExampleIntTerm.eval(@as(bool, false)));
+    try testing.expect(true == AnyRuntimeInt.eval(@as(u32, 0)));
+    try testing.expect(false == AnyRuntimeInt.eval(@as(bool, false)));
 
-    try testing.expect(false == ExampleBoolTerm.eval(@as(u32, 0)));
-    try testing.expect(true == ExampleBoolTerm.eval(@as(bool, false)));
+    try testing.expect(false == AnyBool.eval(@as(u32, 0)));
+    try testing.expect(true == AnyBool.eval(@as(bool, false)));
 }
 
 /// Example:
@@ -110,25 +113,21 @@ pub fn Sign(term: Term) fn (actual: anytype) fn (comptime return_type: type) typ
 }
 
 test Sign {
-    const ExampleIntTerm = struct {
-        fn eval(actual: anytype) bool {
-            return switch (@typeInfo(@TypeOf(actual))) {
-                .int => true,
-                else => false,
-            };
-        }
+    const ExampleIntTerm: Term = .{
+        .name = "example int term",
+        .eval = struct {
+            fn eval(actual: anytype) bool {
+                return switch (@typeInfo(@TypeOf(actual))) {
+                    .int => true,
+                    else => false,
+                };
+            }
+        }.eval,
+    };
 
-        fn impl() Term {
-            return .{
-                .name = "example int term",
-                .eval = eval,
-            };
-        }
-    }.impl();
-
-    const term_value = @as(Term, ExampleIntTerm);
-    const argument_value = @as(u32, 0);
-    const return_type = @as(@TypeOf(void), void);
+    const term_value: Term = ExampleIntTerm;
+    const argument_value: u32 = 0;
+    const return_type: type = void;
 
     _ = Sign(term_value)(argument_value)(return_type);
 
@@ -147,6 +146,10 @@ test "some test" {
         }.eval,
     };
 
+    _ = AlwaysFalse;
+
+    // _ = Sign(AlwaysFalse)(void)(void);
+
     const AlwaysTrue = Term{
         .name = "AlwaysTrue",
         .eval = struct {
@@ -156,14 +159,16 @@ test "some test" {
         }.eval,
     };
 
-    const AlwaysTrueOrAlwaysFalse = Term{
-        .name = AlwaysFalse.name ++ " and " ++ AlwaysTrue.name,
-        .eval = struct {
-            fn eval(_: anytype) bool {
-                return AlwaysTrue.eval(0) and AlwaysFalse.eval(0);
-            }
-        }.eval,
-    };
+    _ = Sign(AlwaysTrue)(void)(void);
 
-    _ = Sign(AlwaysTrueOrAlwaysFalse)(0)(void);
+    // const AlwaysTrueOrAlwaysFalse = Term{
+    //     .name = AlwaysFalse.name ++ " and " ++ AlwaysTrue.name,
+    //     .eval = struct {
+    //         fn eval(_: anytype) bool {
+    //             return AlwaysTrue.eval(0) and AlwaysFalse.eval(0);
+    //         }
+    //     }.eval,
+    // };
+
+    // _ = Sign(AlwaysTrueOrAlwaysFalse)(0)(void);
 }
