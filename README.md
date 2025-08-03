@@ -8,9 +8,9 @@ Inspired off of [this brainstorming thread](https://ziggit.dev/t/implementing-ge
 
 ## About
 
-The goal of ziggurat is to be able to comprehensibly define arbitrarily complex type constraints for `anytype` parameters within function signatures to achieve a balance between flexibility and type safety, which sounds a bit naive now that I'm writing this.
+The goal of ziggurat is to be able to comprehensibly define arbitrarily complex type constraints for `anytype` parameters within function signatures.
 
-The essence of the library is within `contract.zig` and all other parts can be considered supplemental which are most likely to change. `contract.zig` stands to change if effective generalizations are discovered in service of reducing complexity or if deemed absolutely necessary for a better development experience.
+The essence of the library is within `contract.zig` and all other parts can be considered supplemental which are most likely to change. `contract.zig` stands to change if effective generalizations are discovered in service of reducing complexity or if deemed necessary for a better developer experience.
 
 Given with how the `Term` is defined, the library may also have applications writing tests.
 
@@ -169,8 +169,8 @@ If a `struct` is a set of field names, then `Fields` creates a subset of the ori
     -   [x] terms
     -   [ ] params
 
--   [ ] Traceable error output
--   [ ] Failure behavior configuration
+-   [x] Traceable error output
+-   [x] Failure behavior configuration
 -   [ ] Simplify
 
 ## Reflection
