@@ -164,10 +164,10 @@ If a `struct` is a set of field names, then `Fields` creates a subset of the ori
 
 ## Goals
 
--   [ ] Tests
+-   [x] Tests
 
     -   [x] terms
-    -   [ ] params
+    -   [x] params
 
 -   [x] Traceable error output
 -   [x] Failure behavior configuration
