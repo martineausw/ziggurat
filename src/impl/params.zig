@@ -9,14 +9,14 @@ const Type = std.builtin.Type;
 /// Parametric specification of an integer with
 /// inclusive min and max values with a divisible
 /// field, `step`
-pub const Int = struct {
+pub const IntRange = struct {
     min: ?comptime_int = null,
     max: ?comptime_int = null,
     div: ?comptime_int = null,
 };
 
-test Int {
-    const int_params: Int = .{};
+test IntRange {
+    const int_params: IntRange = .{};
     try testing.expect(?comptime_int == @TypeOf(int_params.min));
     try testing.expect(?comptime_int == @TypeOf(int_params.max));
     try testing.expect(?comptime_int == @TypeOf(int_params.div));
@@ -24,24 +24,17 @@ test Int {
 
 /// Parametric specification of a float with
 /// inclusive min and max values and a tolerance field, `err`
-pub const Float = struct {
+pub const FloatRange = struct {
     min: ?comptime_float = null,
     max: ?comptime_float = null,
     err: comptime_float = 0.001,
 };
 
-test Float {
-    const float_params: Float = .{};
+test FloatRange {
+    const float_params: FloatRange = .{};
     try testing.expect(?comptime_float == @TypeOf(float_params.min));
     try testing.expect(?comptime_float == @TypeOf(float_params.max));
     try testing.expect(comptime_float == @TypeOf(float_params.err));
-}
-
-pub const Bool = ?bool;
-
-test Bool {
-    const bool_params: Bool = null;
-    try testing.expect(?bool == @TypeOf(bool_params));
 }
 
 /// Creates a struct fields from input type with fields of the same name
@@ -58,10 +51,10 @@ pub fn Filter(comptime T: type) type {
 
                 temp_fields[field_index] = .{
                     .name = field.name,
-                    .type = Bool,
+                    .type = ?bool,
                     .alignment = meta.alignment(@typeInfo(T).@"enum".tag_type),
                     .is_comptime = false,
-                    .default_value_ptr = @ptrCast(@as(*const Bool, &null)),
+                    .default_value_ptr = @ptrCast(@as(*const ?bool, &null)),
                 };
             }
             break :fields &temp_fields;
@@ -112,21 +105,24 @@ pub fn Fields(comptime T: type) type {
                     if (paratype == void) continue;
 
                     const new_default_value_ptr: ?*const anyopaque = switch (@typeInfo(field.type)) {
-                        .comptime_int, .int => @ptrCast(@as(*const Int, &.{})),
-                        .comptime_float, .float => @ptrCast(@as(*const Float, &.{})),
-                        .bool => @ptrCast(@as(*const Bool, &null)),
+                        .comptime_int, .int => @ptrCast(@as(*const IntRange, &.{})),
+                        .comptime_float, .float => @ptrCast(@as(*const FloatRange, &.{})),
+                        .bool => @ptrCast(@as(*const ?bool, &null)),
 
                         inline .@"struct",
                         .@"union",
                         => @ptrCast(@as(*const (Fields(field.type)), &.{})),
+
                         .@"enum" => @ptrCast(@as(*const Filter(field.type), &.{})),
+
                         .pointer => switch (@typeInfo(@typeInfo(field.type).pointer.child)) {
-                            .comptime_int, .int => @ptrCast(@as(*const Int, &.{})),
-                            .comptime_float, .float => @ptrCast(@as(*const Float, &.{})),
-                            .bool => @ptrCast(@as(*const Bool, &null)),
-                            .@"struct" => @ptrCast(@as(*const Fields(@typeInfo(field.type).pointer.child), &.{})),
-                            .@"union" => @ptrCast(@as(*const Fields(@typeInfo(field.type).pointer.child), &.{})),
-                            .@"enum" => @ptrCast(@as(*const Filter(@typeInfo(field.type).pointer.child), &.{})),
+                            .comptime_int, .int => @ptrCast(@as(*const IntRange, &.{})),
+                            .comptime_float, .float => @ptrCast(@as(*const FloatRange, &.{})),
+                            .bool => @ptrCast(@as(*const ?bool, &null)),
+                            inline .@"struct",
+                            .@"union",
+                            .@"enum",
+                            => @ptrCast(@as(*const Filter(@typeInfo(field.type).pointer.child), &.{})),
                             else => continue,
                         },
                         else => continue,
@@ -157,14 +153,14 @@ test Fields {
     const some_struct_params: Fields(SomeStruct) = .{};
 
     try testing.expect(Value(u8) == @TypeOf(some_struct_params.foo));
-    try testing.expect(Float == @TypeOf(some_struct_params.bar));
+    try testing.expect(FloatRange == @TypeOf(some_struct_params.bar));
 }
 
 fn Value(comptime T: type) type {
     return switch (@typeInfo(T)) {
-        .comptime_int, .int => Int,
-        .comptime_float, .float => Float,
-        .bool => Bool,
+        .comptime_int, .int => IntRange,
+        .comptime_float, .float => FloatRange,
+        .bool => ?bool,
         inline .pointer, .optional, .vector, .array => |info| Value(info.child),
         inline .@"union", .@"struct" => Fields(T),
         .@"enum" => Filter(T),
@@ -184,7 +180,7 @@ fn Value(comptime T: type) type {
 }
 
 test Value {
-    try testing.expect(Int == Value(usize));
-    try testing.expect(Float == Value(f128));
-    try testing.expect(Bool == Value(bool));
+    try testing.expect(IntRange == Value(usize));
+    try testing.expect(FloatRange == Value(f128));
+    try testing.expect(?bool == Value(bool));
 }

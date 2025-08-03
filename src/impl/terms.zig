@@ -136,7 +136,7 @@ test Disjoin {
 ///
 /// Always evaluates to true if set to null, otherwise, `actual`
 /// is expected to be equal to `bool`.
-pub fn Bool(params: Params.Bool) Term {
+pub fn Bool(params: ?bool) Term {
     return .{
         .name = "Bool",
         .eval = struct {
@@ -186,7 +186,7 @@ test Bool {
 /// Always evaluates to true if no parameters are specified.
 ///
 /// When defined, checks if `actual` is evenly divisible by `div`.
-pub fn Int(params: Params.Int) Term {
+pub fn Int(params: Params.IntRange) Term {
     return .{
         .name = "Int",
         .eval = struct {
@@ -273,7 +273,7 @@ test Int {
 /// Always evaluates to true if `min` nor `max` are specified.
 ///
 /// `err` is used in `std.math.approxEqAbs(...)` when determining equality on interval endpoints
-pub fn Float(params: Params.Float) Term {
+pub fn Float(params: Params.FloatRange) Term {
     return .{
         .name = "Float",
         .eval = struct {
@@ -589,23 +589,23 @@ test Fields {
 
     const FooParams: Params.Fields(Foo) = .{
         .bar = @as(?bool, null),
-        .zig = @as(Params.Int, .{
+        .zig = @as(Params.IntRange, .{
             .min = @as(?comptime_int, null),
             .max = @as(?comptime_int, null),
             .div = @as(?comptime_int, null),
         }),
-        .zag = @as(Params.Float, .{
+        .zag = @as(Params.FloatRange, .{
             .min = @as(?comptime_float, null),
             .max = @as(?comptime_float, null),
             .err = @as(comptime_float, 0.001),
         }),
         .fizz = @as(Params.Fields(struct { buzz: usize, fizzbuzz: *const usize }), .{
-            .buzz = @as(Params.Int, .{
+            .buzz = @as(Params.IntRange, .{
                 .min = @as(?comptime_int, null),
                 .max = @as(?comptime_int, null),
                 .div = @as(?comptime_int, null),
             }),
-            .fizzbuzz = @as(Params.Int, .{}),
+            .fizzbuzz = @as(Params.IntRange, .{}),
         }),
     };
 
@@ -805,7 +805,7 @@ test Info {
             .signed = null,
             .unsigned = null,
         }),
-        .bits = @as(Params.Int, .{
+        .bits = @as(Params.IntRange, .{
             .min = null,
             .max = null,
             .div = null,
