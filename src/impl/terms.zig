@@ -2,6 +2,7 @@
 //! representative of primitive types (e.g. `bool`, `float`, ...)
 //! and aggregate types (e.g. `struct`, `union`, ...)
 const std = @import("std");
+const testing = std.testing;
 
 const Params = @import("params");
 const Term = @import("contract").Term;
@@ -17,6 +18,19 @@ pub fn Negate(term: Term) Term {
         }.eval,
         .onFail = term.onFail,
     };
+}
+
+test Negate {
+    const AlwaysTrue: Term = .{
+        .name = "AlwaysTrue",
+        .eval = struct {
+            fn eval(_: anytype) bool {
+                return true;
+            }
+        }.eval,
+    };
+
+    try testing.expect(false == Negate(AlwaysTrue).eval(void));
 }
 
 pub fn Conjoin(term0: Term, term1: Term) Term {
@@ -45,6 +59,28 @@ pub fn Conjoin(term0: Term, term1: Term) Term {
     };
 }
 
+test Conjoin {
+    const AlwaysTrue: Term = .{
+        .name = "AlwaysTrue",
+        .eval = struct {
+            fn eval(_: anytype) bool {
+                return true;
+            }
+        }.eval,
+    };
+    const AlwaysFalse: Term = .{
+        .name = "AlwaysFalse",
+        .eval = struct {
+            fn eval(_: anytype) bool {
+                return false;
+            }
+        }.eval,
+    };
+
+    try testing.expect(true == Conjoin(AlwaysTrue, AlwaysTrue).eval(void));
+    try testing.expect(false == Conjoin(AlwaysTrue, AlwaysFalse).eval(void));
+}
+
 pub fn Disjoin(term0: Term, term1: Term) Term {
     return .{
         .name = std.fmt.comptimePrint(
@@ -69,6 +105,29 @@ pub fn Disjoin(term0: Term, term1: Term) Term {
             }
         }.onFail,
     };
+}
+
+test Disjoin {
+    const AlwaysTrue: Term = .{
+        .name = "AlwaysTrue",
+        .eval = struct {
+            fn eval(_: anytype) bool {
+                return true;
+            }
+        }.eval,
+    };
+    const AlwaysFalse: Term = .{
+        .name = "AlwaysFalse",
+        .eval = struct {
+            fn eval(_: anytype) bool {
+                return false;
+            }
+        }.eval,
+    };
+
+    try testing.expect(true == Disjoin(AlwaysTrue, AlwaysTrue).eval(void));
+    try testing.expect(true == Disjoin(AlwaysTrue, AlwaysFalse).eval(void));
+    try testing.expect(false == Disjoin(AlwaysFalse, AlwaysFalse).eval(void));
 }
 
 /// Special case implementation for boolean types.

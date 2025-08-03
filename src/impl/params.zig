@@ -1,6 +1,7 @@
 //! Parameter definitions and generation to be used in Terms
 //! to automate away some boilerplate
 const std = @import("std");
+const testing = std.testing;
 const meta = std.meta;
 
 const Type = std.builtin.Type;
@@ -15,6 +16,13 @@ pub const Int = struct {
     div: ?comptime_int = null,
 };
 
+test Int {
+    const int_params: Int = .{};
+    try testing.expect(?comptime_int == @TypeOf(int_params.min));
+    try testing.expect(?comptime_int == @TypeOf(int_params.max));
+    try testing.expect(?comptime_int == @TypeOf(int_params.div));
+}
+
 /// Parametric specification of a float with
 /// inclusive min and max values and a tolerance field, `err`
 pub const Float = struct {
@@ -24,7 +32,19 @@ pub const Float = struct {
     err: comptime_float = 0.001,
 };
 
+test Float {
+    const float_params: Float = .{};
+    try testing.expect(?comptime_float == @TypeOf(float_params.min));
+    try testing.expect(?comptime_float == @TypeOf(float_params.max));
+    try testing.expect(comptime_float == @TypeOf(float_params.err));
+}
+
 pub const Bool = ?bool;
+
+test Bool {
+    const bool_params: Bool = null;
+    try testing.expect(?bool == @TypeOf(bool_params));
+}
 
 /// Creates a type where fields of input type are converted
 /// to `?bool` to explicitly specify allowance of enum values
@@ -51,10 +71,16 @@ pub fn Filter(comptime T: type) type {
     } });
 }
 
-pub fn Field(comptime T: type) type {
-    return struct {
-        expr: *const fn (comptime T) T,
-    };
+test Filter {
+    const SomeEnum = enum { a, b, c, d, e };
+
+    const enum_params: Filter(SomeEnum) = .{};
+
+    try testing.expect(?bool == @TypeOf(enum_params.a));
+    try testing.expect(?bool == @TypeOf(enum_params.b));
+    try testing.expect(?bool == @TypeOf(enum_params.c));
+    try testing.expect(?bool == @TypeOf(enum_params.d));
+    try testing.expect(?bool == @TypeOf(enum_params.e));
 }
 
 /// Creates a struct type where fields of argument are converted
@@ -91,8 +117,10 @@ pub fn Fields(comptime T: type) type {
                         .comptime_int, .int => @ptrCast(@as(*const Int, &.{})),
                         .comptime_float, .float => @ptrCast(@as(*const Float, &.{})),
                         .bool => @ptrCast(@as(*const Bool, &null)),
-                        .@"struct" => @ptrCast(@as(*const (Fields(field.type)), &.{})),
-                        .@"union" => @ptrCast(@as(*const (Fields(field.type)), &.{})),
+
+                        inline .@"struct",
+                        .@"union",
+                        => @ptrCast(@as(*const (Fields(field.type)), &.{})),
                         .@"enum" => @ptrCast(@as(*const Filter(field.type), &.{})),
                         .pointer => switch (@typeInfo(@typeInfo(field.type).pointer.child)) {
                             .comptime_int, .int => @ptrCast(@as(*const Int, &.{ .type = @typeInfo(field.type).pointer.child })),
@@ -122,20 +150,25 @@ pub fn Fields(comptime T: type) type {
     });
 }
 
+test Fields {
+    const SomeStruct = struct {
+        foo: []const u8,
+        bar: f128,
+    };
+
+    const some_struct_params: Fields(SomeStruct) = .{};
+
+    try testing.expect(Value(u8) == @TypeOf(some_struct_params.foo));
+    try testing.expect(Float == @TypeOf(some_struct_params.bar));
+}
+
 fn Value(comptime T: type) type {
     return switch (@typeInfo(T)) {
         .comptime_int, .int => Int,
         .comptime_float, .float => Float,
         .bool => Bool,
-        .pointer => |info| switch (@typeInfo(info.child)) {
-            .@"opaque" => void,
-            else => Value(info.child),
-        },
-        .optional => |info| Value(info.child),
-        .vector => |info| Value(info.child),
-        .array => |info| Value(info.child),
-        .@"union" => Fields(T),
-        .@"struct" => Fields(T),
+        inline .pointer, .optional, .vector, .array => |info| Value(info.child),
+        inline .@"union", .@"struct" => Fields(T),
         .@"enum" => Filter(T),
         .type => void,
         .null => void,
@@ -150,4 +183,10 @@ fn Value(comptime T: type) type {
         .error_union => void,
         .enum_literal => void,
     };
+}
+
+test Value {
+    try testing.expect(Int == Value(usize));
+    try testing.expect(Float == Value(f128));
+    try testing.expect(Bool == Value(bool));
 }
