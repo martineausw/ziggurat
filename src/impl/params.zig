@@ -10,7 +10,6 @@ const Type = std.builtin.Type;
 /// inclusive min and max values with a divisible
 /// field, `step`
 pub const Int = struct {
-    type: ?type = null,
     min: ?comptime_int = null,
     max: ?comptime_int = null,
     div: ?comptime_int = null,
@@ -26,7 +25,6 @@ test Int {
 /// Parametric specification of a float with
 /// inclusive min and max values and a tolerance field, `err`
 pub const Float = struct {
-    type: ?type = null,
     min: ?comptime_float = null,
     max: ?comptime_float = null,
     err: comptime_float = 0.001,
@@ -46,8 +44,8 @@ test Bool {
     try testing.expect(?bool == @TypeOf(bool_params));
 }
 
-/// Creates a type where fields of input type are converted
-/// to `?bool` to explicitly specify allowance of enum values
+/// Creates a struct fields from input type with fields of the same name
+/// of optional bool types (`?bool`) to explicitly specify valid enum values
 pub fn Filter(comptime T: type) type {
     return @Type(.{ .@"struct" = .{
         .is_tuple = false,
@@ -123,8 +121,8 @@ pub fn Fields(comptime T: type) type {
                         => @ptrCast(@as(*const (Fields(field.type)), &.{})),
                         .@"enum" => @ptrCast(@as(*const Filter(field.type), &.{})),
                         .pointer => switch (@typeInfo(@typeInfo(field.type).pointer.child)) {
-                            .comptime_int, .int => @ptrCast(@as(*const Int, &.{ .type = @typeInfo(field.type).pointer.child })),
-                            .comptime_float, .float => @ptrCast(@as(*const Float, &.{ .type = @typeInfo(field.type).pointer.child })),
+                            .comptime_int, .int => @ptrCast(@as(*const Int, &.{})),
+                            .comptime_float, .float => @ptrCast(@as(*const Float, &.{})),
                             .bool => @ptrCast(@as(*const Bool, &null)),
                             .@"struct" => @ptrCast(@as(*const Fields(@typeInfo(field.type).pointer.child), &.{})),
                             .@"union" => @ptrCast(@as(*const Fields(@typeInfo(field.type).pointer.child), &.{})),

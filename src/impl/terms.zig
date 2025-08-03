@@ -196,8 +196,6 @@ pub fn Int(params: Params.Int) Term {
                     else => return false,
                 }
 
-                if (params.type) |t| if (t != @TypeOf(actual)) return false;
-
                 const min = (params.min orelse actual) <= actual;
                 const max = actual <= (params.max orelse actual);
                 const div = actual % (params.div orelse actual) == 0;
@@ -284,8 +282,6 @@ pub fn Float(params: Params.Float) Term {
                     .float, .comptime_float => {},
                     else => return false,
                 }
-
-                if (params.type) |t| if (t != @TypeOf(actual)) return false;
 
                 const min = (params.min orelse actual) < actual or std.math.approxEqAbs(
                     comptime_float,
