@@ -5,10 +5,8 @@ const std = @import("std");
 const testing = std.testing;
 
 const TermConfig = struct {
-    name: ?[]const u8 = null,
-    desc: ?[]const u8 = null,
-    onPass: ?*const fn (actual: anytype) bool = null,
-    onFail: ?*const fn (actual: anytype) bool = null,
+    name: [:0]const u8,
+    onFail: *const fn (label: [:0]const u8, actual: anytype) [:0]const u8 = struct {}.onFail,
 };
 
 /// `Term` abstract
@@ -21,7 +19,7 @@ const TermConfig = struct {
 /// through all evaluation steps. `actual` may or may not be indexable and
 /// may have meta-data, as given by `@typeInfo(...)`.
 pub const Term = struct {
-    name: []const u8,
+    name: [:0]const u8,
     /// Function pointer that is invoked by `Sign` or other `Term` wrappers.
     ///
     /// `actual: anytype` argument to be evaluated
@@ -29,19 +27,80 @@ pub const Term = struct {
     ///
     /// `Sign` expects final evaluation result to be true in order to continue.
     eval: *const fn (actual: anytype) bool,
-
-    /// Optional function pointer invoked by `Sign` or other `Term` implementations
-    /// when `eval` returns true.
-    onPass: ?*const fn (actual: anytype) void = null,
-
-    /// Optional function pointer invoked by `Sign` or other `Term` implementations
-    /// when `eval` returns false.
-    onFail: ?*const fn (actual: anytype) void = null,
+    onFail: *const fn (label: [:0]const u8, actual: anytype) [:0]const u8 = struct {
+        fn onFail(label: [:0]const u8, _: anytype) [:0]const u8 {
+            return std.fmt.comptimePrint("{s}", .{label});
+        }
+    }.onFail,
 };
+
+pub fn Negate(term: Term) Term {
+    return .{
+        .name = std.fmt.comptimePrint("(NOT {s})", .{term.name}),
+        .eval = struct {
+            fn eval(actual: anytype) bool {
+                return !term.eval(actual);
+            }
+        }.eval,
+        .onFail = term.onFail,
+    };
+}
+
+pub fn Conjoin(term0: Term, term1: Term) Term {
+    return .{
+        .name = std.fmt.comptimePrint("({s} AND {s})", .{ term0.name, term1.name }),
+        .eval = struct {
+            fn eval(actual: anytype) bool {
+                const eval0 = term0.eval(actual);
+                const eval1 = term1.eval(actual);
+
+                return eval0 and eval1;
+            }
+        }.eval,
+        .onFail = struct {
+            fn onFail(label: [:0]const u8, actual: anytype) [:0]const u8 {
+                var errstr: [:0]const u8 = undefined;
+                if (!term0.eval(actual)) {
+                    errstr = term0.onFail(term0.name, actual);
+                }
+                if (!term1.eval(actual)) {
+                    errstr = term1.onFail(term1.name, actual);
+                }
+                return std.fmt.comptimePrint("{s}: {s}", .{ label, errstr });
+            }
+        }.onFail,
+    };
+}
+
+pub fn Disjoin(term0: Term, term1: Term) Term {
+    return .{
+        .name = std.fmt.comptimePrint(
+            "({s} OR {s})",
+            .{ term0.name, term1.name },
+        ),
+        .eval = struct {
+            fn eval(actual: anytype) bool {
+                const eval0 = term0.eval(actual);
+                const eval1 = term1.eval(actual);
+
+                return eval0 or eval1;
+            }
+        }.eval,
+        .onFail = struct {
+            fn onFail(label: [:0]const u8, _: anytype) [:0]const u8 {
+                return std.fmt.comptimePrint("{s}: {s} NOR {s}", .{
+                    label,
+                    term0.name,
+                    term1.name,
+                });
+            }
+        }.onFail,
+    };
+}
 
 test Term {
     const AnyRuntimeInt: Term = .{
-        .name = "AnyInt",
+        .name = "AnyRuntimeInt",
         .eval = struct {
             fn eval(actual: anytype) bool {
                 return switch (@typeInfo(@TypeOf(actual))) {
@@ -91,21 +150,13 @@ test Term {
 pub fn Sign(term: Term) fn (actual: anytype) fn (comptime return_type: type) type {
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
-            const result = term.eval(actual);
-            if (result) {
-                if (term.onPass) |onPass| {
-                    onPass(actual);
-                }
-            } else {
-                if (term.onFail) |onFail| {
-                    onFail(actual);
-                } else {
-                    @compileError("violated term: " ++ term.name);
-                }
+            if (!term.eval(actual)) {
+                @compileError(term.onFail(term.name, actual));
             }
+
             return struct {
-                pub fn returns(comptime ret_type: type) type {
-                    return ret_type;
+                pub fn returns(comptime return_type: type) type {
+                    return return_type;
                 }
             }.returns;
         }
@@ -113,8 +164,8 @@ pub fn Sign(term: Term) fn (actual: anytype) fn (comptime return_type: type) typ
 }
 
 test Sign {
-    const ExampleIntTerm: Term = .{
-        .name = "example int term",
+    const AnyRuntimeInt: Term = .{
+        .name = "AnyRuntimeInt",
         .eval = struct {
             fn eval(actual: anytype) bool {
                 return switch (@typeInfo(@TypeOf(actual))) {
@@ -125,7 +176,7 @@ test Sign {
         }.eval,
     };
 
-    const term_value: Term = ExampleIntTerm;
+    const term_value: Term = AnyRuntimeInt;
     const argument_value: u32 = 0;
     const return_type: type = void;
 
@@ -146,10 +197,6 @@ test "some test" {
         }.eval,
     };
 
-    _ = AlwaysFalse;
-
-    // _ = Sign(AlwaysFalse)(void)(void);
-
     const AlwaysTrue = Term{
         .name = "AlwaysTrue",
         .eval = struct {
@@ -161,14 +208,12 @@ test "some test" {
 
     _ = Sign(AlwaysTrue)(void)(void);
 
-    // const AlwaysTrueOrAlwaysFalse = Term{
-    //     .name = AlwaysFalse.name ++ " and " ++ AlwaysTrue.name,
-    //     .eval = struct {
-    //         fn eval(_: anytype) bool {
-    //             return AlwaysTrue.eval(0) and AlwaysFalse.eval(0);
-    //         }
-    //     }.eval,
-    // };
+    const TrueOrFalse = Disjoin(AlwaysTrue, AlwaysFalse);
 
-    // _ = Sign(AlwaysTrueOrAlwaysFalse)(0)(void);
+    _ = Sign(TrueOrFalse)(void)(void);
+
+    // Compile error
+    // const TrueAndFalse = Conjoin(AlwaysTrue, AlwaysFalse);
+    // const TrueOrFalseAndTrueAndFalse = Conjoin(TrueOrFalse, TrueAndFalse);
+    // _ = Sign(TrueOrFalseAndTrueAndFalse)(void)(void);
 }
