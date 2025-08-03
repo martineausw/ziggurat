@@ -4,11 +4,6 @@
 const std = @import("std");
 const testing = std.testing;
 
-const TermConfig = struct {
-    name: [:0]const u8,
-    onFail: *const fn (label: [:0]const u8, actual: anytype) [:0]const u8 = struct {}.onFail,
-};
-
 /// `Term` abstract
 ///
 /// Defines a condition that is evaluated when supplied with an argument.
@@ -33,70 +28,6 @@ pub const Term = struct {
         }
     }.onFail,
 };
-
-pub fn Negate(term: Term) Term {
-    return .{
-        .name = std.fmt.comptimePrint("(NOT {s})", .{term.name}),
-        .eval = struct {
-            fn eval(actual: anytype) bool {
-                return !term.eval(actual);
-            }
-        }.eval,
-        .onFail = term.onFail,
-    };
-}
-
-pub fn Conjoin(term0: Term, term1: Term) Term {
-    return .{
-        .name = std.fmt.comptimePrint("({s} AND {s})", .{ term0.name, term1.name }),
-        .eval = struct {
-            fn eval(actual: anytype) bool {
-                const eval0 = term0.eval(actual);
-                const eval1 = term1.eval(actual);
-
-                return eval0 and eval1;
-            }
-        }.eval,
-        .onFail = struct {
-            fn onFail(label: [:0]const u8, actual: anytype) [:0]const u8 {
-                var errstr: [:0]const u8 = undefined;
-                if (!term0.eval(actual)) {
-                    errstr = term0.onFail(term0.name, actual);
-                }
-                if (!term1.eval(actual)) {
-                    errstr = term1.onFail(term1.name, actual);
-                }
-                return std.fmt.comptimePrint("{s}: {s}", .{ label, errstr });
-            }
-        }.onFail,
-    };
-}
-
-pub fn Disjoin(term0: Term, term1: Term) Term {
-    return .{
-        .name = std.fmt.comptimePrint(
-            "({s} OR {s})",
-            .{ term0.name, term1.name },
-        ),
-        .eval = struct {
-            fn eval(actual: anytype) bool {
-                const eval0 = term0.eval(actual);
-                const eval1 = term1.eval(actual);
-
-                return eval0 or eval1;
-            }
-        }.eval,
-        .onFail = struct {
-            fn onFail(label: [:0]const u8, _: anytype) [:0]const u8 {
-                return std.fmt.comptimePrint("{s}: {s} NOR {s}", .{
-                    label,
-                    term0.name,
-                    term1.name,
-                });
-            }
-        }.onFail,
-    };
-}
 
 test Term {
     const AnyRuntimeInt: Term = .{
@@ -197,6 +128,8 @@ test "some test" {
         }.eval,
     };
 
+    _ = AlwaysFalse;
+
     const AlwaysTrue = Term{
         .name = "AlwaysTrue",
         .eval = struct {
@@ -207,13 +140,4 @@ test "some test" {
     };
 
     _ = Sign(AlwaysTrue)(void)(void);
-
-    const TrueOrFalse = Disjoin(AlwaysTrue, AlwaysFalse);
-
-    _ = Sign(TrueOrFalse)(void)(void);
-
-    // Compile error
-    // const TrueAndFalse = Conjoin(AlwaysTrue, AlwaysFalse);
-    // const TrueOrFalseAndTrueAndFalse = Conjoin(TrueOrFalse, TrueAndFalse);
-    // _ = Sign(TrueOrFalseAndTrueAndFalse)(void)(void);
 }
