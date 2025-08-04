@@ -82,7 +82,7 @@ pub fn Sign(term: Term) fn (actual: anytype) fn (comptime return_type: type) typ
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
             if (!term.eval(actual)) {
-                @compileError("violation(s):\n\n" ++ term.onFail(term.name, actual));
+                @compileError("violation(s):\n" ++ term.onFail(term.name, actual));
             }
 
             return struct {

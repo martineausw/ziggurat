@@ -48,10 +48,10 @@ pub fn Conjoin(term0: Term, term1: Term) Term {
             fn onFail(label: [:0]const u8, actual: anytype) [:0]const u8 {
                 var errstr: [:0]const u8 = undefined;
                 if (!term0.eval(actual)) {
-                    errstr = term0.onFail(term0.name, actual);
+                    errstr = term0.onFail("  " ++ term0.name, actual);
                 }
                 if (!term1.eval(actual)) {
-                    errstr = term1.onFail(term1.name, actual);
+                    errstr = term1.onFail("  " ++ term1.name, actual);
                 }
                 return std.fmt.comptimePrint("{s}: {s}", .{ label, errstr });
             }
@@ -213,14 +213,14 @@ pub fn Int(params: Params.IntRange) Term {
                     ),
                 }
 
-                var base_str: []const u8 = std.fmt.comptimePrint("{s}:", .{label});
-                const padding = std.mem.lastIndexOf(u8, label, " ");
-                const prefix = "\n" ++ " " ** (if (padding) |p| p + 3 else 2);
+                var str: []const u8 = label ++ ":";
+                const padding = std.mem.lastIndexOf(u8, label, "    ");
+                const prefix = "\n" ++ "    " ** (if (padding) |p| p + 1 else 1);
 
                 const min = (params.min orelse actual) <= actual;
 
                 if (!min) {
-                    base_str = base_str ++ std.fmt.comptimePrint(
+                    str = str ++ std.fmt.comptimePrint(
                         prefix ++ "min: {d} < @as({s}, {any})",
                         .{
                             params.min.?,
@@ -233,7 +233,7 @@ pub fn Int(params: Params.IntRange) Term {
                 const max = (params.max orelse actual) >= actual;
 
                 if (!max) {
-                    base_str = base_str ++ std.fmt.comptimePrint(
+                    str = str ++ std.fmt.comptimePrint(
                         prefix ++ "max: {d} < @as({s}, {any})",
                         .{
                             params.max.?,
@@ -246,7 +246,7 @@ pub fn Int(params: Params.IntRange) Term {
                 const div = actual % (params.div orelse actual) == 0;
 
                 if (!div) {
-                    base_str = base_str ++ std.fmt.comptimePrint(
+                    str = str ++ std.fmt.comptimePrint(
                         prefix ++ "div: @as({s}, {any}) % {d} != 0",
                         .{
                             @typeName(@TypeOf(actual)),
@@ -256,7 +256,7 @@ pub fn Int(params: Params.IntRange) Term {
                     );
                 }
 
-                return std.fmt.comptimePrint("{s}", .{base_str});
+                return std.fmt.comptimePrint("{s}", .{str});
             }
         }.onFail,
     };
@@ -318,14 +318,14 @@ pub fn Float(params: Params.FloatRange) Term {
                     ),
                 }
 
-                var base_str: []const u8 = std.fmt.comptimePrint("{s}:", .{label});
-                const padding = std.mem.lastIndexOf(u8, label, " ");
-                const prefix = "\n" ++ " " ** (if (padding) |p| p + 3 else 2);
+                var str: []const u8 = label ++ ":";
+                const padding = std.mem.lastIndexOf(u8, label, "    ");
+                const prefix = "\n" ++ "    " ** (if (padding) |p| p + 1 else 1);
 
                 const min = (params.min orelse actual) <= actual;
 
                 if (!min) {
-                    base_str = base_str ++ std.fmt.comptimePrint(
+                    str = str ++ std.fmt.comptimePrint(
                         prefix ++ "min: {d} (+/- {d}) > @as({s}, {any})",
                         .{
                             params.min.?,
@@ -339,7 +339,7 @@ pub fn Float(params: Params.FloatRange) Term {
                 const max = (params.max orelse actual) >= actual;
 
                 if (!max) {
-                    base_str = base_str ++ std.fmt.comptimePrint(
+                    str = str ++ std.fmt.comptimePrint(
                         prefix ++ "max: {d} (+/- {d}) > @as({s}, {any})",
                         .{
                             params.max.?,
@@ -350,7 +350,7 @@ pub fn Float(params: Params.FloatRange) Term {
                     );
                 }
 
-                return std.fmt.comptimePrint("{s}", .{base_str});
+                return std.fmt.comptimePrint("{s}", .{str});
             }
         }.onFail,
     };
@@ -431,26 +431,24 @@ pub fn Filter(comptime T: type) fn (Params.FieldsToToggles(T)) Term {
                             );
                         }
 
-                        var base_str = std.fmt.comptimePrint(
+                        var str: []const u8 = std.fmt.comptimePrint(
                             "{s}: expected values\n",
                             .{label},
                         );
+                        const padding = std.mem.lastIndexOf(u8, label, " ");
+                        const prefix = "\n" ++ " " ** (if (padding) |p| p + 3 else 2);
 
                         // Iterate remaining fields of params
                         inline for (std.meta.fields(@TypeOf(params))) |field| {
                             // Check if current param field has explicit setting
                             if (@field(params, field.name)) |f| {
                                 // Return false if param field is set to true and unused.
-                                if (f) {
-                                    base_str = std.fmt.comptimePrint(
-                                        "  {s}\n",
-                                        .{field.name},
-                                    );
-                                }
+                                if (f)
+                                    str = str ++ prefix ++ field.name;
                             }
                         }
 
-                        return base_str;
+                        return str;
                     }
                 }.onFail,
             };
@@ -467,14 +465,6 @@ test Filter {
         .e = @as(?bool, null),
     });
 }
-
-const SupportedInfo = enum {
-    Int,
-    Float,
-    Pointer,
-    Array,
-    Vector,
-};
 
 /// Special case implementation of aggregate types (e.g. `struct`, `union`)
 ///
@@ -540,57 +530,47 @@ pub fn Fields(comptime T: type) fn (Params.FieldsToParams(T)) Term {
                 }.eval,
                 .onFail = struct {
                     fn onFail(label: [:0]const u8, actual: anytype) [:0]const u8 {
-                        var base_str: []const u8 = std.fmt.comptimePrint(
-                            "{s}:",
-                            .{label},
-                        );
+                        var str: []const u8 = label ++ ":";
+                        const padding = std.mem.lastIndexOf(u8, label, "    ");
+                        const prefix = "\n" ++ "    " ** (if (padding) |p| p + 1 else 1);
+
+                        _ = std.meta.fields(@TypeOf(actual));
 
                         inline for (std.meta.fields(T)) |field| {
                             // Check if param has current field
-                            if (!@hasField(@TypeOf(params), field.name)) continue;
+                            if (!@hasField(@TypeOf(params), field.name))
+                                continue;
+
                             const param_field = @field(params, field.name);
-                            _ = std.meta.fields(@TypeOf(actual));
 
                             // Check if actual value can contain fields
+                            _ = std.meta.fields(@TypeOf(actual));
+
                             const actual_field = @field(actual, field.name);
 
                             switch (@typeInfo(field.type)) {
-                                .int, .comptime_int => {
-                                    if (!Int(param_field).eval(actual_field)) {
-                                        base_str = base_str ++ std.fmt.comptimePrint(
-                                            "\n{s}",
-                                            .{Int(param_field).onFail(
-                                                "  " ++ Int(param_field).name,
-                                                actual_field,
-                                            )},
-                                        );
-                                    }
+                                .comptime_int,
+                                .int,
+                                => if (!Int(param_field).eval(actual_field)) {
+                                    str = str ++ Int(param_field).onFail(
+                                        prefix ++ Int(param_field).name,
+                                        actual_field,
+                                    );
                                 },
-                                .float, .comptime_float => {
-                                    if (!Float(param_field).eval(actual_field)) {
-                                        base_str = base_str ++ std.fmt.comptimePrint(
-                                            "\n{s}",
-                                            .{
-                                                Float(param_field).onFail(
-                                                    "  " ++ Float(param_field).name,
-                                                    actual_field,
-                                                ),
-                                            },
-                                        );
-                                    }
+                                .comptime_float,
+                                .float,
+                                => if (!Float(param_field).eval(actual_field)) {
+                                    str = str ++ Float(param_field).onFail(
+                                        prefix ++ Float(param_field).name,
+                                        actual_field,
+                                    );
                                 },
-                                .@"enum" => {
-                                    if (!Filter(field.type)(param_field).eval(actual_field)) {
-                                        base_str = base_str ++ std.fmt.comptimePrint(
-                                            "\n{s}",
-                                            .{
-                                                Filter(field.type)(param_field).onFail(
-                                                    "  " ++ Filter(field.type)(param_field).name,
-                                                    actual_field,
-                                                ),
-                                            },
-                                        );
-                                    }
+                                .@"enum",
+                                => if (!Filter(field.type)(param_field).eval(actual_field)) {
+                                    str = str ++ Filter(field.type)(param_field).onFail(
+                                        prefix ++ Filter(field.type)(param_field).name,
+                                        actual_field,
+                                    );
                                 },
                                 .@"struct",
                                 .@"union",
@@ -598,20 +578,18 @@ pub fn Fields(comptime T: type) fn (Params.FieldsToParams(T)) Term {
                                 .optional,
                                 .vector,
                                 .array,
-                                => {
-                                    if (!Fields(field.type)(param_field).eval(actual_field)) {
-                                        base_str = base_str ++ std.fmt.comptimePrint("\n{s}", .{
-                                            Fields(field.type)(param_field).onFail(
-                                                "  " ++ Fields(field.type)(param_field).name,
-                                                actual_field,
-                                            ),
-                                        });
-                                    }
+                                => if (!Fields(field.type)(param_field).eval(actual_field)) {
+                                    str = str ++ Fields(field.type)(param_field).onFail(
+                                        prefix ++ Fields(field.type)(param_field).name,
+                                        actual_field,
+                                    );
                                 },
+
                                 else => continue,
                             }
-                            return std.fmt.comptimePrint("{s}", .{base_str});
                         }
+
+                        return std.fmt.comptimePrint("{s}", .{str});
                     }
                 }.onFail,
             };
@@ -701,13 +679,19 @@ pub fn Implements(comptime T: type) Term {
             fn onFail(label: [:0]const u8, actual: anytype) [:0]const u8 {
                 switch (@typeInfo(@TypeOf(actual))) {
                     .@"struct" => {
-                        var base_str: []const u8 = "(" ++ label ++ "):\n";
+                        var str: []const u8 = std.fmt.comptimePrint(
+                            "({s}):",
+                            .{label},
+                        );
+                        const padding = std.mem.lastIndexOf(u8, label, "    ");
+                        const prefix = "\n" ++ ("    " ** (if (padding) |p| p + 1 else 1));
+
                         inline for (std.meta.fields(T)) |field| {
                             if (!@hasField(@TypeOf(actual), field.name)) {
-                                base_str = base_str ++ "  missing implementation: " ++ field.name;
+                                str = str ++ prefix ++ "missing implementation: " ++ field.name;
                             }
                         }
-                        return std.fmt.comptimePrint("{s}", .{base_str});
+                        return std.fmt.comptimePrint("{s}\n", .{str});
                     },
                     else => return std.fmt.comptimePrint("{s}: expected struct", .{label}),
                 }
@@ -737,6 +721,14 @@ test Implements {
 
     try testing.expect(true == ImplementsSomeAbstract.eval(SomeAbstractImpl));
 }
+
+const SupportedInfo = enum {
+    Int,
+    Float,
+    Pointer,
+    Array,
+    Vector,
+};
 
 /// Special case implementation to parameterize an arguments `std.builtin.Type` definition,
 /// as given by `@typeInfo(T: type)`, into `Fields(std.builtin.Type.*)(...)`
