@@ -6,6 +6,25 @@ const meta = std.meta;
 
 const Type = std.builtin.Type;
 
+fn isSupported(comptime T: type) bool {
+    return switch (@typeInfo(T)) {
+        .comptime_int,
+        .comptime_float,
+        .int,
+        .float,
+        .bool,
+        .@"struct",
+        .@"enum",
+        .@"union",
+        .pointer,
+        .array,
+        .vector,
+        .optional,
+        => true,
+        else => false,
+    };
+}
+
 /// Parametric specification of an integer with
 /// inclusive min and max values with a divisible
 /// field, `step`
@@ -39,7 +58,7 @@ test FloatRange {
 
 /// Creates a struct fields from input type with fields of the same name
 /// of optional bool types (`?bool`) to explicitly specify valid enum values
-pub fn Filter(comptime T: type) type {
+pub fn FieldsToToggles(comptime T: type) type {
     return @Type(.{ .@"struct" = .{
         .is_tuple = false,
         .decls = &[_]Type.Declaration{},
@@ -62,10 +81,10 @@ pub fn Filter(comptime T: type) type {
     } });
 }
 
-test Filter {
+test FieldsToToggles {
     const SomeEnum = enum { a, b, c, d, e };
 
-    const enum_params: Filter(SomeEnum) = .{};
+    const enum_params: FieldsToToggles(SomeEnum) = .{};
 
     try testing.expect(?bool == @TypeOf(enum_params.a));
     try testing.expect(?bool == @TypeOf(enum_params.b));
@@ -76,7 +95,7 @@ test Filter {
 
 /// Creates a struct type where fields of argument are converted
 /// to its 'parametric' equivalent
-pub fn Fields(comptime T: type) type {
+pub fn FieldsToParams(comptime T: type) type {
     return @Type(.{
         .@"struct" = .{
             .is_tuple = false,
@@ -85,55 +104,33 @@ pub fn Fields(comptime T: type) type {
             .fields = fields: {
 
                 // count valid paramatric types
-                comptime var new_field_count: usize = 0;
+                var new_field_count: usize = 0;
 
                 inline for (0..meta.fields(T).len) |field_index| {
                     const field = meta.fields(T)[field_index];
-                    const paratype = Value(field.type);
-                    if (paratype == void) continue;
+                    if (ParamType(field.type) == void) continue;
                     new_field_count += 1;
                 }
 
                 if (new_field_count == 0) return void;
 
-                comptime var temp_fields: [new_field_count]Type.StructField = undefined;
-                comptime var temp_fields_index: usize = 0;
+                var temp_fields: [new_field_count]Type.StructField = undefined;
+                var temp_fields_index: usize = 0;
 
                 inline for (0..meta.fields(T).len) |field_index| {
                     const field = meta.fields(T)[field_index];
-                    const paratype = Value(field.type);
-                    if (paratype == void) continue;
 
-                    const new_default_value_ptr: ?*const anyopaque = switch (@typeInfo(field.type)) {
-                        .comptime_int, .int => @ptrCast(@as(*const IntRange, &.{})),
-                        .comptime_float, .float => @ptrCast(@as(*const FloatRange, &.{})),
-                        .bool => @ptrCast(@as(*const ?bool, &null)),
+                    const param_type = if (ParamType(field.type) != void) ParamType(field.type) else continue;
+                    if (!isSupported(field.type)) continue;
 
-                        inline .@"struct",
-                        .@"union",
-                        => @ptrCast(@as(*const (Fields(field.type)), &.{})),
-
-                        .@"enum" => @ptrCast(@as(*const Filter(field.type), &.{})),
-
-                        .pointer => switch (@typeInfo(@typeInfo(field.type).pointer.child)) {
-                            .comptime_int, .int => @ptrCast(@as(*const IntRange, &.{})),
-                            .comptime_float, .float => @ptrCast(@as(*const FloatRange, &.{})),
-                            .bool => @ptrCast(@as(*const ?bool, &null)),
-                            inline .@"struct",
-                            .@"union",
-                            .@"enum",
-                            => @ptrCast(@as(*const Filter(@typeInfo(field.type).pointer.child), &.{})),
-                            else => continue,
-                        },
-                        else => continue,
-                    };
+                    const default_value_ptr = getDefaultValuePtr(field.type);
 
                     temp_fields[temp_fields_index] = .{
                         .name = field.name,
-                        .type = paratype,
+                        .type = param_type,
                         .alignment = field.alignment,
                         .is_comptime = false,
-                        .default_value_ptr = new_default_value_ptr,
+                        .default_value_ptr = default_value_ptr,
                     };
 
                     temp_fields_index += 1;
@@ -144,43 +141,44 @@ pub fn Fields(comptime T: type) type {
     });
 }
 
-test Fields {
+test FieldsToParams {
     const SomeStruct = struct {
         foo: []const u8,
         bar: f128,
     };
 
-    const some_struct_params: Fields(SomeStruct) = .{};
+    const some_struct_params: FieldsToParams(SomeStruct) = .{};
 
-    try testing.expect(Value(u8) == @TypeOf(some_struct_params.foo));
+    try testing.expect(ParamType(u8) == @TypeOf(some_struct_params.foo));
     try testing.expect(FloatRange == @TypeOf(some_struct_params.bar));
 }
 
-fn Value(comptime T: type) type {
+fn ParamType(comptime T: type) type {
     return switch (@typeInfo(T)) {
         .comptime_int, .int => IntRange,
         .comptime_float, .float => FloatRange,
         .bool => ?bool,
-        inline .pointer, .optional, .vector, .array => |info| Value(info.child),
-        inline .@"union", .@"struct" => Fields(T),
-        .@"enum" => Filter(T),
-        .type => void,
-        .null => void,
-        .undefined => void,
-        .void => void,
-        .noreturn => void,
-        .@"opaque" => void,
-        .@"fn" => void,
-        .@"anyframe" => void,
-        .frame => void,
-        .error_set => void,
-        .error_union => void,
-        .enum_literal => void,
+        inline .pointer, .optional, .vector, .array => |info| ParamType(info.child),
+        inline .@"union", .@"struct" => FieldsToParams(T),
+        .@"enum" => FieldsToToggles(T),
+        else => void,
     };
 }
 
-test Value {
-    try testing.expect(IntRange == Value(usize));
-    try testing.expect(FloatRange == Value(f128));
-    try testing.expect(?bool == Value(bool));
+test ParamType {
+    try testing.expect(IntRange == ParamType(usize));
+    try testing.expect(FloatRange == ParamType(f128));
+    try testing.expect(?bool == ParamType(bool));
+}
+
+fn getDefaultValuePtr(comptime T: type) ?*const anyopaque {
+    return switch (@typeInfo(T)) {
+        .comptime_int, .int => @ptrCast(@as(*const IntRange, &.{})),
+        .comptime_float, .float => @ptrCast(@as(*const FloatRange, &.{})),
+        .bool => @ptrCast(@as(*const ?bool, &null)),
+        .pointer, .array, .vector, .optional => getDefaultValuePtr(std.meta.Child(T)),
+        .@"struct", .@"union" => @ptrCast(@as(*const (FieldsToParams(T)), &.{})),
+        .@"enum" => @ptrCast(@as(*const FieldsToToggles(T), &.{})),
+        else => void{},
+    };
 }
