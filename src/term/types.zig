@@ -234,7 +234,7 @@ test TypeWithInfo {
     try testing.expect(true == try OnlyParameterizedTypes.eval([5]comptime_int));
 }
 
-const InfoWithBitsError = TypesWithInfoError || ValuesWithinRangeError;
+const InfoWithBitsError = error{UnexpectedType} || TypesWithInfoError || ValuesWithinRangeError;
 
 pub fn InfoWithBits(params: RangeParams(u16)) Term {
     const ValidInfo = TypeWithInfo(.{
@@ -253,7 +253,7 @@ pub fn InfoWithBits(params: RangeParams(u16)) Term {
 
                 const info = switch (@typeInfo(actual)) {
                     inline .int, .float => |info| info,
-                    else => unreachable,
+                    else => InfoWithBitsError.UnexpectedType,
                 };
 
                 _ = try ValidBitRange.eval(info.bits);
