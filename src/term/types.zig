@@ -55,7 +55,7 @@ test IsType {
     try testing.expect(true == try IsType.eval(union {}));
 }
 
-fn RangeParams(comptime T: type) type {
+pub fn RangeParams(comptime T: type) type {
     _ = TypeWithInfo(.{ .int = true, .comptime_int = true }).eval(T) catch
         @compileError("RangeParams: unexpected type");
 
@@ -67,7 +67,7 @@ fn RangeParams(comptime T: type) type {
 
 const ValuesWithinRangeError = error{ Under, Over };
 
-fn ValueWithinRange(comptime T: type, params: RangeParams(T)) Term {
+pub fn ValueWithinRange(comptime T: type, params: RangeParams(T)) Term {
     return .{
         .name = "ValueWithinRange",
         .eval = struct {
@@ -145,7 +145,7 @@ const TypesWithInfoError = error{
     UnsatisfiedWhitelist,
 };
 
-fn TypeWithInfo(params: InfoParams) Term {
+pub fn TypeWithInfo(params: InfoParams) Term {
     return .{
         .name = "TypeWithInfo",
         .eval = struct {
@@ -236,7 +236,7 @@ test TypeWithInfo {
 
 const InfoWithBitsError = TypesWithInfoError || ValuesWithinRangeError;
 
-fn InfoWithBits(params: RangeParams(u16)) Term {
+pub fn InfoWithBits(params: RangeParams(u16)) Term {
     const ValidInfo = TypeWithInfo(.{
         .int = true,
         .float = true,
@@ -296,7 +296,7 @@ test InfoWithBits {
 
 const InfoWithLenError = TypesWithInfoError || ValuesWithinRangeError;
 
-fn InfoWithLen(params: RangeParams(comptime_int)) Term {
+pub fn InfoWithLen(params: RangeParams(comptime_int)) Term {
     const ValidInfo = TypeWithInfo(.{
         .array = true,
         .vector = true,
@@ -370,7 +370,7 @@ test InfoHasChild {
     try testing.expect(true == try InfoHasChild.eval(@Vector(3, f16)));
 }
 
-fn InfoWithChild(ChildTerm: Term) Term {
+pub fn InfoWithChild(ChildTerm: Term) Term {
     const ValidInfo = TypeWithInfo(.{
         .pointer = true,
         .optional = true,
@@ -421,7 +421,7 @@ const IntInfoParams = struct {
 
 const IntTypeError = error{IncorrectSignedness} || TypesWithInfoError || ValuesWithinRangeError;
 
-fn IntType(params: IntInfoParams) Term {
+pub fn IntType(params: IntInfoParams) Term {
     const ValidType = TypeWithInfo(.{
         .int = true,
     });
@@ -478,7 +478,7 @@ const FloatInfoParams = struct {
     bits: RangeParams(u16) = .{},
 };
 
-fn FloatType(params: FloatInfoParams) Term {
+pub fn FloatType(params: FloatInfoParams) Term {
     const ValidType = TypeWithInfo(.{
         .float = true,
     });
@@ -553,7 +553,7 @@ const PointerInfoParams = struct {
 
 const PointerTypeError = error{ IncorrectConst, IncorrectVolatile, IncorrectSentinel } || TypesWithInfoError;
 
-fn PointerType(params: PointerInfoParams) Term {
+pub fn PointerType(params: PointerInfoParams) Term {
     const ValidInfo = TypeWithInfo(.{
         .pointer = true,
     });
@@ -632,7 +632,7 @@ const SlicePointerTypeParams = struct {
     sentinel: ?bool = null,
 };
 
-fn SlicePointerType(params: SlicePointerTypeParams) Term {
+pub fn SlicePointerType(params: SlicePointerTypeParams) Term {
     const ValidPointerType = PointerType(.{
         .size = .{
             .slice = true,
@@ -667,7 +667,7 @@ const SlicePointerParams = struct {
     len: RangeParams(usize) = .{},
 };
 
-fn SlicePointer(params: SlicePointerParams) Term {
+pub fn SlicePointer(params: SlicePointerParams) Term {
     const ValidSliceType = SlicePointerType(params.info);
     const ValidLenRange = ValueWithinRange(usize, params.len);
 
