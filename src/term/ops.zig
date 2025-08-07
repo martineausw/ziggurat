@@ -3,7 +3,9 @@ const std = @import("std");
 const testing = std.testing;
 const Term = @import("Term.zig");
 
-/// Boolean NOT of `Term.eval` implementation
+/// eval expects any value.
+///
+/// Passes any eval to given term, returns associated error of given term.
 pub fn Negate(term: Term) Term {
     return .{
         .name = std.fmt.comptimePrint("(NOT {s})", .{term.name}),
@@ -31,12 +33,16 @@ test Negate {
 
 const ConjoinError = error{FalseResult};
 
-/// Boolean AND of two `Term.eval` implementations
+/// eval expects any value.
+///
+/// Passes any value to given `term0.eval`, returns associated error of given term.
+///
+/// Passes any value to given `term1.eval`, returns associated error of given term.
 pub fn Conjoin(term0: Term, term1: Term) Term {
     return .{
         .name = std.fmt.comptimePrint("({s} AND {s})", .{ term0.name, term1.name }),
         .eval = struct {
-            fn eval(actual: anytype) !bool {
+            fn eval(actual: anytype) anyerror!bool {
                 const eval0 = try term0.eval(actual);
                 const eval1 = try term1.eval(actual);
 
@@ -82,7 +88,7 @@ pub fn Disjoin(term0: Term, term1: Term) Term {
             .{ term0.name, term1.name },
         ),
         .eval = struct {
-            fn eval(actual: anytype) !bool {
+            fn eval(actual: anytype) anyerror!bool {
                 const eval0 = term0.eval(actual) catch false;
                 const eval1 = term1.eval(actual) catch false;
 

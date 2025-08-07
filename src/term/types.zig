@@ -20,7 +20,7 @@ const IsTypeError = error{
 
 /// eval expects type value.
 ///
-/// Type value is type.
+/// Value is type, returns `error.UnexpectedType` on failure.
 const IsType: Term = .{
     .name = "IsType",
 
