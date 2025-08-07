@@ -253,7 +253,7 @@ pub fn InfoWithBits(params: RangeParams(u16)) Term {
 
                 const info = switch (@typeInfo(actual)) {
                     inline .int, .float => |info| info,
-                    else => InfoWithBitsError.UnexpectedType,
+                    else => return InfoWithBitsError.UnexpectedType,
                 };
 
                 _ = try ValidBitRange.eval(info.bits);
