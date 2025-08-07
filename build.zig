@@ -10,14 +10,6 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const term_mod = b.createModule(.{
-        .root_source_file = b.path("src/term.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    lib_mod.addImport("term", term_mod);
-
     const lib = b.addLibrary(.{
         .linkage = .static,
         .name = "ziggurat",
@@ -31,13 +23,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
 
-    const term_unit_tests = b.addTest(.{
-        .root_module = term_mod,
-        .target = target,
-    });
-
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
-    const run_term_unit_tests = b.addRunArtifact(term_unit_tests);
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_lib_unit_tests.step);

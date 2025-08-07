@@ -1,12 +1,10 @@
 //! 0.14.1 microlibrary to introduce type constraints.
 const std = @import("std");
 
-const term = @import("term.zig");
-
-pub const Term = term.Term;
-pub const params = term.params;
-pub const ops = term.ops;
-pub const types = term.types;
+pub const Term = @import("term/Term.zig");
+pub const params = @import("term/params.zig");
+pub const ops = @import("term/ops.zig");
+pub const types = @import("term/types.zig");
 /// Example:
 /// ```
 /// const AnyIntTerm = Int(.{})
