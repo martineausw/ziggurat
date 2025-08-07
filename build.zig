@@ -10,38 +10,13 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const contract_mod = b.createModule(.{
-        .root_source_file = b.path("src/contract.zig"),
+    const term_mod = b.createModule(.{
+        .root_source_file = b.path("src/term.zig"),
         .target = target,
         .optimize = optimize,
     });
 
-    const params_mod = b.createModule(.{
-        .root_source_file = b.path("src/impl/params.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    const terms_mod = b.createModule(.{
-        .root_source_file = b.path("src/impl/terms.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    const impl_mod = b.createModule(.{
-        .root_source_file = b.path("src/impl.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    terms_mod.addImport("contract", contract_mod);
-    terms_mod.addImport("params", params_mod);
-
-    impl_mod.addImport("terms", terms_mod);
-    impl_mod.addImport("params", params_mod);
-
-    lib_mod.addImport("impl", impl_mod);
-    lib_mod.addImport("contract", contract_mod);
+    lib_mod.addImport("term", term_mod);
 
     const lib = b.addLibrary(.{
         .linkage = .static,
@@ -56,29 +31,15 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
 
-    const params_unit_tests = b.addTest(.{
-        .root_module = params_mod,
-        .target = target,
-    });
-
-    const terms_unit_tests = b.addTest(.{
-        .root_module = terms_mod,
-        .target = target,
-    });
-
-    const contract_unit_tests = b.addTest(.{
-        .root_module = contract_mod,
+    const term_unit_tests = b.addTest(.{
+        .root_module = term_mod,
         .target = target,
     });
 
     const run_lib_unit_tests = b.addRunArtifact(lib_unit_tests);
-    const run_terms_unit_tests = b.addRunArtifact(terms_unit_tests);
-    const run_params_unit_tests = b.addRunArtifact(params_unit_tests);
-    const run_contract_unit_tests = b.addRunArtifact(contract_unit_tests);
+    const run_term_unit_tests = b.addRunArtifact(term_unit_tests);
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_lib_unit_tests.step);
-    test_step.dependOn(&run_terms_unit_tests.step);
-    test_step.dependOn(&run_params_unit_tests.step);
-    test_step.dependOn(&run_contract_unit_tests.step);
+    test_step.dependOn(&run_term_unit_tests.step);
 }

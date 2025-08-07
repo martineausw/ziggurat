@@ -182,3 +182,7 @@ fn getDefaultValuePtr(comptime T: type) ?*const anyopaque {
         else => void{},
     };
 }
+
+test {
+    std.testing.refAllDecls(@This());
+}
