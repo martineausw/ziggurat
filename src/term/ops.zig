@@ -79,21 +79,10 @@ pub fn Disjoin(term0: Term, term1: Term) Term {
         ),
         .eval = struct {
             fn eval(actual: anytype) !bool {
-                var err0: ?anyerror = null;
-                const eval0 = term0.eval(actual) catch |err| {
-                    err0 = err;
-                };
+                const eval0 = term0.eval(actual) catch false;
+                const eval1 = term1.eval(actual) catch false;
 
-                var err1: ?anyerror = null;
-                const eval1 = term1.eval(actual) catch |err| {
-                    err1 = err;
-                };
-
-                if (eval0 or eval1) {
-                    return true;
-                } else {
-                    return err0 orelse false;
-                }
+                return eval0 or eval1;
             }
         }.eval,
         .onError = struct {
