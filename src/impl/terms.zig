@@ -816,7 +816,7 @@ test Info {
     _ = Info(.Int)(IntInfoParams);
 }
 
-test "some ints" {
+test "someInts" {
     const Default: Term = Int(.{
         .min = @as(?comptime_int, null),
         .max = @as(?comptime_int, null),
@@ -850,7 +850,7 @@ test "some ints" {
     try testing.expect(false == OnlyZero.eval(1));
 }
 
-test "some floats" {
+test "someFloats" {
     const DefaultFloat: Term = Float(.{
         .min = @as(?comptime_float, null),
         .max = @as(?comptime_float, null),
@@ -880,7 +880,7 @@ test "some floats" {
     try testing.expect(false == ExactlyZero.eval(0.001));
 }
 
-test "some bools" {
+test "someFools" {
     const DefaultBool = Bool(@as(?bool, null));
     try testing.expect(true == DefaultBool.eval(false));
     try testing.expect(true == DefaultBool.eval(true));
@@ -894,7 +894,7 @@ test "some bools" {
     try testing.expect(false == OnlyFalse.eval(true));
 }
 
-test "some fields" {
+test "someFields" {
     const DefaultFields = Fields(struct {})(void{});
 
     try testing.expect(true == DefaultFields.eval(void));
@@ -924,7 +924,7 @@ test "some fields" {
     try testing.expect(false == NestedFields.eval(.{ .x = .{ .y = .{ .z = 1 } } }));
 }
 
-test "some filters" {
+test "someFilters" {
     const DefaultFilter = Filter(enum { x })(.{});
 
     try testing.expect(true == DefaultFilter.eval((enum { x }).x));
@@ -942,7 +942,7 @@ test "some filters" {
     try testing.expect(false == OneFilterExplicitNoUse.eval(enum { a }.a));
 }
 
-test "some signs" {
+test "someSigns" {
     const AnyInteger = Int(.{});
     const SignedAnyInteger = Sign(AnyInteger);
     try testing.expect(void == SignedAnyInteger(1)(void));

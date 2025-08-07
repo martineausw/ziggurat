@@ -116,28 +116,3 @@ test Sign {
     const Signed = Sign(term_value);
     _ = Signed(argument_value)(return_type);
 }
-
-test "some test" {
-    std.testing.log_level = .err;
-    const AlwaysFalse = Term{
-        .name = "AlwaysFalse",
-        .eval = struct {
-            fn eval(_: anytype) bool {
-                return false;
-            }
-        }.eval,
-    };
-
-    _ = AlwaysFalse;
-
-    const AlwaysTrue = Term{
-        .name = "AlwaysTrue",
-        .eval = struct {
-            fn eval(_: anytype) bool {
-                return true;
-            }
-        }.eval,
-    };
-
-    _ = Sign(AlwaysTrue)(void)(void);
-}
