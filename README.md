@@ -63,8 +63,10 @@ A `Term` is an abstract class that requires an `eval` function. `eval` is invoke
 
 ```zig
 const Term type = struct {
-    eval: *const fn (value: anytype) bool,
-    ...
+    name: [:0]const u8,
+    eval: *const fn (actual: anytype) anyerror!bool,
+    onFail: ?*const fn (term: Term, actual: anytype) void = null,
+    onError: ?*const fn (err: anyerror, term: Term, actual: anytype) void = null,
 }
 ```
 
@@ -75,7 +77,7 @@ Here is an example implementation of a `Term` type.
 ```zig
 const Int: Term = .{
     .eval = struct {
-        fn eval(actual: anytype) bool {
+        fn eval(actual: anytype) !bool {
             return switch (@typeInfo(@TypeOf(actual))) {
                 .int => true,
                 else => false,
@@ -128,26 +130,11 @@ pub fn Sign(term: Term) fn (actual: anytype) fn (comptime return_type: type) typ
 
 ```
 
-## Appendix
+### Params
 
-Included `Term` types often include parameter types to automate away some boilerplate by making assumptions about how the library will be used (based entirely on how I am currently using it). This part of the codebase is very much a WIP. Feel free to ignore these if it doesn't fit your needs.
+`params.zig` is an attempt to automate away some boilerplate through arbitrary assumptions about how I intend to utilize the content in `terms.zig`.
 
-```zig
-fn Int(expected_value_or_params: IntParams) Term {
-    return struct {
-        fn eval(actual_value: anytype) bool { ... }
-        fn impl() Term { return .{ .eval = eval }; }
-    }.impl();
-}
-```
-
-The `impl` function is ultimately unnecessary in name and structure, but I am partial to it's compartmentalized nature when defining more complex types.
-
-### Parameters
-
-`parameters.zig` is an attempt to automate away some boilerplate through arbitrary assumptions about how I intend to utilize the content in `terms.zig`.
-
-`Term` implementations included in the library accept "parameters" as rules to check actual values against. Parameterized definitions of primitive type classes (e.g. `Int`, `Float`) are included in `parameters.zig` and are concretely defined.
+`Term` implementations included in the library accept "parameters" as rules to check actual values against. Parameterized definitions of primitive type classes (e.g. `Int`, `Float`) are included in `params` are concretely defined.
 
 ```zig
 const IntParams = struct {
@@ -161,26 +148,3 @@ The other available parameter types like `Fields` and `Filter` are only slightly
 If a `struct` is a set of field names, then `Fields` creates a subset of the original field names. Furthermore, the respective types are transformed to their appropriate counterpart (e.g. `u64` ⇒ `ex.IntParams`, `f128` ⇒ `ex.FloatParams`).
 
 `Fields` accepts an aggregate type, such as a `struct`, and procedurally constructs a parameterized counterpart by iterating through its fields, treating it as a container of fields. This continues recursively until all parameteritiz-able types are defined.
-
-## Goals
-
--   [x] Tests
-
-    -   [x] terms
-    -   [x] params
-
--   [x] Traceable error output
--   [x] Failure behavior configuration
--   [ ] Simplify
-
-## Reflection
-
-> "If you are the head that floats atop the ziggurat, then the stairs that lead to you must be infinite." (9:30)
->
-> "The Mountain." _Adventure Time_, created by Pendleton Ward, season 6, episode 28, Frederator Studios, 2015
-
-This is a crude attempt to enforce constraints on `anytype` parameters. The initial approach was seeded by the brainstorming thread (linked above) and it regrettably became more entangled overtime. I don't abhor the implementation, but as it exists at this moment I'm a little dissatisfied with it. There are many reasons for this feeling, but it boils down being faced with a fog that can only be navigated with experience or dispelled with time. This is to say, I imagine there's a more sightly form that returns back to the elegant minimalism as posited in the thread, but it escapes me at this time.
-
-The primary goal in setting out to write this library was to enjoy some syntactic sugar, reminiscent of C++ black magic, afforded without contention by zig's comptime and meta-programming features. I'm realizing now as I'm writing that I've adopted many implicit secondary goals all of which are indulgent, which is as fun as is frustrating when having a nebulous idea of where you want to be with no interest in arriving there sensibly, hence the lack of tests and git history as of today.
-
-At this moment, though, endless iteration in a vacuum isn't doing me any favors, so I'll be making improvements when the shortcomings surface practically as I integrate it in the project I imagined it to be used in.

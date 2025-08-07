@@ -1,12 +1,14 @@
+/// Boolean operations for `Term.eval` implementations.
 const std = @import("std");
 const testing = std.testing;
 const Term = @import("Term.zig");
 
+/// Boolean NOT of `Term.eval` implementation
 pub fn Negate(term: Term) Term {
     return .{
         .name = std.fmt.comptimePrint("(NOT {s})", .{term.name}),
         .eval = struct {
-            fn eval(actual: anytype) !bool {
+            fn eval(actual: anytype) anyerror!bool {
                 return !(try term.eval(actual));
             }
         }.eval,
@@ -18,7 +20,7 @@ test Negate {
     const AlwaysTrue: Term = .{
         .name = "AlwaysTrue",
         .eval = struct {
-            fn eval(_: anytype) !bool {
+            fn eval(_: anytype) anyerror!bool {
                 return true;
             }
         }.eval,
@@ -29,6 +31,7 @@ test Negate {
 
 const ConjoinError = error{FalseResult};
 
+/// Boolean AND of two `Term.eval` implementations
 pub fn Conjoin(term0: Term, term1: Term) Term {
     return .{
         .name = std.fmt.comptimePrint("({s} AND {s})", .{ term0.name, term1.name }),
@@ -71,6 +74,7 @@ test Conjoin {
     try testing.expect(false == try Conjoin(AlwaysTrue, AlwaysFalse).eval(void));
 }
 
+/// Boolean OR of two `Term.eval` implementations
 pub fn Disjoin(term0: Term, term1: Term) Term {
     return .{
         .name = std.fmt.comptimePrint(

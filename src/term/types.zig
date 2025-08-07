@@ -18,9 +18,14 @@ const IsTypeError = error{
     UnexpectedType,
 };
 
+/// eval expects type value.
+///
+/// Type value is type.
 const IsType: Term = .{
     .name = "IsType",
+
     .eval = struct {
+        /// Expects `type` argument
         fn eval(actual: anytype) IsTypeError!bool {
             return switch (@typeInfo(@TypeOf(actual))) {
                 .type => true,
@@ -31,7 +36,7 @@ const IsType: Term = .{
     .onError = struct {
         fn onErr(err: anyerror, term: Term, actual: anytype) void {
             switch (err) {
-                .InvalidArgument => @compileError(std.fmt.comptimePrint(
+                .UnexpectedType => @compileError(std.fmt.comptimePrint(
                     "{s}.{s} expects `type`, actual: {s}",
                     .{
                         term.name,
@@ -55,9 +60,16 @@ test IsType {
     try testing.expect(true == try IsType.eval(union {}));
 }
 
+/// Parameters for inclusive interval of integer values.
+///
+/// Throws compiler error for non-integer types.
 pub fn RangeParams(comptime T: type) type {
-    _ = TypeWithInfo(.{ .int = true, .comptime_int = true }).eval(T) catch
+    _ = TypeWithInfo(.{
+        .int = true,
+        .comptime_int = true,
+    }).eval(T) catch {
         @compileError("RangeParams: unexpected type");
+    };
 
     return struct {
         min: ?T = null,
@@ -67,6 +79,13 @@ pub fn RangeParams(comptime T: type) type {
 
 const ValuesWithinRangeError = error{ Under, Over };
 
+/// eval expects integer value.
+///
+/// integer value is greater-than-or-equal-to `params.min`, returns
+/// `error.Under` on failure.
+///
+/// integer value is less-than-or-equal-to `params.max`, returns
+/// `error.Over` on failure.
 pub fn ValueWithinRange(comptime T: type, params: RangeParams(T)) Term {
     return .{
         .name = "ValueWithinRange",
@@ -140,21 +159,30 @@ const InfoParams = struct {
     enum_literal: ?bool = null,
 };
 
-const TypesWithInfoError = error{
+const TypeWithInfoError = error{
     UnsatisfiedBlacklist,
     UnsatisfiedWhitelist,
 };
 
+/// eval expects type value.
+///
+/// Whitelist evaluation occurs when at least one `InfoParams` field
+/// is true where argument must belong to at least one to evaluate to
+/// true. Returns `error.UnsatisfiedWhitelist` on failure.
+///
+/// Blacklist evaluation occurs when associated `InfoParams` field of
+/// active type info is false. Returns `error.UnsatisfiedBlacklist` on
+/// failure.
 pub fn TypeWithInfo(params: InfoParams) Term {
     return .{
         .name = "TypeWithInfo",
         .eval = struct {
-            fn eval(actual: anytype) TypesWithInfoError!bool {
+            fn eval(actual: anytype) TypeWithInfoError!bool {
                 _ = try IsType.eval(actual);
 
                 // fail at blacklisted field
                 if (@field(params, @tagName(@typeInfo(actual)))) |param| {
-                    if (!param) return TypesWithInfoError.UnsatisfiedBlacklist;
+                    if (!param) return TypeWithInfoError.UnsatisfiedBlacklist;
                     return true;
                 }
 
@@ -170,7 +198,7 @@ pub fn TypeWithInfo(params: InfoParams) Term {
         }.eval,
         .onError = struct {
             fn onError(err: anyerror, term: Term, actual: anytype) void {
-                switch (@as(TypesWithInfoError, err)) {
+                switch (@as(TypeWithInfoError, err)) {
                     .UnsatisfiedBlacklist => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: {s}",
                         .{
@@ -234,8 +262,14 @@ test TypeWithInfo {
     try testing.expect(true == try OnlyParameterizedTypes.eval([5]comptime_int));
 }
 
-const InfoWithBitsError = error{UnexpectedType} || TypesWithInfoError || ValuesWithinRangeError;
+const InfoWithBitsError = error{UnexpectedType} || TypeWithInfoError || ValuesWithinRangeError;
 
+/// eval expects runtime int or runtime float type value.
+///
+/// Passes type value to `TypeWithInfo`, returns associated errors on failure.
+///
+/// Passes type info bits value to `ValueWithinRange`, returns associated errors
+/// on failure.
 pub fn InfoWithBits(params: RangeParams(u16)) Term {
     const ValidInfo = TypeWithInfo(.{
         .int = true,
@@ -294,8 +328,14 @@ test InfoWithBits {
     try testing.expect(true == Min2B.eval(f16) catch false);
 }
 
-const InfoWithLenError = TypesWithInfoError || ValuesWithinRangeError;
+const InfoWithLenError = TypeWithInfoError || ValuesWithinRangeError;
 
+/// eval expects array or vector type value.
+///
+/// Passes type value to `TypeWithInfo`, returns associated errors on failure.
+///
+/// Passes type info len value to `ValueWithinRange`, returns associated errors
+/// on failure.
 pub fn InfoWithLen(params: RangeParams(comptime_int)) Term {
     const ValidInfo = TypeWithInfo(.{
         .array = true,
@@ -370,6 +410,11 @@ test InfoHasChild {
     try testing.expect(true == try InfoHasChild.eval(@Vector(3, f16)));
 }
 
+/// eval expects pointer, optional, array, or vector type value
+///
+/// Passes type value to `TypeWithInfo`, returns associated errors.
+///
+/// Passes type value to `ChildTerm`, returns associated errors.
 pub fn InfoWithChild(ChildTerm: Term) Term {
     const ValidInfo = TypeWithInfo(.{
         .pointer = true,
@@ -378,7 +423,7 @@ pub fn InfoWithChild(ChildTerm: Term) Term {
         .vector = true,
     });
     return .{
-        .name = "ApplyToChildType",
+        .name = "InfoWithChild",
         .eval = struct {
             fn eval(actual: anytype) anyerror!bool {
                 _ = try InfoHasChild.eval(actual);
@@ -419,8 +464,20 @@ const IntInfoParams = struct {
     signedness: ?std.builtin.Signedness = null,
 };
 
-const IntTypeError = error{IncorrectSignedness} || TypesWithInfoError || ValuesWithinRangeError;
+const IntTypeError = error{IncorrectSignedness} || TypeWithInfoError || ValuesWithinRangeError;
 
+/// eval expects int type value.
+///
+/// Evaluates:
+///
+/// Passes type value to `TypeWithInfo`, returns associated errors
+/// on failure.
+///
+/// Passes type info value to `InfoWithBits`, returns associated errors
+/// on failure.
+///
+/// Int type info signedness value against `IntInfoParams` if not null,
+/// returns `error.IncorrectSignedness` on failure.
 pub fn IntType(params: IntInfoParams) Term {
     const ValidType = TypeWithInfo(.{
         .int = true,
@@ -429,7 +486,7 @@ pub fn IntType(params: IntInfoParams) Term {
     const ValidBitRange = InfoWithBits(params.bits);
 
     return .{
-        .name = "TypeIsInt",
+        .name = "IntType",
         .eval = struct {
             fn eval(actual: anytype) !bool {
                 _ = try ValidType.eval(actual);
@@ -478,6 +535,15 @@ const FloatInfoParams = struct {
     bits: RangeParams(u16) = .{},
 };
 
+/// eval expects float type value.
+///
+/// Evaluates:
+///
+/// Passes float type value to `TypeWithInfo`, returns associated errors
+/// on failure.
+///
+/// Passes float type info value to `InfoWithBits`, returns associated errors
+/// on failure.
 pub fn FloatType(params: FloatInfoParams) Term {
     const ValidType = TypeWithInfo(.{
         .float = true,
@@ -486,7 +552,7 @@ pub fn FloatType(params: FloatInfoParams) Term {
     const ValidBitRange = InfoWithBits(params.bits);
 
     return .{
-        .name = "TypeIsFloat",
+        .name = "FloatType",
         .eval = struct {
             fn eval(actual: anytype) !bool {
                 _ = try ValidType.eval(actual);
@@ -551,15 +617,30 @@ const PointerInfoParams = struct {
     sentinel: ?bool = null,
 };
 
-const PointerTypeError = error{ IncorrectConst, IncorrectVolatile, IncorrectSentinel } || TypesWithInfoError;
+const PointerTypeError = error{ IncorrectConst, IncorrectVolatile, IncorrectSentinel } || TypeWithInfoError;
 
+/// eval expects pointer type value.
+///
+/// Evaluates:
+///
+/// Passes pointer type into `TypeWithInfo`, returns associated errors.
+///
+/// Pointer type info `is_const` field against `PointerInfoParams.is_const` if not null,
+/// returns `error.IncorrectConst` when not equal.
+///
+/// Pointer type info `is_volatile` field against `PointerInfoParams.is_volatile` if not null,
+/// returns `error.IncorrectVolatile` when not equal.
+///
+/// Pointer type info `sentinel()` method against `PointerInfoParams.sentinel` if not null,
+/// returns `error.IncorrectSentinel` when `sentinel()` is not null and `.sentinel` is false
+/// or `sentinel()` is null and `.sentinel` is true
 pub fn PointerType(params: PointerInfoParams) Term {
     const ValidInfo = TypeWithInfo(.{
         .pointer = true,
     });
 
     return .{
-        .name = "TypeIsPointer",
+        .name = "PointerType",
         .eval = struct {
             fn eval(actual: anytype) !bool {
                 _ = try ValidInfo.eval(actual);
@@ -570,14 +651,14 @@ pub fn PointerType(params: PointerInfoParams) Term {
                 };
 
                 if (@field(params.size, @tagName(info.size))) |param| {
-                    if (!param) return TypesWithInfoError.UnsatisfiedBlacklist;
+                    if (!param) return TypeWithInfoError.UnsatisfiedBlacklist;
                     return true;
                 }
 
                 // fail at unused whitelist
                 inline for (std.meta.fields(@TypeOf(params.size))) |field| {
                     if (@field(params.size, field.name)) |param_field| {
-                        if (param_field) return TypesWithInfoError.UnsatisfiedWhitelist;
+                        if (param_field) return TypeWithInfoError.UnsatisfiedWhitelist;
                     }
                 }
 
@@ -632,6 +713,12 @@ const SlicePointerTypeParams = struct {
     sentinel: ?bool = null,
 };
 
+/// `eval` expects slice type value.
+///
+/// Evaluates:
+///
+/// Slice type into PointerType with whitelisted `size.slice`, returns
+/// associated errors on failure.
 pub fn SlicePointerType(params: SlicePointerTypeParams) Term {
     const ValidPointerType = PointerType(.{
         .size = .{
@@ -646,7 +733,7 @@ pub fn SlicePointerType(params: SlicePointerTypeParams) Term {
     });
 
     return .{
-        .name = "TypeIsSlice",
+        .name = "SlicePointerType",
         .eval = ValidPointerType.eval,
         .onFail = ValidPointerType.onFail,
     };
@@ -667,11 +754,20 @@ const SlicePointerParams = struct {
     len: RangeParams(usize) = .{},
 };
 
+/// `eval` expects slice value.
+///
+/// Evaluates:
+///
+/// Slice type into `PointerType` with whitelisted size.slice, returns
+/// associated errors on failure.
+///
+/// Slice value length field into `ValueWithinRange`, returns associated
+/// errors on failure.
 pub fn SlicePointer(params: SlicePointerParams) Term {
     const ValidSliceType = SlicePointerType(params.info);
     const ValidLenRange = ValueWithinRange(usize, params.len);
 
-    return .{ .name = "TypeIsSlice", .eval = struct {
+    return .{ .name = "SlicePointer", .eval = struct {
         fn eval(actual: anytype) !bool {
             _ = try ValidSliceType.eval(@TypeOf(actual));
             _ = try ValidLenRange.eval(actual.len);
