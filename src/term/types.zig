@@ -1,3 +1,4 @@
+//! Implementations of `Term` abstract class for convenience or reference.
 const std = @import("std");
 const testing = std.testing;
 const Term = @import("Term.zig");
@@ -26,10 +27,10 @@ const FilterError = error{
     InactiveInclusions,
 };
 
-/// eval expects type value.
+/// Expects type value.
 ///
-/// Value is type, returns `error.UnexpectedType` on failure.
-const IsType: Term = .{
+/// `actual` is type value, otherwise returns `ValueError.UnexpectedType`.
+pub const IsType: Term = .{
     .name = "IsType",
 
     .eval = struct {
@@ -425,7 +426,7 @@ test InfoWithLen {
     try testing.expect(false == MaxTenElem.eval([11][10]f64) catch false);
 }
 
-const InfoHasChild: Term = .{
+pub const InfoHasChild: Term = .{
     .name = "InfoHasChild",
     .eval = TypeWithInfo(.{
         .pointer = true,
@@ -450,7 +451,7 @@ test InfoHasChild {
     try testing.expect(true == try InfoHasChild.eval(@Vector(3, f16)));
 }
 
-/// eval expects pointer, optional, array, or vector type value
+/// Expects pointer, optional, array, or vector type value.
 ///
 /// `actual` is a pointer, optional, array or vector type value, otherwise returns
 /// error from `TypeWithInfo`.

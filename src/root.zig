@@ -9,15 +9,25 @@ pub const Negate = ops.Negate;
 pub const Conjoin = ops.Conjoin;
 pub const Disjoin = ops.Disjoin;
 
+pub const IntervalParams = types.IntervalParams;
+
+pub const IsType = types.IsType;
+pub const InfoHasChild = types.InfoHasChild;
+
+pub const TypeWithInfo = types.TypeWithInfo;
+
+pub const InfoWithBits = types.InfoWithBits;
+pub const InfoWithLen = types.InfoWithLen;
+pub const InfoWithChild = types.InfoWithChild;
+
 pub const IntType = types.IntType;
 pub const FloatType = types.FloatType;
 pub const PointerType = types.PointerType;
-pub const TypeWithInfo = types.TypeWithInfo;
-pub const IntervalParams = types.IntervalParams;
 pub const SlicePointerType = types.SlicePointerType;
-pub const SlicePointer = types.SlicePointer;
-pub const InfoWithChild = types.InfoWithChild;
 
+pub const SlicePointer = types.SlicePointer;
+
+pub const IntWithinInterval = types.IntWithinInterval;
 /// Example:
 /// ```
 /// const AnyIntTerm = Int(.{})

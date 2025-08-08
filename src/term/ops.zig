@@ -1,11 +1,9 @@
-/// Boolean operations for `Term.eval` implementations.
+//! Boolean operations for `Term.eval` implementations.
 const std = @import("std");
 const testing = std.testing;
 const Term = @import("Term.zig");
 
-/// eval expects any value.
-///
-/// Passes any eval to given term, returns associated error of given term.
+/// Boolean NOT of given `term`
 pub fn Negate(term: Term) Term {
     return .{
         .name = std.fmt.comptimePrint("(NOT {s})", .{term.name}),
@@ -33,11 +31,7 @@ test Negate {
 
 const ConjoinError = error{FalseResult};
 
-/// eval expects any value.
-///
-/// Passes any value to given `term0.eval`, returns associated error of given term.
-///
-/// Passes any value to given `term1.eval`, returns associated error of given term.
+/// Boolean AND of given `term0` and `term1`
 pub fn Conjoin(term0: Term, term1: Term) Term {
     return .{
         .name = std.fmt.comptimePrint("({s} AND {s})", .{ term0.name, term1.name }),
@@ -80,7 +74,7 @@ test Conjoin {
     try testing.expect(false == try Conjoin(AlwaysTrue, AlwaysFalse).eval(void));
 }
 
-/// Boolean OR of two `Term.eval` implementations
+/// Boolean OR of `term0` and `term1`
 pub fn Disjoin(term0: Term, term1: Term) Term {
     return .{
         .name = std.fmt.comptimePrint(

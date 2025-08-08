@@ -44,3 +44,7 @@ test {
     try testing.expect(false == try AnyBool.eval(@as(u32, 0)));
     try testing.expect(true == try AnyBool.eval(@as(bool, false)));
 }
+
+test {
+    testing.refAllDecls(@This());
+}
