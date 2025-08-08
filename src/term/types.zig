@@ -762,7 +762,8 @@ pub fn PointerType(params: PointerInfoParams) Term {
                 if (params.is_volatile) |is_const|
                     if (info.is_const != is_const) return PointerTypeError.InvalidVolatileQualifier;
                 if (params.sentinel) |sentinel|
-                    if (sentinel != if (info.sentinel()) |_| true else false) return PointerTypeError.InvalidSentinel;
+                    if (sentinel != if (info.sentinel()) |_| true else false)
+                        return PointerTypeError.InvalidSentinel;
 
                 return true;
             }

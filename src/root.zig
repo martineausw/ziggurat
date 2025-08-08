@@ -1,10 +1,10 @@
 //! 0.14.1 microlibrary to introduce type constraints.
 const std = @import("std");
 
-pub const Term = @import("term/Term.zig");
 const ops = @import("term/ops.zig");
 const types = @import("term/types.zig");
 
+pub const Term = @import("term/Term.zig");
 pub const Negate = ops.Negate;
 pub const Conjoin = ops.Conjoin;
 pub const Disjoin = ops.Disjoin;
