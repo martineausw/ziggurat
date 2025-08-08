@@ -154,7 +154,7 @@ test IntWithinInterval {
     try testing.expect(false == IntRange.eval(3) catch false);
 }
 
-const InfoFilterParams = struct {
+pub const InfoParams = struct {
     type: ?bool = null,
     void: ?bool = null,
     bool: ?bool = null,
@@ -180,7 +180,7 @@ const InfoFilterParams = struct {
     vector: ?bool = null,
     enum_literal: ?bool = null,
 
-    pub fn eval(self: InfoFilterParams, T: type) FilterError!bool {
+    pub fn eval(self: InfoParams, T: type) FilterError!bool {
         if (@field(self, @tagName(@typeInfo(T)))) |param| {
             if (!param) return FilterError.ActiveExclusion;
             return true;
@@ -219,7 +219,7 @@ const InfoFilterParams = struct {
 ///
 /// `actual` active tag of `Type` does not belong to the set of `InfoParams` fields
 /// set to false, otherwise returns `FilterError.UsesExclusion`.
-pub fn TypeWithInfo(params: InfoFilterParams) Term {
+pub fn TypeWithInfo(params: InfoParams) Term {
     const Error = ValueError || FilterError;
 
     return .{
@@ -508,7 +508,7 @@ test InfoWithChild {
     // try testing.expect(false == OptionalIntType.eval(?f16) catch false);
 }
 
-const IntInfoParams = struct {
+pub const IntInfoParams = struct {
     bits: IntervalParams(u16) = .{},
     signedness: ?std.builtin.Signedness = null,
 };
@@ -593,7 +593,7 @@ test IntType {
     try testing.expect(false == SignedInt.eval(f16) catch false);
 }
 
-const FloatInfoParams = struct {
+pub const FloatInfoParams = struct {
     bits: IntervalParams(u16) = .{},
 };
 
@@ -657,13 +657,13 @@ test FloatType {
 /// - `true`, belongs to whitelist, at least one element of whitelist
 ///   is expected, "pseudo-`union`"
 /// - `false`, belongs to blacklist, element should not be used
-const Size = struct {
+const SizeParams = struct {
     one: ?bool = null,
     many: ?bool = null,
     slice: ?bool = null,
     c: ?bool = null,
 
-    pub fn eval(self: Size, comptime size: std.builtin.Type.Pointer.Size) PointerTypeError!bool {
+    pub fn eval(self: SizeParams, comptime size: std.builtin.Type.Pointer.Size) PointerTypeError!bool {
         if (@field(self, @tagName(size))) |param| {
             if (!param) return PointerTypeError.UsesInvalidSize;
             return true;
@@ -693,8 +693,8 @@ const Size = struct {
     }
 };
 
-const PointerInfoParams = struct {
-    size: Size = .{},
+pub const PointerInfoParams = struct {
+    size: SizeParams = .{},
     /// - `null`, no preference
     /// - `true`, pointer must be `const` qualified
     /// - `false`, pointer must _not_ be `const` qualified
@@ -817,7 +817,7 @@ test PointerType {
     try testing.expect(false == ConstPointer.eval(*bool) catch false);
 }
 
-const SlicePointerTypeParams = struct {
+pub const SlicePointerTypeParams = struct {
     is_const: ?bool = null,
     is_volatile: ?bool = null,
     sentinel: ?bool = null,
@@ -856,7 +856,7 @@ test SlicePointerType {
     try testing.expect(false == SliceType.eval(*bool) catch false);
 }
 
-const SlicePointerParams = struct {
+pub const SlicePointerParams = struct {
     info: SlicePointerTypeParams = .{},
     len: IntervalParams(usize) = .{},
 };
