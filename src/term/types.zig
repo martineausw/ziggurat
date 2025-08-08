@@ -661,6 +661,35 @@ const Size = struct {
     many: ?bool = null,
     slice: ?bool = null,
     c: ?bool = null,
+
+    pub fn eval(self: Size, comptime size: std.builtin.Type.Pointer.Size) PointerTypeError!bool {
+        if (@field(self, @tagName(size))) |param| {
+            if (!param) return PointerTypeError.UsesInvalidSize;
+            return true;
+        }
+
+        inline for (std.meta.fields(@TypeOf(self))) |field| {
+            if (@field(self, field.name)) |value| {
+                if (value) return PointerTypeError.IgnoresValidSizes;
+            }
+        }
+        return true;
+    }
+
+    pub fn onError(err: anyerror, term: Term, actual: anytype) void {
+        switch (err) {
+            PointerTypeError.ActiveExclusion,
+            PointerTypeError.InactiveInclusions,
+            => @compileError(std.fmt.comptimePrint(
+                "{s}.{s}: {s}",
+                .{
+                    term.name,
+                    @errorName(err),
+                    @tagName(actual),
+                },
+            )),
+        }
+    }
 };
 
 const PointerInfoParams = struct {
@@ -680,7 +709,8 @@ const PointerInfoParams = struct {
 };
 
 const PointerTypeError = error{
-    InvalidSize,
+    UsesInvalidSize,
+    IgnoresValidSizes,
     InvalidConstQualifier,
     InvalidVolatileQualifier,
     InvalidSentinel,
@@ -693,7 +723,7 @@ const PointerTypeError = error{
 /// Passes pointer type into `TypeWithInfo`, returns associated errors.
 ///
 /// `actual` active tag of `size` belongs to the set of `InfoParams` fields
-/// set to true, otherwise returns `PointerTypeError.InvalidSize`.
+/// set to true, otherwise returns `PointerTypeError.IgnoresNeeded`.
 ///
 /// `actual` active tag of `Type` does not belong to the set of `InfoParams` fields
 /// set to false, otherwise returns `PointerTypeError.InvalidSize`.
@@ -725,21 +755,7 @@ pub fn PointerType(params: PointerInfoParams) Term {
                     else => unreachable,
                 };
 
-                var valid_size = false;
-
-                if (@field(params.size, @tagName(info.size))) |size| {
-                    if (!size) return PointerTypeError.InvalidSize;
-                    valid_size = true;
-                }
-
-                if (!valid_size) {
-                    inline for (std.meta.fields(@TypeOf(params.size))) |field| {
-                        if (@field(params.size, field.name)) |value| {
-                            if (value) return PointerTypeError.InvalidSize;
-                        }
-                    }
-                    valid_size = true;
-                }
+                _ = try params.size.eval(info.size);
 
                 if (params.is_const) |is_const|
                     if (info.is_const != is_const) return PointerTypeError.InvalidConstQualifier;
@@ -758,6 +774,10 @@ pub fn PointerType(params: PointerInfoParams) Term {
                     FilterError.ActiveExclusion,
                     FilterError.InactiveInclusions,
                     => ValidInfo.onError(err, term, actual),
+
+                    PointerTypeError.UsesExcludedPointerSize,
+                    PointerTypeError.IgnoresNeededPointerSizes,
+                    => params.size.onError(err, term, actual),
 
                     PointerTypeError.InvalidConstQualifier,
                     => std.fmt.comptimePrint("{s}.{s} expects {s}", .{

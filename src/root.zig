@@ -2,9 +2,21 @@
 const std = @import("std");
 
 pub const Term = @import("term/Term.zig");
-pub const params = @import("term/params.zig");
-pub const ops = @import("term/ops.zig");
-pub const types = @import("term/types.zig");
+const ops = @import("term/ops.zig");
+const types = @import("term/types.zig");
+
+pub const Negate = ops.Negate;
+pub const Conjoin = ops.Conjoin;
+pub const Disjoin = ops.Disjoin;
+
+pub const IntType = types.IntType;
+pub const FloatType = types.FloatType;
+pub const PointerType = types.PointerType;
+pub const TypeWithInfo = types.TypeWithInfo;
+pub const IntervalParams = types.IntervalParams;
+pub const SlicePointerType = types.SlicePointerType;
+pub const SlicePointer = types.SlicePointer;
+pub const InfoWithChild = types.InfoWithChild;
 
 /// Example:
 /// ```
