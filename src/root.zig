@@ -209,7 +209,7 @@ test types {
 }
 
 test aux {
-    const Info = aux.info.has(.{
+    const Info = aux.info.Has(.{
         .type = null,
         .void = null,
         .bool = null,
