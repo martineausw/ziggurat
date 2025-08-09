@@ -235,7 +235,7 @@ test aux {
         .vector = null,
         .enum_literal = null,
     });
-    const Interval = aux.interval.In(.{
+    const Interval = aux.interval.In(comptime_int, .{
         .min = null,
         .max = null,
     });
