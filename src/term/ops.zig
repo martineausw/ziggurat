@@ -9,7 +9,11 @@ pub fn Negate(term: Term) Term {
         .name = std.fmt.comptimePrint("(NOT {s})", .{term.name}),
         .eval = struct {
             fn eval(actual: anytype) anyerror!bool {
-                return !(try term.eval(actual));
+                if (term.eval(actual)) |result| {
+                    return !result;
+                } else |err| {
+                    return err;
+                }
             }
         }.eval,
         .onError = term.onError,
@@ -34,19 +38,51 @@ const ConjoinError = error{FalseResult};
 /// Boolean AND of given `term0` and `term1`
 pub fn Conjoin(term0: Term, term1: Term) Term {
     return .{
-        .name = std.fmt.comptimePrint("({s} AND {s})", .{ term0.name, term1.name }),
+        .name = std.fmt.comptimePrint(
+            "({s} AND {s})",
+            .{ term0.name, term1.name },
+        ),
         .eval = struct {
             fn eval(actual: anytype) anyerror!bool {
-                const eval0 = try term0.eval(actual);
-                const eval1 = try term1.eval(actual);
+                var result0 = false;
+                var result1 = false;
 
-                return eval0 and eval1;
+                var err0: ?anyerror = null;
+                var err1: ?anyerror = null;
+
+                if (term0.eval(actual)) |result| {
+                    result0 = result;
+                } else |err| {
+                    err0 = err;
+                }
+
+                if (term1.eval(actual)) |result| {
+                    result1 = result;
+                } else |err| {
+                    err1 = err;
+                }
+
+                if (result0 and result1) {
+                    return true;
+                }
+
+                if (err0) |err| {
+                    return err;
+                }
+
+                if (err1) |err| {
+                    return err;
+                }
+
+                return false;
             }
         }.eval,
         .onError = struct {
             fn onError(_: anyerror, term: Term, actual: anytype) void {
-                _ = term0.eval(actual) catch |err0| term0.onError(err0, term, actual);
-                _ = term1.eval(actual) catch |err1| term1.onError(err1, term, actual);
+                _ = term0.eval(actual) catch |err0|
+                    term0.onError(err0, term, actual);
+                _ = term1.eval(actual) catch |err1|
+                    term1.onError(err1, term, actual);
             }
         }.onError,
     };
@@ -70,8 +106,14 @@ test Conjoin {
         }.eval,
     };
 
-    try testing.expect(true == try Conjoin(AlwaysTrue, AlwaysTrue).eval(void));
-    try testing.expect(false == try Conjoin(AlwaysTrue, AlwaysFalse).eval(void));
+    try testing.expectEqual(
+        true,
+        Conjoin(AlwaysTrue, AlwaysTrue).eval(void),
+    );
+    try testing.expectEqual(
+        false,
+        Conjoin(AlwaysTrue, AlwaysFalse).eval(void),
+    );
 }
 
 /// Boolean OR of `term0` and `term1`
@@ -83,16 +125,45 @@ pub fn Disjoin(term0: Term, term1: Term) Term {
         ),
         .eval = struct {
             fn eval(actual: anytype) anyerror!bool {
-                const eval0 = term0.eval(actual) catch false;
-                const eval1 = term1.eval(actual) catch false;
+                var result0 = false;
+                var result1 = false;
 
-                return eval0 or eval1;
+                var err0: ?anyerror = null;
+                var err1: ?anyerror = null;
+
+                if (term0.eval(actual)) |result| {
+                    result0 = result;
+                } else |err| {
+                    err0 = err;
+                }
+
+                if (term1.eval(actual)) |result| {
+                    result1 = result;
+                } else |err| {
+                    err1 = err;
+                }
+
+                if (result0 or result1) {
+                    return true;
+                }
+
+                if (err0) |err| {
+                    return err;
+                }
+
+                if (err1) |err| {
+                    return err;
+                }
+
+                return false;
             }
         }.eval,
         .onError = struct {
             fn onError(_: anyerror, term: Term, actual: anytype) void {
-                _ = term0.eval(actual) catch |err0| term0.onError(err0, term, actual);
-                _ = term1.eval(actual) catch |err1| term1.onError(err1, term, actual);
+                _ = term0.eval(actual) catch |err0|
+                    term0.onError(err0, term, actual);
+                _ = term1.eval(actual) catch |err1|
+                    term1.onError(err1, term, actual);
             }
         }.onError,
     };
@@ -116,9 +187,18 @@ test Disjoin {
         }.eval,
     };
 
-    try testing.expect(true == try Disjoin(AlwaysTrue, AlwaysTrue).eval(void));
-    try testing.expect(true == try Disjoin(AlwaysTrue, AlwaysFalse).eval(void));
-    try testing.expect(false == try Disjoin(AlwaysFalse, AlwaysFalse).eval(void));
+    try testing.expectEqual(
+        true,
+        Disjoin(AlwaysTrue, AlwaysTrue).eval(void),
+    );
+    try testing.expectEqual(
+        true,
+        Disjoin(AlwaysTrue, AlwaysFalse).eval(void),
+    );
+    try testing.expectEqual(
+        false,
+        Disjoin(AlwaysFalse, AlwaysFalse).eval(void),
+    );
 }
 
 test {
