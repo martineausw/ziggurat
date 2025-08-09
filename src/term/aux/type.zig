@@ -1,4 +1,7 @@
 //! Auxillary term to filter for a type value.
+//! Expects type value
+//!
+//! `acutal` is type value, otherwise returns error.
 const std = @import("std");
 const testing = std.testing;
 

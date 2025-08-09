@@ -152,16 +152,109 @@ test ops {
 }
 
 test types {
-    const Int = types.int.Has(.{});
-    const Float = types.float.Has(.{});
-    const Pointer = types.pointer.Has(.{});
+    const Int = types.int.Has(.{
+        .bits = .{
+            .min = null,
+            .max = null,
+        },
+        .signedness = null,
+    });
+    const Float = types.float.Has(.{
+        .bits = .{
+            .min = null,
+            .max = null,
+        },
+    });
+    const Pointer = types.pointer.Has(.{
+        .is_const = null,
+        .is_volatile = null,
+        .sentinel = null,
+        .size = .{
+            .one = null,
+            .slice = null,
+            .many = null,
+            .c = null,
+        },
+    });
 
-    try std.testing.expectEqual(true, Int.eval(usize));
-    try std.testing.expectEqual(error.UnexpectedInfo, Int.eval(bool));
-    try std.testing.expectEqual(true, Float.eval(f128));
-    try std.testing.expectEqual(error.UnexpectedInfo, Float.eval(usize));
-    try std.testing.expectEqual(true, Pointer.eval([]const u8));
-    try std.testing.expectEqual(error.UnexpectedInfo, Pointer.eval([3]u8));
+    try std.testing.expectEqual(
+        true,
+        Int.eval(usize),
+    );
+
+    try std.testing.expectEqual(
+        error.UnexpectedInfo,
+        Int.eval(bool),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        Float.eval(f128),
+    );
+
+    try std.testing.expectEqual(
+        error.UnexpectedInfo,
+        Float.eval(usize),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        Pointer.eval([]const u8),
+    );
+
+    try std.testing.expectEqual(
+        error.UnexpectedInfo,
+        Pointer.eval([3]u8),
+    );
+}
+
+test aux {
+    const Info = aux.info.has(.{
+        .type = null,
+        .void = null,
+        .bool = null,
+        .noreturn = null,
+        .int = null,
+        .float = null,
+        .pointer = null,
+        .array = null,
+        .@"struct" = null,
+        .comptime_float = null,
+        .comptime_int = null,
+        .undefined = null,
+        .null = null,
+        .optional = null,
+        .error_union = null,
+        .error_set = null,
+        .@"enum" = null,
+        .@"union" = null,
+        .@"fn" = null,
+        .@"opaque" = null,
+        .frame = null,
+        .@"anyframe" = null,
+        .vector = null,
+        .enum_literal = null,
+    });
+    const Interval = aux.interval.in(.{
+        .min = null,
+        .max = null,
+    });
+    const Type = aux.type.is;
+
+    try std.testing.expectEqual(
+        true,
+        Info.eval(void),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        Interval.eval(0),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        Type.eval(usize),
+    );
 }
 
 test {
