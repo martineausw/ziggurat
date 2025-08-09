@@ -24,15 +24,15 @@ pub const Term = @import("term/Term.zig");
 /// Wraps the final term and invoked at return value position of a function signature.
 ///
 /// Term must evaluate to true to continue.
-pub fn Sign(t: Term) fn (actual: anytype) fn (comptime return_type: type) type {
+pub fn Sign(T: Term) fn (actual: anytype) fn (comptime return_type: type) type {
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
-            if (t.eval(actual)) |result| {
-                if (!result) if (t.onFail) |onFail|
-                    onFail(t, actual);
+            if (T.eval(actual)) |result| {
+                if (!result) if (T.onFail) |onFail|
+                    onFail(T, actual);
             } else |err| {
-                if (t.onError) |onError|
-                    onError(t, actual, err);
+                if (T.onError) |onError|
+                    onError(err, T, actual);
             }
 
             return struct {
