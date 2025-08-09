@@ -37,7 +37,7 @@ pub fn Has(params: Params) Term {
     const Bits = interval.In(u16, params.bits);
 
     return .{
-        .name = "IsIntType",
+        .name = "IntType",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = Is.eval(actual) catch |err| return err;

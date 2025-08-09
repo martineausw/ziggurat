@@ -86,7 +86,7 @@ pub const InfoParams = struct {
 /// set to false, otherwise returns error.
 pub fn Has(params: InfoParams) Term {
     return .{
-        .name = "HasTypeInfo",
+        .name = "Info",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = @"type".Is.eval(actual) catch |err| return err;

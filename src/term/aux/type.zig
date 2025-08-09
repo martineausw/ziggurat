@@ -15,7 +15,7 @@ pub const Error = TypeError;
 ///
 /// `actual` is type value, otherwise returns error.
 pub const Is: Term = .{
-    .name = "IsType",
+    .name = "Type",
 
     .eval = struct {
         fn eval(actual: anytype) Error!bool {

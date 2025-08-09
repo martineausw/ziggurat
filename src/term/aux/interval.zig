@@ -71,7 +71,7 @@ pub fn In(comptime T: type, params: Params(T)) Term {
     });
 
     return .{
-        .name = "IntWithinInterval",
+        .name = "Interval",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = ValidType.eval(T) catch |err| return err;
