@@ -10,12 +10,15 @@ pub const Term = @import("term/Term.zig");
 /// Example:
 /// ```
 /// const ziggurat = @import("ziggurat");
+///
 /// const FloatOrInt = ziggurat.ops.Disjoin(
 ///     ziggurat.types.int.Has(.{}),
 ///     ziggurat.types.float.Has(.{}),
 /// );
-/// const FloatOrInt
-/// fn foo(x: anytype) Sign(FloatOrInt)(x)(void) {
+///
+/// const OnlyFloatOrInt = Sign(FloatOrInt)
+///
+/// fn foo(x: anytype) OnlyFloatOrInt(x)(void) {
 ///     ...
 /// }
 /// ```
