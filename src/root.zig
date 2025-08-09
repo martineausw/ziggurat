@@ -235,11 +235,11 @@ test aux {
         .vector = null,
         .enum_literal = null,
     });
-    const Interval = aux.interval.in(.{
+    const Interval = aux.interval.In(.{
         .min = null,
         .max = null,
     });
-    const Type = aux.type.is;
+    const Type = aux.type.Is;
 
     try std.testing.expectEqual(
         true,
