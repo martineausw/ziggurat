@@ -67,6 +67,95 @@ test Sign {
     _ = Signed(argument_value)(return_type);
 }
 
+test Term {
+    const AlwaysTrue: Term = .{
+        .name = "AlwaysTrue",
+        .eval = struct {
+            fn eval(_: anytype) !bool {
+                return true;
+            }
+        }.eval,
+    };
+
+    const AlwaysFalse: Term = .{
+        .name = "AlwaysFalse",
+        .eval = struct {
+            fn eval(_: anytype) !bool {
+                return false;
+            }
+        }.eval,
+        .onFail = struct {
+            fn onFail(term: Term, _: anytype) void {
+                std.log.err(term.name);
+            }
+        }.onFail,
+    };
+
+    const AlwaysError: Term = .{
+        .name = "AlwaysError",
+        .eval = struct {
+            fn eval(_: anytype) !bool {
+                return error.ExampleError;
+            }
+        }.eval,
+        .onError = struct {
+            fn onError(err: anyerror, term: Term, _: anytype) void {
+                @compileError(term.name ++ ": " ++ @errorName(err));
+            }
+        }.onError,
+    };
+
+    try std.testing.expectEqual(true, AlwaysTrue.eval(void));
+    try std.testing.expectEqual(false, AlwaysFalse.eval(void));
+    try std.testing.expectEqual(error.ExampleError, AlwaysError.eval(void));
+}
+
+test ops {
+    const AlwaysTrue: Term = .{
+        .name = "AlwaysTrue",
+        .eval = struct {
+            fn eval(_: anytype) !bool {
+                return true;
+            }
+        }.eval,
+    };
+
+    const AlwaysFalse: Term = .{
+        .name = "AlwaysFalse",
+        .eval = struct {
+            fn eval(_: anytype) !bool {
+                return false;
+            }
+        }.eval,
+        .onFail = struct {
+            fn onFail(term: Term, _: anytype) void {
+                std.log.err(term.name);
+            }
+        }.onFail,
+    };
+
+    const TrueOrFalse = ops.Disjoin(AlwaysFalse, AlwaysTrue);
+    const TrueAndFalse = ops.Conjoin(AlwaysFalse, AlwaysTrue);
+    const NotFalse = ops.Negate(AlwaysFalse);
+
+    try std.testing.expectEqual(true, TrueOrFalse.eval(void));
+    try std.testing.expectEqual(false, TrueAndFalse.eval(void));
+    try std.testing.expectEqual(true, NotFalse.eval(void));
+}
+
+test types {
+    const Int = types.int.Has(.{});
+    const Float = types.float.Has(.{});
+    const Pointer = types.pointer.Has(.{});
+
+    try std.testing.expectEqual(true, Int.eval(usize));
+    try std.testing.expectEqual(error.UnexpectedInfo, Int.eval(bool));
+    try std.testing.expectEqual(true, Float.eval(f128));
+    try std.testing.expectEqual(error.UnexpectedInfo, Float.eval(usize));
+    try std.testing.expectEqual(true, Pointer.eval([]const u8));
+    try std.testing.expectEqual(error.UnexpectedInfo, Pointer.eval([3]u8));
+}
+
 test {
     std.testing.refAllDecls(@This());
 }
