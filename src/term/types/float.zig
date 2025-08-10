@@ -22,54 +22,54 @@ pub const Params = struct {
 ///
 /// `actual` type info `bits` is within given `params`, otherwise returns
 /// error.
-pub fn Has(params: Params) Term {
-    const Info = info.Has(.{
+pub fn init(params: Params) Term {
+    const validator_info = info.init(.{
         .float = true,
     });
 
-    const Bits = interval.In(u16, params.bits);
+    const validator_bits = interval.init(u16, params.bits);
 
     return .{
-        .name = "FloatType",
+        .name = "Float",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try Info.eval(actual);
+                _ = try validator_info.eval(actual);
                 const actual_info = switch (@typeInfo(actual)) {
                     .float => |float_info| float_info,
                     else => unreachable,
                 };
-                _ = try Bits.eval(actual_info.bits);
+                _ = try validator_bits.eval(actual_info.bits);
                 return true;
             }
         }.eval,
         .onError = struct {
             fn onError(err: anyerror, term: Term, actual: anytype) void {
                 switch (err) {
-                    .InvalidType,
-                    .DisallowedInfo,
-                    .UnexpectedInfo,
-                    => Info.onError(err, term, actual),
+                    Error.InvalidType,
+                    Error.DisallowedType,
+                    Error.UnexpectedType,
+                    => validator_info.onError(err, term, actual),
 
-                    .ExceedsMin,
-                    .ExceedsMax,
-                    => Bits.onError(err, term, actual),
+                    Error.ExceedsMin,
+                    Error.ExceedsMax,
+                    => validator_bits.onError(err, term, actual),
                 }
             }
         }.onError,
     };
 }
 
-test Has {
-    const Float32 = Has(.{
+test init {
+    const float32 = init(.{
         .bits = .{
             .min = 32,
             .max = 32,
         },
     });
 
-    try testing.expectEqual(error.ExceedsMin, Float32.eval(f16));
-    try testing.expectEqual(true, Float32.eval(f32));
-    try testing.expectEqual(error.ExceedsMax, Float32.eval(f128));
+    try testing.expectEqual(Error.ExceedsMin, float32.eval(f16));
+    try testing.expectEqual(true, float32.eval(f32));
+    try testing.expectEqual(Error.ExceedsMax, float32.eval(f128));
 }
 
 test {

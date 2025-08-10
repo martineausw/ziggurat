@@ -4,7 +4,7 @@ const testing = std.testing;
 const Term = @import("Term.zig");
 
 /// Boolean NOT of given `term`
-pub fn Negate(term: Term) Term {
+pub fn negate(term: Term) Term {
     return .{
         .name = std.fmt.comptimePrint("(NOT {s})", .{term.name}),
         .eval = struct {
@@ -20,8 +20,8 @@ pub fn Negate(term: Term) Term {
     };
 }
 
-test Negate {
-    const AlwaysTrue: Term = .{
+test negate {
+    const always_true: Term = .{
         .name = "AlwaysTrue",
         .eval = struct {
             fn eval(_: anytype) anyerror!bool {
@@ -30,13 +30,13 @@ test Negate {
         }.eval,
     };
 
-    try testing.expect(false == try Negate(AlwaysTrue).eval(void));
+    try testing.expect(false == try negate(always_true).eval(void));
 }
 
 const ConjoinError = error{FalseResult};
 
 /// Boolean AND of given `term0` and `term1`
-pub fn Conjoin(term0: Term, term1: Term) Term {
+pub fn conjoin(term0: Term, term1: Term) Term {
     return .{
         .name = std.fmt.comptimePrint(
             "({s} AND {s})",
@@ -88,8 +88,8 @@ pub fn Conjoin(term0: Term, term1: Term) Term {
     };
 }
 
-test Conjoin {
-    const AlwaysTrue: Term = .{
+test conjoin {
+    const always_true: Term = .{
         .name = "AlwaysTrue",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -97,7 +97,7 @@ test Conjoin {
             }
         }.eval,
     };
-    const AlwaysFalse: Term = .{
+    const always_false: Term = .{
         .name = "AlwaysFalse",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -108,16 +108,16 @@ test Conjoin {
 
     try testing.expectEqual(
         true,
-        Conjoin(AlwaysTrue, AlwaysTrue).eval(void),
+        conjoin(always_true, always_true).eval(void),
     );
     try testing.expectEqual(
         false,
-        Conjoin(AlwaysTrue, AlwaysFalse).eval(void),
+        conjoin(always_true, always_false).eval(void),
     );
 }
 
 /// Boolean OR of `term0` and `term1`
-pub fn Disjoin(term0: Term, term1: Term) Term {
+pub fn disjoin(term0: Term, term1: Term) Term {
     return .{
         .name = std.fmt.comptimePrint(
             "({s} OR {s})",
@@ -169,8 +169,8 @@ pub fn Disjoin(term0: Term, term1: Term) Term {
     };
 }
 
-test Disjoin {
-    const AlwaysTrue: Term = .{
+test disjoin {
+    const always_true: Term = .{
         .name = "AlwaysTrue",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -178,7 +178,7 @@ test Disjoin {
             }
         }.eval,
     };
-    const AlwaysFalse: Term = .{
+    const always_false: Term = .{
         .name = "AlwaysFalse",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -189,15 +189,15 @@ test Disjoin {
 
     try testing.expectEqual(
         true,
-        Disjoin(AlwaysTrue, AlwaysTrue).eval(void),
+        disjoin(always_true, always_true).eval(void),
     );
     try testing.expectEqual(
         true,
-        Disjoin(AlwaysTrue, AlwaysFalse).eval(void),
+        disjoin(always_true, always_false).eval(void),
     );
     try testing.expectEqual(
         false,
-        Disjoin(AlwaysFalse, AlwaysFalse).eval(void),
+        disjoin(always_false, always_false).eval(void),
     );
 }
 

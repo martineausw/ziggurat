@@ -8,8 +8,12 @@ const info = @import("../aux/info.zig");
 
 /// Error set for array
 const ArrayError = error{
-    /// Violates `sentinel` assertion
+    /// Violates `sentinel` assertion.
     InvalidSentinel,
+    /// Violates `child` blacklist assertion.
+    DisallowedChild,
+    /// Violates `child` whitelist assertion.
+    UnexpectedChild,
 };
 
 /// Error set returned by `eval`
@@ -41,25 +45,35 @@ pub const Params = struct {
 ///
 /// `actual` type info `sentinel()` is not-null when given params is true
 /// or null when given params is false, otherwise returns error.
-pub fn Has(params: Params) Term {
-    const Info = info.Has(.{
+pub fn init(params: Params) Term {
+    const validator_info = info.init(.{
         .array = true,
     });
 
-    const Len = interval.In(comptime_int, params.len);
+    const validator_child = info.init(params.child);
+
+    const validator_len = interval.init(comptime_int, params.len);
 
     return .{
         .name = "Array",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try Info.eval(actual);
+                _ = try validator_info.eval(actual);
 
                 const actual_info = switch (@typeInfo(actual)) {
                     .array => |array_info| array_info,
                     else => unreachable,
                 };
 
-                _ = try Len.eval(actual_info.len);
+                _ = validator_child.eval(actual_info.child) catch |err| {
+                    return switch (err) {
+                        info.Error.DisallowedType => Error.DisallowedChild,
+                        info.Error.UnexpectedType => Error.UnexpectedChild,
+                        else => unreachable,
+                    };
+                };
+
+                _ = try validator_len.eval(actual_info.len);
 
                 if (params.sentinel) |sentinel| {
                     const actual_sentinel =
@@ -79,12 +93,20 @@ pub fn Has(params: Params) Term {
         .onError = struct {
             fn onError(err: anyerror, term: Term, actual: anytype) void {
                 switch (err) {
-                    .InvalidType,
-                    .ActiveExclusion,
-                    .InactiveInclusions,
-                    => Info.onError(err, term, actual),
+                    Error.InvalidType,
+                    Error.DisallowedType,
+                    Error.UnexpectedType,
+                    => validator_info.onError(err, term, actual),
 
-                    .InvalidSentinel,
+                    Error.UnexpectedChild,
+                    Error.DisallowedChild,
+                    => validator_child.onError(err, term, actual),
+
+                    Error.ExceedsMin,
+                    Error.ExceedsMax,
+                    => validator_len.onError(err, term, actual),
+
+                    Error.InvalidSentinel,
                     => std.fmt.comptimePrint("{s}.{s} expects {s}", .{
                         term.name,
                         @errorName(err),
@@ -93,14 +115,16 @@ pub fn Has(params: Params) Term {
                         else
                             "sentinel value omitted",
                     }),
+
+                    else => unreachable,
                 }
             }
         }.onError,
     };
 }
 
-test Has {
-    const Array = Has(.{
+test init {
+    const array = init(.{
         .len = .{
             .min = null,
             .max = null,
@@ -110,12 +134,12 @@ test Has {
 
     try testing.expectEqual(
         true,
-        Array.eval([5]u8),
+        array.eval([5]u8),
     );
 
     try testing.expectEqual(
-        Error.UnexpectedInfo,
-        Array.eval([]const u8),
+        Error.UnexpectedType,
+        array.eval([]const u8),
     );
 }
 

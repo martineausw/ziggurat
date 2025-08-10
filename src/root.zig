@@ -32,7 +32,7 @@ pub const Term = @import("term/Term.zig");
 /// Wraps the final term and invoked at return value position of a function signature.
 ///
 /// Term must evaluate to true to continue.
-pub fn Sign(T: Term) fn (actual: anytype) fn (comptime return_type: type) type {
+pub fn sign(T: Term) fn (actual: anytype) fn (comptime return_type: type) type {
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
             if (T.eval(actual)) |result| {
@@ -52,8 +52,8 @@ pub fn Sign(T: Term) fn (actual: anytype) fn (comptime return_type: type) type {
     }.validate;
 }
 
-test Sign {
-    const AnyRuntimeInt: Term = .{
+test sign {
+    const runtime_int: Term = .{
         .name = "AnyRuntimeInt",
         .eval = struct {
             fn eval(actual: anytype) !bool {
@@ -65,18 +65,18 @@ test Sign {
         }.eval,
     };
 
-    const term_value: Term = AnyRuntimeInt;
+    const term_value: Term = runtime_int;
     const argument_value: u32 = 0;
     const return_type: type = void;
 
-    _ = Sign(term_value)(argument_value)(return_type);
+    _ = sign(term_value)(argument_value)(return_type);
 
-    const Signed = Sign(term_value);
-    _ = Signed(argument_value)(return_type);
+    const signed = sign(term_value);
+    _ = signed(argument_value)(return_type);
 }
 
 test Term {
-    const AlwaysTrue: Term = .{
+    const always_true: Term = .{
         .name = "AlwaysTrue",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -85,7 +85,7 @@ test Term {
         }.eval,
     };
 
-    const AlwaysFalse: Term = .{
+    const always_false: Term = .{
         .name = "AlwaysFalse",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -99,7 +99,7 @@ test Term {
         }.onFail,
     };
 
-    const AlwaysError: Term = .{
+    const always_error: Term = .{
         .name = "AlwaysError",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -113,13 +113,13 @@ test Term {
         }.onError,
     };
 
-    try std.testing.expectEqual(true, AlwaysTrue.eval(void));
-    try std.testing.expectEqual(false, AlwaysFalse.eval(void));
-    try std.testing.expectEqual(error.ExampleError, AlwaysError.eval(void));
+    try std.testing.expectEqual(true, always_true.eval(void));
+    try std.testing.expectEqual(false, always_false.eval(void));
+    try std.testing.expectEqual(error.ExampleError, always_error.eval(void));
 }
 
 test ops {
-    const AlwaysTrue: Term = .{
+    const always_true: Term = .{
         .name = "AlwaysTrue",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -128,7 +128,7 @@ test ops {
         }.eval,
     };
 
-    const AlwaysFalse: Term = .{
+    const always_false: Term = .{
         .name = "AlwaysFalse",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -142,30 +142,30 @@ test ops {
         }.onFail,
     };
 
-    const TrueOrFalse = ops.Disjoin(AlwaysFalse, AlwaysTrue);
-    const TrueAndFalse = ops.Conjoin(AlwaysFalse, AlwaysTrue);
-    const NotFalse = ops.Negate(AlwaysFalse);
+    const true_or_false = ops.disjoin(always_false, always_true);
+    const true_and_false = ops.conjoin(always_false, always_true);
+    const not_false = ops.negate(always_false);
 
-    try std.testing.expectEqual(true, TrueOrFalse.eval(void));
-    try std.testing.expectEqual(false, TrueAndFalse.eval(void));
-    try std.testing.expectEqual(true, NotFalse.eval(void));
+    try std.testing.expectEqual(true, true_or_false.eval(void));
+    try std.testing.expectEqual(false, true_and_false.eval(void));
+    try std.testing.expectEqual(true, not_false.eval(void));
 }
 
 test types {
-    const Int = types.int.Has(.{
+    const int = types.Int.init(.{
         .bits = .{
             .min = null,
             .max = null,
         },
         .signedness = null,
     });
-    const Float = types.float.Has(.{
+    const float = types.Float.init(.{
         .bits = .{
             .min = null,
             .max = null,
         },
     });
-    const Pointer = types.pointer.Has(.{
+    const pointer = types.Pointer.init(.{
         .is_const = null,
         .is_volatile = null,
         .sentinel = null,
@@ -179,37 +179,37 @@ test types {
 
     try std.testing.expectEqual(
         true,
-        Int.eval(usize),
+        int.eval(usize),
     );
 
     try std.testing.expectEqual(
-        error.UnexpectedInfo,
-        Int.eval(bool),
-    );
-
-    try std.testing.expectEqual(
-        true,
-        Float.eval(f128),
-    );
-
-    try std.testing.expectEqual(
-        error.UnexpectedInfo,
-        Float.eval(usize),
+        error.UnexpectedType,
+        int.eval(bool),
     );
 
     try std.testing.expectEqual(
         true,
-        Pointer.eval([]const u8),
+        float.eval(f128),
     );
 
     try std.testing.expectEqual(
-        error.UnexpectedInfo,
-        Pointer.eval([3]u8),
+        error.UnexpectedType,
+        float.eval(usize),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        pointer.eval([]const u8),
+    );
+
+    try std.testing.expectEqual(
+        error.UnexpectedType,
+        pointer.eval([3]u8),
     );
 }
 
 test aux {
-    const Info = aux.info.Has(.{
+    const info = aux.info.init(.{
         .type = null,
         .void = null,
         .bool = null,
@@ -235,25 +235,25 @@ test aux {
         .vector = null,
         .enum_literal = null,
     });
-    const Interval = aux.interval.In(comptime_int, .{
+    const interval = aux.interval.init(comptime_int, .{
         .min = null,
         .max = null,
     });
-    const Type = aux.type.Is;
+    const @"type" = aux.type.init;
 
     try std.testing.expectEqual(
         true,
-        Info.eval(void),
+        info.eval(void),
     );
 
     try std.testing.expectEqual(
         true,
-        Interval.eval(0),
+        interval.eval(0),
     );
 
     try std.testing.expectEqual(
         true,
-        Type.eval(usize),
+        @"type".eval(usize),
     );
 }
 

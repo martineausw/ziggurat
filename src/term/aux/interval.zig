@@ -45,8 +45,9 @@ pub fn Params(comptime T: type) type {
             actual: anytype,
         ) void {
             const print_val = switch (err) {
-                .ExceedsMin => self.min.?,
-                .ExceedsMax => self.max.?,
+                Error.ExceedsMin => self.min.?,
+                Error.ExceedsMax => self.max.?,
+                else => unreachable,
             };
             @compileError(std.fmt.comptimePrint(
                 "{s}.{s}: {d} actual: @as({s}, {d})",
@@ -71,50 +72,52 @@ pub fn Params(comptime T: type) type {
 ///
 /// `actual` is less-than-or-equal-to given `params.max`, otherwise returns
 /// error.
-pub fn In(comptime T: type, params: Params(T)) Term {
-    const ValidType = info.Has(.{
+pub fn init(comptime T: type, params: Params(T)) Term {
+    const validator_info = info.init(.{
         .int = true,
         .comptime_int = true,
         .float = true,
         .comptime_float = true,
     });
 
+    const validator_interval = params;
+
     return .{
         .name = "Interval",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = ValidType.eval(T) catch |err| return err;
-                _ = params.eval(actual) catch |err| return err;
+                _ = validator_info.eval(T) catch |err| return err;
+                _ = validator_interval.eval(actual) catch |err| return err;
                 return true;
             }
         }.eval,
         .onError = struct {
             fn onError(err: anyerror, term: Term, actual: anytype) void {
                 switch (err) {
-                    .InvalidType,
-                    .DisallowedInfo,
-                    .UnexpectedInfo,
-                    => ValidType.onError(err, term, actual),
+                    Error.InvalidType,
+                    Error.DisallowedType,
+                    Error.UnexpectedType,
+                    => validator_info.onError(err, term, actual),
 
-                    .ExceedsMin,
-                    .ExceedsMax,
-                    => params.onError(err, term, actual),
+                    Error.ExceedsMin,
+                    Error.ExceedsMax,
+                    => validator_interval.onError(err, term, actual),
                 }
             }
         }.onError,
     };
 }
 
-test In {
-    const IntRange: Term = In(usize, .{
+test init {
+    const usize_interval: Term = init(usize, .{
         .min = @as(usize, 1),
         .max = @as(usize, 2),
     });
 
-    try testing.expectEqual(error.ExceedsMin, IntRange.eval(0));
-    try testing.expectEqual(true, IntRange.eval(1));
-    try testing.expectEqual(true, IntRange.eval(2));
-    try testing.expectEqual(error.ExceedsMax, IntRange.eval(3));
+    try testing.expectEqual(Error.ExceedsMin, usize_interval.eval(0));
+    try testing.expectEqual(true, usize_interval.eval(1));
+    try testing.expectEqual(true, usize_interval.eval(2));
+    try testing.expectEqual(Error.ExceedsMax, usize_interval.eval(3));
 }
 
 test {

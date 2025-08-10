@@ -16,7 +16,7 @@ pub const Error = TypeError;
 /// Expects type value.
 ///
 /// `actual` is type value, otherwise returns error.
-pub const Is: Term = .{
+pub const init: Term = .{
     .name = "Type",
 
     .eval = struct {
@@ -30,7 +30,7 @@ pub const Is: Term = .{
     .onError = struct {
         fn onError(err: anyerror, term: Term, actual: anytype) void {
             switch (err) {
-                .InvalidType => @compileError(std.fmt.comptimePrint(
+                Error.InvalidType => @compileError(std.fmt.comptimePrint(
                     "{s}.{s} expects `type`, actual: {s}",
                     .{
                         term.name,
@@ -38,25 +38,26 @@ pub const Is: Term = .{
                         @typeName(@TypeOf(actual)),
                     },
                 )),
+                else => unreachable,
             }
         }
     }.onError,
 };
 
-test Is {
-    try testing.expectEqual(true, Is.eval(bool));
-    try testing.expectEqual(true, Is.eval(usize));
-    try testing.expectEqual(true, Is.eval(i64));
-    try testing.expectEqual(true, Is.eval(f128));
-    try testing.expectEqual(true, Is.eval(struct {}));
-    try testing.expectEqual(true, Is.eval(enum {}));
-    try testing.expectEqual(true, Is.eval(union {}));
+test init {
+    try testing.expectEqual(true, init.eval(bool));
+    try testing.expectEqual(true, init.eval(usize));
+    try testing.expectEqual(true, init.eval(i64));
+    try testing.expectEqual(true, init.eval(f128));
+    try testing.expectEqual(true, init.eval(struct {}));
+    try testing.expectEqual(true, init.eval(enum {}));
+    try testing.expectEqual(true, init.eval(union {}));
 
-    try testing.expectEqual(error.InvalidType, Is.eval(@as(bool, true)));
-    try testing.expectEqual(error.InvalidType, Is.eval(@as(usize, 0)));
+    try testing.expectEqual(Error.InvalidType, init.eval(@as(bool, true)));
+    try testing.expectEqual(Error.InvalidType, init.eval(@as(usize, 0)));
     try testing.expectEqual(
-        error.InvalidType,
-        Is.eval(@as(struct {}, .{})),
+        Error.InvalidType,
+        init.eval(@as(struct {}, .{})),
     );
 }
 

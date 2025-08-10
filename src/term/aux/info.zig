@@ -9,9 +9,9 @@ const @"type" = @import("type.zig");
 /// Error set for info.
 const InfoError = error{
     /// Violates type info blacklist.
-    DisallowedInfo,
+    DisallowedType,
     /// Ignored type info whitelist.
-    UnexpectedInfo,
+    UnexpectedType,
 };
 
 /// Error set returned by `eval`.
@@ -53,13 +53,13 @@ pub const Params = struct {
 
     pub fn eval(self: Params, T: type) Error!bool {
         if (@field(self, @tagName(@typeInfo(T)))) |param| {
-            if (!param) return Error.DisallowedInfo;
+            if (!param) return Error.DisallowedType;
             return true;
         }
 
         inline for (std.meta.fields(@TypeOf(self))) |field| {
             if (@field(self, field.name)) |value| {
-                if (value) return Error.UnexpectedInfo;
+                if (value) return Error.UnexpectedType;
             }
         }
         return true;
@@ -67,8 +67,8 @@ pub const Params = struct {
 
     pub fn onError(err: anyerror, term: Term, actual: anytype) void {
         switch (err) {
-            Error.DisallowedInfo,
-            Error.UnexpectedInfo,
+            Error.DisallowedType,
+            Error.UnexpectedType,
             => @compileError(std.fmt.comptimePrint(
                 "{s}.{s}: {s}",
                 .{
@@ -90,13 +90,15 @@ pub const Params = struct {
 ///
 /// `actual` active tag of `Type` does not belong to the set param fields
 /// set to false, otherwise returns error.
-pub fn Has(params: Params) Term {
+pub fn init(params: Params) Term {
+    const validator_type = @"type".init;
+    const validator_info = params;
     return .{
         .name = "Info",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = @"type".Is.eval(actual) catch |err| return err;
-                _ = params.eval(actual) catch |err| return err;
+                _ = validator_type.eval(actual) catch |err| return err;
+                _ = validator_info.eval(actual) catch |err| return err;
                 return true;
             }
         }.eval,
@@ -104,38 +106,51 @@ pub fn Has(params: Params) Term {
             fn onError(err: anyerror, term: Term, actual: anytype) void {
                 switch (err) {
                     Error.InvalidType,
-                    => @"type".Type.onError(err, term, actual),
+                    => validator_type.onError(err, term, actual),
 
-                    Error.DisallowedInfo,
-                    Error.UnexpectedInfo,
-                    => params.onError(err, term, actual),
+                    Error.DisallowedType,
+                    Error.UnexpectedType,
+                    => validator_info.onError(err, term, actual),
                 }
             }
         }.onError,
     };
 }
 
-test Has {
-    const NumberTypes = Has(.{
+test init {
+    const number = init(.{
         .int = true,
         .float = true,
         .comptime_int = true,
         .comptime_float = true,
     });
 
-    try testing.expectEqual(true, NumberTypes.eval(usize));
-    try testing.expectEqual(true, NumberTypes.eval(i64));
-    try testing.expectEqual(true, NumberTypes.eval(f128));
     try testing.expectEqual(
-        error.UnexpectedInfo,
-        NumberTypes.eval(*comptime_int),
-    );
-    try testing.expectEqual(
-        error.UnexpectedInfo,
-        NumberTypes.eval([3]comptime_float),
+        true,
+        number.eval(usize),
     );
 
-    const NotNumberTypes = Has(.{
+    try testing.expectEqual(
+        true,
+        number.eval(i64),
+    );
+
+    try testing.expectEqual(
+        true,
+        number.eval(f128),
+    );
+
+    try testing.expectEqual(
+        Error.UnexpectedType,
+        number.eval(*comptime_int),
+    );
+
+    try testing.expectEqual(
+        Error.UnexpectedType,
+        number.eval([3]comptime_float),
+    );
+
+    const not_number = init(.{
         .int = false,
         .float = false,
         .comptime_int = false,
@@ -143,22 +158,22 @@ test Has {
     });
 
     try testing.expectEqual(
-        error.DisallowedInfo,
-        NotNumberTypes.eval(usize),
+        Error.DisallowedType,
+        not_number.eval(usize),
     );
     try testing.expectEqual(
-        error.DisallowedInfo,
-        NotNumberTypes.eval(i64),
+        Error.DisallowedType,
+        not_number.eval(i64),
     );
     try testing.expectEqual(
-        error.DisallowedInfo,
-        NotNumberTypes.eval(f128),
+        Error.DisallowedType,
+        not_number.eval(f128),
     );
 
-    try testing.expectEqual(true, NotNumberTypes.eval(*comptime_int));
-    try testing.expectEqual(true, NotNumberTypes.eval([3]comptime_float));
+    try testing.expectEqual(true, not_number.eval(*comptime_int));
+    try testing.expectEqual(true, not_number.eval([3]comptime_float));
 
-    const OnlyParameterizedTypes = Has(.{
+    const parameterized = init(.{
         .optional = true,
         .pointer = true,
         .array = true,
@@ -166,23 +181,23 @@ test Has {
     });
 
     try testing.expectEqual(
-        error.UnexpectedInfo,
-        OnlyParameterizedTypes.eval(usize),
+        Error.UnexpectedType,
+        parameterized.eval(usize),
     );
     try testing.expectEqual(
-        error.UnexpectedInfo,
-        OnlyParameterizedTypes.eval(i64),
+        Error.UnexpectedType,
+        parameterized.eval(i64),
     );
     try testing.expectEqual(
-        error.UnexpectedInfo,
-        OnlyParameterizedTypes.eval(f128),
-    );
-    try testing.expectEqual(
-        true,
-        OnlyParameterizedTypes.eval(*comptime_int),
+        Error.UnexpectedType,
+        parameterized.eval(f128),
     );
     try testing.expectEqual(
         true,
-        OnlyParameterizedTypes.eval([3]comptime_float),
+        parameterized.eval(*comptime_int),
+    );
+    try testing.expectEqual(
+        true,
+        parameterized.eval([3]comptime_float),
     );
 }

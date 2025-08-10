@@ -37,25 +37,25 @@ pub const Params = struct {
 ///
 /// `actual` type info `signedness` is equal to given `params`, otherwise
 /// returns error.
-pub fn Has(params: Params) Term {
-    const Info = info.Has(.{
+pub fn init(params: Params) Term {
+    const validator_info = info.init(.{
         .int = true,
     });
 
-    const Bits = interval.In(u16, params.bits);
+    const validator_bits = interval.init(u16, params.bits);
 
     return .{
-        .name = "IntType",
+        .name = "Int",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = Info.eval(actual) catch |err| return err;
+                _ = validator_info.eval(actual) catch |err| return err;
 
                 const actual_info = switch (@typeInfo(actual)) {
                     .int => |int_info| int_info,
                     else => unreachable,
                 };
 
-                _ = Bits.eval(actual_info.bits) catch |err| return err;
+                _ = validator_bits.eval(actual_info.bits) catch |err| return err;
 
                 if (params.signedness) |signedness| {
                     if (signedness != actual_info.signedness)
@@ -68,16 +68,16 @@ pub fn Has(params: Params) Term {
         .onError = struct {
             fn onError(err: anyerror, term: Term, actual: anytype) void {
                 switch (err) {
-                    .InvalidType,
-                    .DisallowedInfo,
-                    .DisallowedSize,
-                    => Info.onError(err, term, actual),
+                    Error.InvalidType,
+                    Error.DisallowedType,
+                    Error.DisallowedSize,
+                    => validator_info.onError(err, term, actual),
 
-                    .ExceedsMin,
-                    .ExceedsMax,
-                    => Bits.onError(err, term, actual),
+                    Error.ExceedsMin,
+                    Error.ExceedsMax,
+                    => validator_bits.onError(err, term, actual),
 
-                    .InvalidSignedness,
+                    Error.InvalidSignedness,
                     => std.fmt.comptimePrint(
                         "{s}.{s} expects {s}, actual: {s}",
                         .{
@@ -87,24 +87,26 @@ pub fn Has(params: Params) Term {
                             @typeName(actual),
                         },
                     ),
+
+                    else => unreachable,
                 }
             }
         }.onError,
     };
 }
 
-test Has {
-    const SignedInt = Has(
+test init {
+    const signed_int = init(
         .{ .signedness = .signed },
     );
 
-    try testing.expectEqual(true, SignedInt.eval(i16));
-    try testing.expectEqual(true, SignedInt.eval(i128));
+    try testing.expectEqual(true, signed_int.eval(i16));
+    try testing.expectEqual(true, signed_int.eval(i128));
     try testing.expectEqual(
-        error.InvalidSignedness,
-        SignedInt.eval(usize),
+        Error.InvalidSignedness,
+        signed_int.eval(usize),
     );
-    try testing.expectEqual(error.UnexpectedInfo, SignedInt.eval(f16));
+    try testing.expectEqual(Error.UnexpectedType, signed_int.eval(f16));
 }
 
 test {

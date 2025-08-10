@@ -18,6 +18,10 @@ const PointerError = error{
     InvalidVolatileQualifier,
     /// Violates `sentinel` assertion.
     InvalidSentinel,
+    /// Violates `child` blacklist assertion.
+    DisallowedChild,
+    /// Violates `child` whitelist assertion.
+    UnexpectedChild,
 };
 
 /// Error set returned by `eval`
@@ -54,8 +58,8 @@ const SizeParams = struct {
 
     pub fn onError(err: anyerror, term: Term, actual: anytype) void {
         switch (err) {
-            Error.DisallowedInfo,
-            Error.IgnoresValidSizes,
+            .DisallowedSize,
+            .UnexpectedSize,
             => @compileError(std.fmt.comptimePrint(
                 "{s}.{s}: {s}",
                 .{
@@ -120,23 +124,35 @@ pub const Params = struct {
 ///
 /// `actual` type info `sentinel()` is not-null when given params is true
 /// or null when given params is false, otherwise returns error.
-pub fn Has(params: Params) Term {
-    const Info = info.Has(.{
+pub fn init(params: Params) Term {
+    const validator_info = info.init(.{
         .pointer = true,
     });
 
+    const validator_child = info.init(params.child);
+
+    const validator_size = params.size;
+
     return .{
-        .name = "PointerType",
+        .name = "Pointer",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try Info.eval(actual);
+                _ = try validator_info.eval(actual);
 
                 const actual_info = switch (@typeInfo(actual)) {
                     .pointer => |pointer_info| pointer_info,
                     else => unreachable,
                 };
 
-                _ = try params.size.eval(actual_info.size);
+                _ = validator_child.eval(actual_info.child) catch |err| {
+                    return switch (err) {
+                        info.Error.DisallowedType => Error.DisallowedChild,
+                        info.Error.UnexpectedType => Error.UnexpectedChild,
+                        else => unreachable,
+                    };
+                };
+
+                _ = try validator_size.eval(actual_info.size);
 
                 if (params.is_const) |is_const| {
                     if (actual_info.is_const != is_const)
@@ -148,7 +164,13 @@ pub fn Has(params: Params) Term {
                         return Error.InvalidVolatileQualifier;
                 }
 
-                _ = try info.Has(params.child).eval(actual_info.child);
+                _ = validator_child.eval(actual_info.child) catch |err| {
+                    return switch (err) {
+                        info.Error.DisallowedType => Error.DisallowedChild,
+                        info.Error.UnexpectedType => Error.UnexpectedChild,
+                        else => unreachable,
+                    };
+                };
 
                 if (params.sentinel) |sentinel| {
                     const actual_sentinel =
@@ -168,16 +190,20 @@ pub fn Has(params: Params) Term {
         .onError = struct {
             fn onError(err: anyerror, term: Term, actual: anytype) void {
                 switch (err) {
-                    .InvalidType,
-                    .ActiveExclusion,
-                    .InactiveInclusions,
-                    => Info.onError(err, term, actual),
+                    Error.InvalidType,
+                    Error.DisallowedType,
+                    Error.UnexpectedType,
+                    => validator_info.onError(err, term, actual),
 
-                    .DisallowedSize,
-                    .UnexpectedSize,
-                    => params.size.onError(err, term, actual),
+                    Error.DisallowedChild,
+                    Error.UnexpectedChild,
+                    => validator_child.onError(err, term, actual),
 
-                    .InvalidConstQualifier,
+                    Error.DisallowedSize,
+                    Error.UnexpectedSize,
+                    => validator_size.onError(err, term, actual),
+
+                    Error.InvalidConstQualifier,
                     => std.fmt.comptimePrint(
                         "{s}.{s} expects {s}",
                         .{
@@ -189,7 +215,7 @@ pub fn Has(params: Params) Term {
                                 "const omitted",
                         },
                     ),
-                    .InvalidVolatileQualifier,
+                    Error.InvalidVolatileQualifier,
                     => std.fmt.comptimePrint(
                         "{s}.{s} expects {s}",
                         .{
@@ -201,7 +227,7 @@ pub fn Has(params: Params) Term {
                                 "volatile omitted",
                         },
                     ),
-                    .InvalidSentinel,
+                    Error.InvalidSentinel,
                     => std.fmt.comptimePrint("{s}.{s} expects {s}", .{
                         term.name,
                         @errorName(err),
@@ -210,30 +236,34 @@ pub fn Has(params: Params) Term {
                         else
                             "sentinel value omitted",
                     }),
+                    else => unreachable,
                 }
             }
         }.onError,
     };
 }
 
-test Has {
-    const ConstPointer = Has(.{
-        .is_const = true,
+test init {
+    const pointer = init(.{
+        .size = .{},
+        .is_const = null,
+        .is_volatile = null,
+        .sentinel = null,
     });
 
-    try testing.expectEqual(true, ConstPointer.eval(*const struct {}));
-    try testing.expectEqual(true, ConstPointer.eval([]const u8));
     try testing.expectEqual(
         true,
-        ConstPointer.eval([*]const @Vector(3, usize)),
+        pointer.eval(*const struct {}),
     );
+
     try testing.expectEqual(
-        error.InvalidConstQualifier,
-        ConstPointer.eval([]i16),
+        true,
+        pointer.eval([]const u8),
     );
+
     try testing.expectEqual(
-        error.InvalidConstQualifier,
-        ConstPointer.eval(*bool),
+        true,
+        pointer.eval([*]const @Vector(3, usize)),
     );
 }
 

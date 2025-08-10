@@ -5,8 +5,16 @@ const testing = std.testing;
 const Term = @import("../Term.zig");
 const info = @import("../aux/info.zig");
 
+/// Error set for optional.
+const OptionalError = error{
+    /// Violates `child` blacklist assertion.
+    DisallowedChild,
+    /// Violates `child` whitelist assertion.
+    UnexpectedChild,
+};
+
 /// Error set returned by `eval`
-pub const Error = info.Error;
+pub const Error = OptionalError || info.Error;
 
 /// Parameters for term evaluation.
 ///
@@ -19,23 +27,31 @@ pub const Params = struct {
 /// Expects optional type value.
 ///
 /// `actual` is an optional type value.
-pub fn Has(params: Params) Term {
-    const Info = info.Has(.{
+pub fn init(params: Params) Term {
+    const validator_info = info.init(.{
         .optional = true,
     });
 
+    const validator_child = info.init(params.child);
+
     return .{
-        .name = "Array",
+        .name = "Optional",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try Info.eval(actual);
+                _ = try validator_info.eval(actual);
 
                 const actual_info = switch (@typeInfo(actual)) {
                     .optional => |optional_info| optional_info,
                     else => unreachable,
                 };
 
-                _ = try info.Has(params.child).eval(actual_info.child);
+                _ = validator_child.eval(actual_info.child) catch |err| {
+                    return switch (err) {
+                        info.Error.DisallowedType => Error.DisallowedChild,
+                        info.Error.UnexpectedType => Error.UnexpectedChild,
+                        else => unreachable,
+                    };
+                };
 
                 return true;
             }
@@ -43,27 +59,35 @@ pub fn Has(params: Params) Term {
         .onError = struct {
             fn onError(err: anyerror, term: Term, actual: anytype) void {
                 switch (err) {
-                    .InvalidType,
-                    .ActiveExclusion,
-                    .InactiveInclusions,
-                    => Info.onError(err, term, actual),
+                    Error.InvalidType,
+                    Error.DisallowedSize,
+                    Error.UnexpectedSize,
+                    => validator_info.onError(err, term, actual),
+
+                    Error.DisallowedChild,
+                    Error.UnexpectedChild,
+                    => validator_child.onError(err, term, actual),
+
+                    else => unreachable,
                 }
             }
         }.onError,
     };
 }
 
-test Has {
-    const Optional = Has(.{});
+test init {
+    const optional = init(.{
+        .child = .{},
+    });
 
     try testing.expectEqual(
         true,
-        Optional.eval(?bool),
+        optional.eval(?bool),
     );
 
     try testing.expectEqual(
-        Error.UnexpectedInfo,
-        Optional.eval(bool),
+        Error.UnexpectedType,
+        optional.eval(bool),
     );
 }
 

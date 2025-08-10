@@ -6,8 +6,16 @@ const Term = @import("../Term.zig");
 const interval = @import("../aux/interval.zig");
 const info = @import("../aux/info.zig");
 
-/// Error set returned by `eval`
-pub const Error = interval.Error || info.Error;
+/// Error set for vector.
+const VectorError = error{
+    /// Violates `child` blacklist assertion.
+    DisallowedChild,
+    /// Violates `child` whitelist assertion.
+    UnexpectedChild,
+};
+
+/// Error set returned by `eval`.
+pub const Error = VectorError || interval.Error || info.Error;
 
 /// Parameters for term evaluation.
 ///
@@ -25,27 +33,37 @@ pub const Params = struct {
 /// `actual` is a vector type value.
 ///
 /// `actual` type info `len` is within given `params`.
-pub fn Has(params: Params) Term {
-    const Info = info.Has(.{
+pub fn init(params: Params) Term {
+    const validator_info = info.init(.{
         .vector = true,
     });
 
-    const Len = interval.In(comptime_int, params.len);
+    const validator_child = info.init(params.child);
+
+    const validator_len = interval.init(comptime_int, params.len);
 
     return .{
-        .name = "Array",
+        .name = "Vector",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try Info.eval(actual);
+                _ = try validator_info.eval(actual);
 
                 const actual_info = switch (@typeInfo(actual)) {
                     .vector => |vector_info| vector_info,
                     else => unreachable,
                 };
 
-                _ = try Len.eval(actual_info.len);
+                _ = validator_child.eval(actual_info.child) catch |err| {
+                    return switch (err) {
+                        info.Error.DisallowedType => Error.DisallowedChild,
+                        info.Error.UnexpectedType => Error.UnexpectedChild,
+                        else => unreachable,
+                    };
+                };
 
-                _ = try info.Has(params.child).eval(actual_info.child);
+                _ = try validator_len.eval(actual_info.len);
+
+                _ = try validator_child.eval(actual_info.child);
 
                 return true;
             }
@@ -53,18 +71,28 @@ pub fn Has(params: Params) Term {
         .onError = struct {
             fn onError(err: anyerror, term: Term, actual: anytype) void {
                 switch (err) {
-                    .InvalidType,
-                    .ActiveExclusion,
-                    .InactiveInclusions,
-                    => Info.onError(err, term, actual),
+                    Error.InvalidType,
+                    Error.DisallowedInfo,
+                    Error.UnexpectedType,
+                    => validator_info.onError(err, term, actual),
+
+                    Error.DisallowedChild,
+                    Error.UnexpectedChild,
+                    => validator_child.onError(err, term, actual),
+
+                    Error.ExceedsMin,
+                    Error.ExceedsMax,
+                    => validator_len.onError(err, term, actual),
+
+                    else => unreachable,
                 }
             }
         }.onError,
     };
 }
 
-test Has {
-    const Vector = Has(.{
+test init {
+    const Vector = init(.{
         .len = .{
             .min = null,
             .max = null,
@@ -77,7 +105,7 @@ test Has {
     );
 
     try testing.expectEqual(
-        Error.UnexpectedInfo,
+        Error.UnexpectedType,
         Vector.eval([5]u8),
     );
 }
