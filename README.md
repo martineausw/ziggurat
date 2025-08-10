@@ -39,12 +39,12 @@ ziggurat makes generous use of closures. This is done by returning function poin
 I justify using closures as it lends itself to a declarative approach which appears more sensible than an imperative approach, in that it's easier to wrap (ha) my head around and favors type safety, also I appreciate the aesthetics.
 
 ```zig
-fn foo() fn () void { // returns signature of enclosed function
+fn foo() fn () void { // Returns signature of enclosed function
     return struct {
         fn bar() void {
             ...
         }
-    }.bar // member accesing of function pointer
+    }.bar; // Accesses `bar` function pointer.
 }
 
 const bar = foo(); // @as(fn () void, bar)
@@ -55,20 +55,20 @@ const bar = foo(); // @as(fn () void, bar)
 That out of the way, hopefully this isn't terribly intimidating:
 
 ```zig
-fn foo(actual_value: anytype) Sign(some_prototype)(actual_value)(void) { ... }
+fn foo(actual_value: anytype) sign(some_prototype)(actual_value)(void) { ... }
 ```
 
 ### `Prototype` Abstract
 
-A `Prototype` is an abstract class that requires an `eval` function. `eval` is invoked by `Sign` and other `Prototype` instances.
+A `Prototype` is an abstract class that requires an `eval` function. `eval` is invoked by `sign` and other `Prototype` instances.
 
 ```zig
-const Prototype type = struct {
+const Prototype = struct {
     name: [:0]const u8,
     eval: *const fn (actual: anytype) anyerror!bool,
     onFail: ?*const fn (prototype: Prototype, actual: anytype) void = null,
     onError: ?*const fn (err: anyerror, prototype: Prototype, actual: anytype) void = null,
-}
+};
 ```
 
 #### Implementing `Prototype`
@@ -84,8 +84,8 @@ const int: Prototype = .{
                 else => false,
             };
         }
-    }.eval
-}
+    }.eval,
+};
 ```
 
 Here's an implementation that only accepts odd integer values:
@@ -98,10 +98,10 @@ const odd_int: Prototype = .{
                 .comptime_int => @mod(actual, 2) == 1,
                 .int => actual % 2 == 1,
                 else => false,
-            }
+            };
         }
-    }.eval
-}
+    }.eval,
+};
 ```
 
 Feel free to go crazy.
@@ -129,6 +129,6 @@ pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type:
             }.returns;
         }
     }.validate;
-}
+};
 
 ```
