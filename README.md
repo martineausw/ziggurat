@@ -58,7 +58,7 @@ const Term type = struct {
 Here is an example implementation of a `Term` type.
 
 ```zig
-const Int: Term = .{
+const int: Term = .{
     .eval = struct {
         fn eval(actual: anytype) !bool {
             return switch (@typeInfo(@TypeOf(actual))) {
@@ -73,7 +73,7 @@ const Int: Term = .{
 Here's an implementation that only accepts odd integer values:
 
 ```zig
-const OddInt: Term = .{
+const odd_int: Term = .{
     .eval = struct {
         fn eval(actual: anytype) bool {
             return switch (@typeInfo(@TypeOf(actual))) {
@@ -88,20 +88,20 @@ const OddInt: Term = .{
 
 Feel free to go crazy.
 
-### Sign Function
+### `sign` Function
 
-`Sign` is a function invokes the evaluation of a `Term`. Complex `Term`s are intended to be composed into a single instance.
+`sign` is a function invokes the evaluation of a `Term`. Complex `Term`s are intended to be composed into a single instance.
 
 ```zig
-pub fn Sign(T: Term) fn (actual: anytype) fn (comptime return_type: type) type {
+pub fn sign(term: Term) fn (actual: anytype) fn (comptime return_type: type) type {
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
-            if (T.eval(actual)) |result| {
-                if (!result) if (T.onFail) |onFail|
-                    onFail(T, actual);
+            if (term.eval(actual)) |result| {
+                if (!result) if (term.onFail) |onFail|
+                    onFail(term, actual);
             } else |err| {
-                if (T.onError) |onError|
-                    onError(err, T, actual);
+                if (term.onError) |onError|
+                    onError(err, term, actual);
             }
 
             return struct {

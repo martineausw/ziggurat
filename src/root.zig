@@ -7,40 +7,22 @@ pub const ops = @import("term/ops.zig");
 
 pub const Term = @import("term/Term.zig");
 
-/// Example:
-/// ```
-/// const ziggurat = @import("ziggurat");
-///
-/// const FloatOrInt = ziggurat.ops.Disjoin(
-///     ziggurat.types.int.Has(.{}),
-///     ziggurat.types.float.Has(.{}),
-/// );
-///
-/// const OnlyFloatOrInt = Sign(FloatOrInt)
-///
-/// fn foo(x: anytype) OnlyFloatOrInt(x)(void) {
-///     ...
-/// }
-/// ```
-///
-/// Implementation uses monad(?) pattern, or a series of closures. Calling is as follows:
-///
-/// ```
-/// Sign(term_value: Term)(argument_value: anytype)(function_return_type: type)
-/// ```
-///
 /// Wraps the final term and invoked at return value position of a function signature.
 ///
 /// Term must evaluate to true to continue.
-pub fn sign(T: Term) fn (actual: anytype) fn (comptime return_type: type) type {
+///
+/// Invokes `term.onFail` when `term.eval` returns `false`.
+///
+/// Invokes `term.onError` when `term.eval` returns error.
+pub fn sign(term: Term) fn (actual: anytype) fn (comptime return_type: type) type {
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
-            if (T.eval(actual)) |result| {
-                if (!result) if (T.onFail) |onFail|
-                    onFail(T, actual);
+            if (term.eval(actual)) |result| {
+                if (!result) if (term.onFail) |onFail|
+                    onFail(term, actual);
             } else |err| {
-                if (T.onError) |onError|
-                    onError(err, T, actual);
+                if (term.onError) |onError|
+                    onError(err, term, actual);
             }
 
             return struct {
@@ -54,7 +36,7 @@ pub fn sign(T: Term) fn (actual: anytype) fn (comptime return_type: type) type {
 
 test sign {
     const runtime_int: Term = .{
-        .name = "AnyRuntimeInt",
+        .name = "RuntimeInt",
         .eval = struct {
             fn eval(actual: anytype) !bool {
                 return switch (@typeInfo(@TypeOf(actual))) {

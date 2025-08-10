@@ -92,7 +92,7 @@ pub fn init(params: Params) Term {
 }
 
 test init {
-    const Vector = init(.{
+    const vector = init(.{
         .len = .{
             .min = null,
             .max = null,
@@ -101,12 +101,12 @@ test init {
 
     try testing.expectEqual(
         true,
-        Vector.eval(@Vector(5, u8)),
+        vector.eval(@Vector(5, u8)),
     );
 
     try testing.expectEqual(
         Error.UnexpectedType,
-        Vector.eval([5]u8),
+        vector.eval([5]u8),
     );
 }
 
