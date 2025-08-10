@@ -7,10 +7,12 @@ const Term = @import("../Term.zig");
 const interval = @import("../aux/interval.zig");
 const info = @import("../aux/info.zig");
 
+/// Errors returned by `eval`
 pub const Error = info.Error || interval.Error;
 
+/// Associated with `std.builtin.Type.Float`
 pub const Params = struct {
-    /// Valid bits interval for float type
+    /// Evaluates against `.bits`
     bits: interval.Params(u16) = .{},
 };
 
@@ -21,7 +23,7 @@ pub const Params = struct {
 /// `actual` type info `bits` is within given `params`, otherwise returns
 /// error.
 pub fn Has(params: Params) Term {
-    const Is = info.Has(.{
+    const Info = info.Has(.{
         .float = true,
     });
 
@@ -31,7 +33,7 @@ pub fn Has(params: Params) Term {
         .name = "FloatType",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try Is.eval(actual);
+                _ = try Info.eval(actual);
                 const actual_info = switch (@typeInfo(actual)) {
                     .float => |float_info| float_info,
                     else => unreachable,
@@ -46,7 +48,7 @@ pub fn Has(params: Params) Term {
                     .InvalidType,
                     .DisallowedInfo,
                     .UnexpectedInfo,
-                    => Is.onError(err, term, actual),
+                    => Info.onError(err, term, actual),
 
                     .ExceedsMin,
                     .ExceedsMax,

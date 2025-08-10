@@ -7,17 +7,26 @@ const Term = @import("../Term.zig");
 const interval = @import("../aux/interval.zig");
 const info = @import("../aux/info.zig");
 
+/// Error set for int
 const IntError = error{
-    /// Violated signedness preference.
+    /// Violates `signedness` assertion.
     InvalidSignedness,
 };
 
+/// Error set returned by `eval`
 const Error = IntError || interval.Error || info.Error;
 
+/// Parameters for term evaluation
+///
+/// Associated with `std.builtin.Type.Int`
 pub const Params = struct {
-    /// Valid bits interval for integer type
+    /// Evaluates against `.bits`
     bits: interval.Params(u16) = .{},
-    /// Valid signedness
+    /// Evaluates against `.signedness`
+    ///
+    /// - `null`, no assertion
+    /// - `signed`, asserts `signed`
+    /// - `unsigned`, asserts `unsigned`
     signedness: ?std.builtin.Signedness = null,
 };
 
@@ -30,7 +39,7 @@ pub const Params = struct {
 /// `actual` type info `signedness` is equal to given `params`, otherwise
 /// returns error.
 pub fn Has(params: Params) Term {
-    const Is = info.Has(.{
+    const Info = info.Has(.{
         .int = true,
     });
 
@@ -40,7 +49,7 @@ pub fn Has(params: Params) Term {
         .name = "IntType",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = Is.eval(actual) catch |err| return err;
+                _ = Info.eval(actual) catch |err| return err;
 
                 const actual_info = switch (@typeInfo(actual)) {
                     .int => |int_info| int_info,
@@ -63,7 +72,7 @@ pub fn Has(params: Params) Term {
                     .InvalidType,
                     .DisallowedInfo,
                     .DisallowedSize,
-                    => Is.onError(err, term, actual),
+                    => Info.onError(err, term, actual),
 
                     .ExceedsMin,
                     .ExceedsMax,

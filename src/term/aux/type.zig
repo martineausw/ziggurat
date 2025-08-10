@@ -1,17 +1,16 @@
 //! Auxillary term to filter for a type value.
-//! Expects type value
-//!
-//! `acutal` is type value, otherwise returns error.
 const std = @import("std");
 const testing = std.testing;
 
 const Term = @import("../Term.zig");
 
+/// Error set for type.
 const TypeError = error{
-    /// Value is not type.
+    /// Violates type value assertion.
     InvalidType,
 };
 
+/// Error set returned by `eval`
 pub const Error = TypeError;
 
 /// Expects type value.

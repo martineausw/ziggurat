@@ -6,6 +6,7 @@ const Term = @import("../Term.zig");
 
 const @"type" = @import("type.zig");
 
+/// Error set for info.
 const InfoError = error{
     /// Violated blacklisted type info tag.
     DisallowedInfo,
@@ -13,12 +14,17 @@ const InfoError = error{
     UnexpectedInfo,
 };
 
+/// Error set returned by `eval`.
 pub const Error = InfoError;
 
-/// - `null`, no preference
-/// - `true`, belongs to whitelist, at least one element of whitelist
-///   is expected, "pseudo-`union`"
-/// - `false`, belongs to blacklist, element should not be used
+/// Parameters used for term evaluation.
+///
+/// Associated with `std.builtin.Type`.
+///
+/// For any field:
+/// - `null`, no assertion.
+/// - `true`, asserts active tag belongs to subset of `true` members.
+/// - `false`, asserts active tag does not belong to subset of `false` members.
 pub const InfoParams = struct {
     type: ?bool = null,
     void: ?bool = null,

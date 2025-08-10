@@ -5,20 +5,29 @@ const testing = std.testing;
 const Term = @import("../Term.zig");
 const info = @import("info.zig");
 
+/// Error set for interval.
 const IntervalError = error{
-    /// Value is less than min.
+    /// Violates inclusive minimum value assertion.
     ExceedsMin,
-    /// Value is greater than max.
+    /// Violates inclusive maximum value assertion.
     ExceedsMax,
 };
 
+/// Error set returned by `eval`
 pub const Error = IntervalError || info.Error;
 
+/// Parameters used for term evaluation.
 pub fn Params(comptime T: type) type {
     return struct {
-        /// Inclusive minimum
+        /// Evaluates against `actual` value
+        ///
+        /// - `null`, no assertion.
+        /// - not `null`, asserts less-than-or-equal-to.
         min: ?T = null,
-        /// Inclusive maximum
+        /// Evaluates against `actual` value
+        ///
+        /// - `null`, no assertion.
+        /// - not `null`, asserts greater-than-or-equal-to.
         max: ?T = null,
 
         pub fn eval(self: Params(T), actual: T) Error!bool {

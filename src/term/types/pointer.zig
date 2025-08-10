@@ -7,25 +7,29 @@ const Term = @import("../Term.zig");
 const interval = @import("../aux/interval.zig");
 const info = @import("../aux/info.zig");
 
+/// Error set for pointer
 const PointerError = error{
-    /// Violated blacklisted size.
+    /// Violates `size` blacklist assertion.
     DisallowedSize,
-    /// Ignored whitelisted size set.
+    /// Violates `size` whitelist assertion.
     UnexpectedSize,
-    /// Violated const preference.
+    /// Violates `is_const` assertion.
     InvalidConstQualifier,
-    /// Violated volatile preference.
+    /// Violates `is_volatile` assertion.
     InvalidVolatileQualifier,
-    /// Violated sentinel preference.
+    /// Violates `sentinel` assertion.
     InvalidSentinel,
 };
 
+/// Error set returned by `eval`
 pub const Error = PointerError || interval.Error || info.Error;
 
-/// - `null`, no preference
-/// - `true`, belongs to whitelist, at least one element of whitelist
-///   is expected, "pseudo-`union`"
-/// - `false`, belongs to blacklist, element should not be used
+/// Associated with `std.builtin.Pointer.Array.Size`.
+///
+/// For any field:
+/// - `null`, no assertion
+/// - `true`, asserts active tag belongs to subset of `true` members.
+/// - `false`, asserts active tag does not belong to subset of `false` members.
 const SizeParams = struct {
     one: ?bool = null,
     many: ?bool = null,
@@ -65,19 +69,32 @@ const SizeParams = struct {
     }
 };
 
+/// Parameters for term evaluation.
+///
+/// Associated with `std.builtin.Type.Pointer`
 pub const Params = struct {
+    /// Evaluates against `.size`
     size: SizeParams = .{},
-    /// - `null`, no preference
-    /// - `true`, pointer must be `const` qualified
-    /// - `false`, pointer must _not_ be `const` qualified
+
+    /// Evaluates against `.is_const`
+    ///
+    /// - `null`, no assertion.
+    /// - `true`, asserts `true`
+    /// - `false`, asserts `false`
     is_const: ?bool = null,
-    /// - `null`, no preference
-    /// - `true`, pointer must be `volatile` qualified
-    /// - `false`, pointer must _not_ be `volatile` qualified
+
+    /// Evaluates against `.is_volatile`
+    ///
+    /// - `null`, no assertion.
+    /// - `true`, asserts `true`
+    /// - `false`, asserts `false`
     is_volatile: ?bool = null,
-    /// - `null`, no preference
-    /// - `true`, pointer must have a sentinel element
-    /// - `false`, pointer must _not_ have a sentinel element
+
+    /// Evaluates against `.sentinel()`
+    ///
+    /// - `null`, no assertion
+    /// - `true`, asserts returns not `null`
+    /// - `false`, asserts returns `null`
     sentinel: ?bool = null,
 };
 
@@ -102,7 +119,7 @@ pub const Params = struct {
 /// `actual` type info `sentinel()` is not-null when given params is true
 /// or null when given params is false, otherwise returns error.
 pub fn Has(params: Params) Term {
-    const ValidInfo = info.Has(.{
+    const Info = info.Has(.{
         .pointer = true,
     });
 
@@ -110,7 +127,7 @@ pub fn Has(params: Params) Term {
         .name = "PointerType",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try ValidInfo.eval(actual);
+                _ = try Info.eval(actual);
 
                 const actual_info = switch (@typeInfo(actual)) {
                     .pointer => |pointer_info| pointer_info,
@@ -148,7 +165,7 @@ pub fn Has(params: Params) Term {
                     .InvalidType,
                     .ActiveExclusion,
                     .InactiveInclusions,
-                    => ValidInfo.onError(err, term, actual),
+                    => Info.onError(err, term, actual),
 
                     .DisallowedSize,
                     .UnexpectedSize,
