@@ -25,7 +25,7 @@ pub const Error = InfoError;
 /// - `null`, no assertion.
 /// - `true`, asserts active tag belongs to subset of `true` members.
 /// - `false`, asserts active tag does not belong to subset of `false` members.
-pub const InfoParams = struct {
+pub const Params = struct {
     type: ?bool = null,
     void: ?bool = null,
     bool: ?bool = null,
@@ -51,7 +51,7 @@ pub const InfoParams = struct {
     vector: ?bool = null,
     enum_literal: ?bool = null,
 
-    pub fn eval(self: InfoParams, T: type) Error!bool {
+    pub fn eval(self: Params, T: type) Error!bool {
         if (@field(self, @tagName(@typeInfo(T)))) |param| {
             if (!param) return Error.DisallowedInfo;
             return true;
@@ -90,7 +90,7 @@ pub const InfoParams = struct {
 ///
 /// `actual` active tag of `Type` does not belong to the set param fields
 /// set to false, otherwise returns error.
-pub fn Has(params: InfoParams) Term {
+pub fn Has(params: Params) Term {
     return .{
         .name = "Info",
         .eval = struct {
