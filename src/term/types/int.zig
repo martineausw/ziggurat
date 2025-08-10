@@ -1,5 +1,4 @@
-//! Term to filter for runtime integer type values with parameterized
-//! bits and signedness.
+//! Term to filter for runtime integer type values.
 const std = @import("std");
 const testing = std.testing;
 

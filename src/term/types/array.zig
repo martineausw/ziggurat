@@ -1,5 +1,4 @@
-//! Term to filter for for pointer type values with parameterized size,
-//! const and volatile qualifiers, and whether a sentinel value exists.
+//! Term to filter for for array type values.
 const std = @import("std");
 const testing = std.testing;
 

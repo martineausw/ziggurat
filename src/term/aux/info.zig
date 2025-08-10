@@ -8,9 +8,9 @@ const @"type" = @import("type.zig");
 
 /// Error set for info.
 const InfoError = error{
-    /// Violated blacklisted type info tag.
+    /// Violates type info blacklist.
     DisallowedInfo,
-    /// Ignored whitelisted type info tag set.
+    /// Ignored type info whitelist.
     UnexpectedInfo,
 };
 
