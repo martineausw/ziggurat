@@ -10,7 +10,7 @@ Inspired off of [this brainstorming thread](https://ziggit.dev/t/implementing-ge
 
 The goal of ziggurat is to be able to comprehensibly define arbitrarily complex type constraints for `anytype` parameters within function signatures.
 
-Given with how the `Term` is defined, the library may also have applications writing tests.
+Given with how the `Prototype` is defined, the library may also have applications writing tests.
 
 ## Usage
 
@@ -37,28 +37,28 @@ const bar = foo(); // @as(fn () void, bar)
 That out of the way, hopefully this isn't terribly intimidating:
 
 ```zig
-fn foo(actual_value: anytype) Sign(some_term)(actual_value)(void) { ... }
+fn foo(actual_value: anytype) Sign(some_prototype)(actual_value)(void) { ... }
 ```
 
-### Term Abstract Class
+### `Prototype` Abstract
 
-A `Term` is an abstract class that requires an `eval` function. `eval` is invoked by `Sign` and other `Term` instances.
+A `Prototype` is an abstract class that requires an `eval` function. `eval` is invoked by `Sign` and other `Prototype` instances.
 
 ```zig
-const Term type = struct {
+const Prototype type = struct {
     name: [:0]const u8,
     eval: *const fn (actual: anytype) anyerror!bool,
-    onFail: ?*const fn (term: Term, actual: anytype) void = null,
-    onError: ?*const fn (err: anyerror, term: Term, actual: anytype) void = null,
+    onFail: ?*const fn (prototype: Prototype, actual: anytype) void = null,
+    onError: ?*const fn (err: anyerror, prototype: Prototype, actual: anytype) void = null,
 }
 ```
 
-#### Implementation Examples
+#### Implementing `Prototype`
 
-Here is an example implementation of a `Term` type.
+Here is an example implementation of a `Prototype` type.
 
 ```zig
-const int: Term = .{
+const int: Prototype = .{
     .eval = struct {
         fn eval(actual: anytype) !bool {
             return switch (@typeInfo(@TypeOf(actual))) {
@@ -73,7 +73,7 @@ const int: Term = .{
 Here's an implementation that only accepts odd integer values:
 
 ```zig
-const odd_int: Term = .{
+const odd_int: Prototype = .{
     .eval = struct {
         fn eval(actual: anytype) bool {
             return switch (@typeInfo(@TypeOf(actual))) {
@@ -90,18 +90,18 @@ Feel free to go crazy.
 
 ### `sign` Function
 
-`sign` is a function invokes the evaluation of a `Term`. Complex `Term`s are intended to be composed into a single instance.
+`sign` is a function invokes the evaluation of a `Prototype`. Complex `Prototype`s are intended to be composed into a single instance.
 
 ```zig
-pub fn sign(term: Term) fn (actual: anytype) fn (comptime return_type: type) type {
+pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type: type) type {
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
-            if (term.eval(actual)) |result| {
-                if (!result) if (term.onFail) |onFail|
-                    onFail(term, actual);
+            if (prototype.eval(actual)) |result| {
+                if (!result) if (prototype.onFail) |onFail|
+                    onFail(prototype, actual);
             } else |err| {
-                if (term.onError) |onError|
-                    onError(err, term, actual);
+                if (prototype.onError) |onError|
+                    onError(err, prototype, actual);
             }
 
             return struct {

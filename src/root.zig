@@ -1,28 +1,28 @@
 //! 0.14.1 microlibrary to introduce type constraints.
 const std = @import("std");
 
-pub const aux = @import("term/aux.zig");
-pub const types = @import("term/types.zig");
-pub const ops = @import("term/ops.zig");
+pub const aux = @import("prototype/aux.zig");
+pub const prototypes = @import("prototype/prototypes.zig");
+pub const ops = @import("prototype/ops.zig");
 
-pub const Term = @import("term/Term.zig");
+pub const Prototype = @import("prototype/Prototype.zig");
 
-/// Wraps the final term and invoked at return value position of a function signature.
+/// Wraps the final prototype and invoked at return value position of a function signature.
 ///
-/// Term must evaluate to true to continue.
+/// Prototype must evaluate to true to continue.
 ///
-/// Invokes `term.onFail` when `term.eval` returns `false`.
+/// Invokes `prototype.onFail` when `prototype.eval` returns `false`.
 ///
-/// Invokes `term.onError` when `term.eval` returns error.
-pub fn sign(term: Term) fn (actual: anytype) fn (comptime return_type: type) type {
+/// Invokes `prototype.onError` when `prototype.eval` returns error.
+pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type: type) type {
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
-            if (term.eval(actual)) |result| {
-                if (!result) if (term.onFail) |onFail|
-                    onFail(term, actual);
+            if (prototype.eval(actual)) |result| {
+                if (!result) if (prototype.onFail) |onFail|
+                    onFail(prototype, actual);
             } else |err| {
-                if (term.onError) |onError|
-                    onError(err, term, actual);
+                if (prototype.onError) |onError|
+                    onError(err, prototype, actual);
             }
 
             return struct {
@@ -35,7 +35,7 @@ pub fn sign(term: Term) fn (actual: anytype) fn (comptime return_type: type) typ
 }
 
 test sign {
-    const runtime_int: Term = .{
+    const runtime_int: Prototype = .{
         .name = "RuntimeInt",
         .eval = struct {
             fn eval(actual: anytype) !bool {
@@ -47,18 +47,18 @@ test sign {
         }.eval,
     };
 
-    const term_value: Term = runtime_int;
+    const prototype_value: Prototype = runtime_int;
     const argument_value: u32 = 0;
     const return_type: type = void;
 
-    _ = sign(term_value)(argument_value)(return_type);
+    _ = sign(prototype_value)(argument_value)(return_type);
 
-    const signed = sign(term_value);
+    const signed = sign(prototype_value);
     _ = signed(argument_value)(return_type);
 }
 
-test Term {
-    const always_true: Term = .{
+test Prototype {
+    const always_true: Prototype = .{
         .name = "AlwaysTrue",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -67,7 +67,7 @@ test Term {
         }.eval,
     };
 
-    const always_false: Term = .{
+    const always_false: Prototype = .{
         .name = "AlwaysFalse",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -75,13 +75,13 @@ test Term {
             }
         }.eval,
         .onFail = struct {
-            fn onFail(term: Term, _: anytype) void {
-                std.log.err(term.name);
+            fn onFail(prototype: Prototype, _: anytype) void {
+                std.log.err(prototype.name);
             }
         }.onFail,
     };
 
-    const always_error: Term = .{
+    const always_error: Prototype = .{
         .name = "AlwaysError",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -89,8 +89,8 @@ test Term {
             }
         }.eval,
         .onError = struct {
-            fn onError(err: anyerror, term: Term, _: anytype) void {
-                @compileError(term.name ++ ": " ++ @errorName(err));
+            fn onError(err: anyerror, prototype: Prototype, _: anytype) void {
+                @compileError(prototype.name ++ ": " ++ @errorName(err));
             }
         }.onError,
     };
@@ -101,7 +101,7 @@ test Term {
 }
 
 test ops {
-    const always_true: Term = .{
+    const always_true: Prototype = .{
         .name = "AlwaysTrue",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -110,7 +110,7 @@ test ops {
         }.eval,
     };
 
-    const always_false: Term = .{
+    const always_false: Prototype = .{
         .name = "AlwaysFalse",
         .eval = struct {
             fn eval(_: anytype) !bool {
@@ -118,8 +118,8 @@ test ops {
             }
         }.eval,
         .onFail = struct {
-            fn onFail(term: Term, _: anytype) void {
-                std.log.err(term.name);
+            fn onFail(prototype: Prototype, _: anytype) void {
+                std.log.err(prototype.name);
             }
         }.onFail,
     };
@@ -133,21 +133,21 @@ test ops {
     try std.testing.expectEqual(true, not_false.eval(void));
 }
 
-test types {
-    const int = types.Int.init(.{
+test prototypes {
+    const int = prototypes.Int.init(.{
         .bits = .{
             .min = null,
             .max = null,
         },
         .signedness = null,
     });
-    const float = types.Float.init(.{
+    const float = prototypes.Float.init(.{
         .bits = .{
             .min = null,
             .max = null,
         },
     });
-    const pointer = types.Pointer.init(.{
+    const pointer = prototypes.Pointer.init(.{
         .is_const = null,
         .is_volatile = null,
         .sentinel = null,
