@@ -14,19 +14,22 @@ The goal of ziggurat is to be able to comprehensibly define arbitrarily complex 
 
 ### Remote repository
 
-From terminal:
-
-```
+```bash
 zig fetch --save git+https://github.com/martineausw/ziggurat.git
 ```
 
 ### Local directory
 
-From terminal:
-
-```
+```bash
 cd /path/to/clone/
-git clone https://github.com/martineausw/ziggurat.git
+
+# either start
+git clone https://github.com/martineausw/ziggurat.git # via HTTPS
+git clone git@github.com:martineausw/ziggurat.git # via SSH
+# either end
+
+cd /path/to/zig/project
+
 zig fetch --save /path/to/clone/ziggurat/
 ```
 
