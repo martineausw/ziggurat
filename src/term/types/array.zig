@@ -17,15 +17,17 @@ const ArrayError = error{
 pub const Error = ArrayError || interval.Error || info.Error;
 
 /// Parameters for term evaluation.
+///
+/// Associated with `std.builtin.Type.Array`.
 pub const Params = struct {
-    /// Evaluates against `std.builtin.Array.len`
+    /// Evaluates against `.len`
     len: interval.Params(comptime_int) = .{},
 
-    /// Evaluates against `std.builtin.Array.sentinel()`
+    /// Evaluates against `.sentinel()`.
     ///
-    /// - `null`, no assertion
-    /// - `true`, asserts not `null`
-    /// - `false`, asserts `null`
+    /// - `null`, no assertion.
+    /// - `true`, asserts not `null`.
+    /// - `false`, asserts `null`.
     sentinel: ?bool = null,
 };
 
