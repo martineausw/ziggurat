@@ -16,6 +16,9 @@ pub const Error = interval.Error || info.Error;
 pub const Params = struct {
     /// Evaluates against `.len`.
     len: interval.Params(comptime_int) = .{},
+
+    /// Evaluates against `.child`
+    child: info.Params = .{},
 };
 
 /// Expects vector type value.
@@ -42,6 +45,8 @@ pub fn Has(params: Params) Term {
                 };
 
                 _ = try Len.eval(actual_info.len);
+
+                _ = try info.Has(params.child).eval(actual_info.child);
 
                 return true;
             }

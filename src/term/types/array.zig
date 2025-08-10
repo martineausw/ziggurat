@@ -23,6 +23,9 @@ pub const Params = struct {
     /// Evaluates against `.len`
     len: interval.Params(comptime_int) = .{},
 
+    /// Evaluates against `.child`
+    child: info.Params = .{},
+
     /// Evaluates against `.sentinel()`.
     ///
     /// - `null`, no assertion.

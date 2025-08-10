@@ -96,6 +96,9 @@ pub const Params = struct {
     /// - `true`, asserts returns not `null`
     /// - `false`, asserts returns `null`
     sentinel: ?bool = null,
+
+    /// Evaluates against `.child`
+    child: info.Params = .{},
 };
 
 /// Expects pointer type value.
@@ -140,10 +143,14 @@ pub fn Has(params: Params) Term {
                     if (actual_info.is_const != is_const)
                         return Error.InvalidConstQualifier;
                 }
+
                 if (params.is_volatile) |is_const| {
                     if (actual_info.is_const != is_const)
                         return Error.InvalidVolatileQualifier;
                 }
+
+                _ = try info.Has(params.child).eval(actual_info.child);
+
                 if (params.sentinel) |sentinel| {
                     const actual_sentinel =
                         if (actual_info.sentinel()) |_| {
