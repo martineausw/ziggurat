@@ -10,7 +10,25 @@ Inspired off of [this brainstorming thread](https://ziggit.dev/t/implementing-ge
 
 The goal of ziggurat is to be able to comprehensibly define arbitrarily complex type constraints for `anytype` parameters within function signatures.
 
-Given with how the `Prototype` is defined, the library may also have applications writing tests.
+## Installation
+
+### Remote repository
+
+From terminal:
+
+```
+zig fetch --save git+https://github.com/martineausw/ziggurat.git
+```
+
+### Local directory
+
+From terminal:
+
+```
+cd /path/to/clone/
+git clone https://github.com/martineausw/ziggurat.git
+zig fetch --save /path/to/clone/ziggurat/
+```
 
 ## Usage
 
