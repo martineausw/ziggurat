@@ -76,6 +76,8 @@ const SizeParams = struct {
 ///
 /// Associated with `std.builtin.Type.Pointer`
 pub const Params = struct {
+    /// Evaluates against `.child`
+    child: info.Params = .{},
     /// Evaluates against `.size`
     size: SizeParams = .{},
 
@@ -99,9 +101,6 @@ pub const Params = struct {
     /// - `true`, asserts returns not `null`
     /// - `false`, asserts returns `null`
     sentinel: ?bool = null,
-
-    /// Evaluates against `.child`
-    child: info.Params = .{},
 };
 
 /// Expects pointer type value.
