@@ -1,4 +1,4 @@
-//! Prototype to filter for pointer type values.
+//! Prototype for pointer type values.
 const std = @import("std");
 const testing = std.testing;
 
