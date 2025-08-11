@@ -1,4 +1,4 @@
-//! Prototype to filter for for array type values.
+//! Prototype for array type values.
 const std = @import("std");
 const testing = std.testing;
 

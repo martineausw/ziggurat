@@ -1,4 +1,4 @@
-//! Prototype to filter for runtime float type values.
+//! Prototype for runtime float type values.
 const std = @import("std");
 const testing = std.testing;
 

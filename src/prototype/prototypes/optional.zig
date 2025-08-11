@@ -1,4 +1,4 @@
-//! Prototype to filter for optional type values.
+//! Prototype for optional type values.
 const std = @import("std");
 const testing = std.testing;
 

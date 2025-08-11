@@ -1,4 +1,4 @@
-//! Prototype to filter for vector type values.
+//! Prototype for vector type values.
 const std = @import("std");
 const testing = std.testing;
 

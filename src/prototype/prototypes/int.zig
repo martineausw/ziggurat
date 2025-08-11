@@ -1,4 +1,4 @@
-//! Prototype to filter for runtime integer type values.
+//! Prototype for runtime integer type values.
 const std = @import("std");
 const testing = std.testing;
 

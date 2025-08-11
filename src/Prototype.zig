@@ -1,5 +1,7 @@
-//! Validates an argument intended to be used by `Sign` at function return
-//! value or tests
+//! Validates an argument intended to be used by `sign` at function return
+//! value or tests.
+const std = @import("std");
+const testing = std.testing;
 
 /// Name to be used for messages.
 name: [:0]const u8,
@@ -16,9 +18,6 @@ onError: ?*const fn (
 
 /// Callback triggered by `Sign` when `eval` returns `false`.
 onFail: ?*const fn (prototype: @This(), actual: anytype) void = null,
-
-const std = @import("std");
-const testing = std.testing;
 
 test {
     const int: @This() = .{
