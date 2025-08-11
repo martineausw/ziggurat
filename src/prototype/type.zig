@@ -1,9 +1,6 @@
 //! Prototype for `type` value with `type` type info.
 //!
-//! `eval` asserts vector type within parameters:
-//!
-//! - `child`, type info filter assertion.
-//! - `len`, type info interval assertion.
+//! `eval` asserts `type` type value.
 const std = @import("std");
 
 const Prototype = @import("Prototype.zig");

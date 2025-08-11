@@ -1,3 +1,6 @@
+//! Prototype for `type` value with bool type info.
+//!
+//! `eval` asserts `bool` type value.
 const std = @import("std");
 
 const Prototype = @import("Prototype.zig");

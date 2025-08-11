@@ -86,7 +86,7 @@ test Params {
 /// Given type `T` is integer type, otherwise returns error.
 ///
 /// `actual` is greater-than-or-equal-to given `params.min`, otherwise
-/// error.
+/// returns error.
 ///
 /// `actual` is less-than-or-equal-to given `params.max`, otherwise returns
 /// error.
