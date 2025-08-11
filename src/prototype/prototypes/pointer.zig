@@ -245,6 +245,7 @@ pub fn init(params: Params) Prototype {
 
 test init {
     const pointer = init(.{
+        .child = .{},
         .size = .{},
         .is_const = null,
         .is_volatile = null,

@@ -93,6 +93,7 @@ pub fn init(params: Params) Prototype {
 
 test init {
     const vector = init(.{
+        .child = .{},
         .len = .{
             .min = null,
             .max = null,

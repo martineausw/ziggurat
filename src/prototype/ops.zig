@@ -21,8 +21,8 @@ pub fn negate(prototype: Prototype) Prototype {
 }
 
 test negate {
-    const always_true: Prototype = .{
-        .name = "AlwaysTrue",
+    const @"true": Prototype = .{
+        .name = "True",
         .eval = struct {
             fn eval(_: anytype) anyerror!bool {
                 return true;
@@ -30,7 +30,7 @@ test negate {
         }.eval,
     };
 
-    try testing.expect(false == try negate(always_true).eval(void));
+    try testing.expect(false == try negate(@"true").eval(void));
 }
 
 const ConjoinError = error{FalseResult};
@@ -89,16 +89,16 @@ pub fn conjoin(prototype0: Prototype, prototype1: Prototype) Prototype {
 }
 
 test conjoin {
-    const always_true: Prototype = .{
-        .name = "AlwaysTrue",
+    const @"true": Prototype = .{
+        .name = "True",
         .eval = struct {
             fn eval(_: anytype) !bool {
                 return true;
             }
         }.eval,
     };
-    const always_false: Prototype = .{
-        .name = "AlwaysFalse",
+    const @"false": Prototype = .{
+        .name = "False",
         .eval = struct {
             fn eval(_: anytype) !bool {
                 return false;
@@ -108,11 +108,11 @@ test conjoin {
 
     try testing.expectEqual(
         true,
-        conjoin(always_true, always_true).eval(void),
+        conjoin(@"true", @"true").eval(void),
     );
     try testing.expectEqual(
         false,
-        conjoin(always_true, always_false).eval(void),
+        conjoin(@"true", @"false").eval(void),
     );
 }
 
@@ -170,16 +170,16 @@ pub fn disjoin(prototype0: Prototype, prototype1: Prototype) Prototype {
 }
 
 test disjoin {
-    const always_true: Prototype = .{
-        .name = "AlwaysTrue",
+    const @"true": Prototype = .{
+        .name = "true",
         .eval = struct {
             fn eval(_: anytype) !bool {
                 return true;
             }
         }.eval,
     };
-    const always_false: Prototype = .{
-        .name = "AlwaysFalse",
+    const @"false": Prototype = .{
+        .name = "false",
         .eval = struct {
             fn eval(_: anytype) !bool {
                 return false;
@@ -189,15 +189,15 @@ test disjoin {
 
     try testing.expectEqual(
         true,
-        disjoin(always_true, always_true).eval(void),
+        disjoin(@"true", @"true").eval(void),
     );
     try testing.expectEqual(
         true,
-        disjoin(always_true, always_false).eval(void),
+        disjoin(@"true", @"false").eval(void),
     );
     try testing.expectEqual(
         false,
-        disjoin(always_false, always_false).eval(void),
+        disjoin(@"false", @"false").eval(void),
     );
 }
 

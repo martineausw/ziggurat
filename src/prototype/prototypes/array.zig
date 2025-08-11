@@ -125,6 +125,7 @@ pub fn init(params: Params) Prototype {
 
 test init {
     const array = init(.{
+        .child = .{},
         .len = .{
             .min = null,
             .max = null,

@@ -44,15 +44,21 @@ I justify using closures as it lends itself to a declarative approach which appe
 ```zig
 fn foo() fn () void { // Returns signature of enclosed function
     return struct {
-        fn bar() void {
-            ...
-        }
+        fn bar() void {}
     }.bar; // Accesses `bar` function pointer.
 }
 
-const bar = foo(); // @as(fn () void, bar)
+const bar: *const fn () void = foo();
 
 // These are all equivalent: bar() == foo()() == void
+
+test "closure equality" {
+    try std.testing.expectEqual(*const fn () void, @TypeOf(bar));
+    try std.testing.expectEqual(bar, foo());
+    try std.testing.expectEqual(void, @TypeOf(bar()));
+    try std.testing.expectEqual(bar(), foo()());
+}
+
 ```
 
 That out of the way, hopefully this isn't terribly intimidating:

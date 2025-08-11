@@ -14,8 +14,8 @@ const std = @import("std");
 const testing = std.testing;
 
 test {
-    const runtime_int: @This() = .{
-        .name = "RuntimeInt",
+    const int: @This() = .{
+        .name = "Int",
         .eval = struct {
             fn eval(actual: anytype) !bool {
                 return switch (@typeInfo(@TypeOf(actual))) {
@@ -26,8 +26,8 @@ test {
         }.eval,
     };
 
-    const boolean: @This() = .{
-        .name = "bool",
+    const @"bool": @This() = .{
+        .name = "Bool",
         .eval = struct {
             fn eval(actual: anytype) !bool {
                 return switch (@typeInfo(@TypeOf(actual))) {
@@ -38,11 +38,11 @@ test {
         }.eval,
     };
 
-    try testing.expect(true == try runtime_int.eval(@as(u32, 0)));
-    try testing.expect(false == try runtime_int.eval(@as(bool, false)));
+    try testing.expect(true == try int.eval(@as(u32, 0)));
+    try testing.expect(false == try int.eval(@as(bool, false)));
 
-    try testing.expect(false == try boolean.eval(@as(u32, 0)));
-    try testing.expect(true == try boolean.eval(@as(bool, false)));
+    try testing.expect(false == try @"bool".eval(@as(u32, 0)));
+    try testing.expect(true == try @"bool".eval(@as(bool, false)));
 }
 
 test {
