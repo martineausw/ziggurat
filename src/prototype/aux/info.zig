@@ -2,7 +2,7 @@
 const std = @import("std");
 const testing = std.testing;
 
-const Prototype = @import("../Prototype.zig");
+const Prototype = @import("../../Prototype.zig");
 
 const @"type" = @import("type.zig");
 

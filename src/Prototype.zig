@@ -1,13 +1,20 @@
-//! Validates an argument intended to be used by `Sign`
-//! at function return value or tests
+//! Validates an argument intended to be used by `Sign` at function return
+//! value or tests
 
-/// Name to be used for messages
+/// Name to be used for messages.
 name: [:0]const u8,
-/// Evaluates value, returns an error or false on failure conditions
+
+/// Evaluates `actual`, returns an error or `false` on failure conditions.
 eval: *const fn (actual: anytype) anyerror!bool,
-/// Callback triggered by `Sign` when `eval` returns an error
-onError: ?*const fn (err: anyerror, prototype: @This(), actual: anytype) void = null,
-/// Callback triggered by `Sign` when `eval` returns false
+
+/// Callback triggered by `Sign` when `eval` returns an error.
+onError: ?*const fn (
+    err: anyerror,
+    prototype: @This(),
+    actual: anytype,
+) void = null,
+
+/// Callback triggered by `Sign` when `eval` returns `false`.
 onFail: ?*const fn (prototype: @This(), actual: anytype) void = null,
 
 const std = @import("std");
