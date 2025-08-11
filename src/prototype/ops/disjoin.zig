@@ -2,7 +2,7 @@
 const std = @import("std");
 const testing = std.testing;
 
-const Prototype = @import("../../Prototype.zig");
+const Prototype = @import("../Prototype.zig");
 
 /// Boolean OR of `prototype0` and `prototype1`
 pub fn disjoin(prototype0: Prototype, prototype1: Prototype) Prototype {

@@ -2,7 +2,7 @@
 const std = @import("std");
 const testing = std.testing;
 
-const Prototype = @import("../../Prototype.zig");
+const Prototype = @import("../Prototype.zig");
 const info = @import("info.zig");
 
 /// Error set for interval.
@@ -15,6 +15,15 @@ const IntervalError = error{
 
 /// Error set returned by `eval`
 pub const Error = IntervalError || info.Error;
+
+test Error {
+    _ = Error.InvalidType catch void;
+    _ = Error.DisallowedType catch void;
+    _ = Error.UnexpectedType catch void;
+
+    _ = Error.ExceedsMin catch void;
+    _ = Error.ExceedsMax catch void;
+}
 
 /// Parameters used for prototype evaluation.
 pub fn Params(comptime T: type) type {
@@ -61,6 +70,15 @@ pub fn Params(comptime T: type) type {
             ));
         }
     };
+}
+
+test Params {
+    const params: Params(comptime_int) = .{
+        .min = null,
+        .max = null,
+    };
+
+    _ = params;
 }
 
 /// Expects integer value.
@@ -118,8 +136,4 @@ test init {
     try testing.expectEqual(true, usize_interval.eval(1));
     try testing.expectEqual(true, usize_interval.eval(2));
     try testing.expectEqual(Error.ExceedsMax, usize_interval.eval(3));
-}
-
-test {
-    std.testing.refAllDecls(@This());
 }

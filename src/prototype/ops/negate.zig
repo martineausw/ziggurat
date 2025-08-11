@@ -2,7 +2,7 @@
 const std = @import("std");
 const testing = std.testing;
 
-const Prototype = @import("../../Prototype.zig");
+const Prototype = @import("../Prototype.zig");
 
 /// Boolean NOT of given `prototype`
 pub fn negate(prototype: Prototype) Prototype {

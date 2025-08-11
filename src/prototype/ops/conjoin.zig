@@ -2,7 +2,7 @@
 const std = @import("std");
 const testing = std.testing;
 
-const Prototype = @import("../../Prototype.zig");
+const Prototype = @import("../Prototype.zig");
 
 /// Boolean AND of given `prototype0` and `prototype1`
 pub fn conjoin(prototype0: Prototype, prototype1: Prototype) Prototype {

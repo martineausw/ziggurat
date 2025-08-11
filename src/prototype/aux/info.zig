@@ -2,9 +2,9 @@
 const std = @import("std");
 const testing = std.testing;
 
-const Prototype = @import("../../Prototype.zig");
+const Prototype = @import("../Prototype.zig");
 
-const @"type" = @import("type.zig");
+const @"type" = @import("../type.zig");
 
 /// Error set for info.
 const InfoError = error{
@@ -15,7 +15,13 @@ const InfoError = error{
 };
 
 /// Error set returned by `eval`.
-pub const Error = InfoError;
+pub const Error = InfoError || @"type".Error;
+
+test Error {
+    _ = Error.InvalidType catch void;
+    _ = Error.DisallowedType catch void;
+    _ = Error.UnexpectedType catch void;
+}
 
 /// Parameters used for prototype evaluation.
 ///
@@ -81,6 +87,37 @@ pub const Params = struct {
     }
 };
 
+test Params {
+    const info_params: Params = .{
+        .type = null,
+        .void = null,
+        .bool = null,
+        .noreturn = null,
+        .int = null,
+        .float = null,
+        .pointer = null,
+        .array = null,
+        .@"struct" = null,
+        .comptime_float = null,
+        .comptime_int = null,
+        .undefined = null,
+        .null = null,
+        .optional = null,
+        .error_union = null,
+        .error_set = null,
+        .@"enum" = null,
+        .@"union" = null,
+        .@"fn" = null,
+        .@"opaque" = null,
+        .frame = null,
+        .@"anyframe" = null,
+        .vector = null,
+        .enum_literal = null,
+    };
+
+    _ = info_params;
+}
+
 /// Expects type value.
 ///
 /// `actual` is a type value, otherwise returns error from `IsType`.
@@ -91,14 +128,13 @@ pub const Params = struct {
 /// `actual` active tag of `Type` does not belong to the set param fields
 /// set to false, otherwise returns error.
 pub fn init(params: Params) Prototype {
-    const validator_type = @"type".init;
-    const validator_info = params;
+    const type_validator = @"type".init;
     return .{
         .name = "Info",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = validator_type.eval(actual) catch |err| return err;
-                _ = validator_info.eval(actual) catch |err| return err;
+                _ = try type_validator.eval(actual);
+                _ = try params.eval(actual);
                 return true;
             }
         }.eval,
@@ -106,11 +142,11 @@ pub fn init(params: Params) Prototype {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
                     Error.InvalidType,
-                    => validator_type.onError(err, prototype, actual),
+                    => type_validator.onError(err, prototype, actual),
 
                     Error.DisallowedType,
                     Error.UnexpectedType,
-                    => validator_info.onError(err, prototype, actual),
+                    => params.onError(err, prototype, actual),
                 }
             }
         }.onError,

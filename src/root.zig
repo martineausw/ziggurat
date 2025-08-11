@@ -5,7 +5,7 @@ pub const Prototype = @import("Prototype.zig");
 pub const sign = @import("sign.zig").sign;
 
 pub const aux = @import("prototype/aux.zig");
-pub const prototypes = @import("prototype/prototypes.zig");
+pub const prototype = @import("prototype.zig");
 pub const ops = @import("prototype/ops.zig");
 
 test {

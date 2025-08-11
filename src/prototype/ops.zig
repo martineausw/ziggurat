@@ -10,6 +10,14 @@ pub const disjoin = @import("ops/disjoin.zig").disjoin;
 /// Asserts boolean NOT of a prototype evaluation result.
 pub const negate = @import("ops/negate.zig").negate;
 
-test {
-    std.testing.refAllDecls(@This());
+test conjoin {
+    _ = conjoin;
+}
+
+test disjoin {
+    _ = disjoin;
+}
+
+test negate {
+    _ = negate;
 }

@@ -1,5 +1,5 @@
 ///! `sign` definition.
-const Prototype = @import("Prototype.zig");
+const Prototype = @import("prototype/Prototype.zig");
 
 /// Wraps the final prototype and invoked at return value position of a function signature.
 ///
