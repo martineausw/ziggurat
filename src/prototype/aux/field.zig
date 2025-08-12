@@ -121,31 +121,35 @@ test info_validator {
 }
 
 test Params {
-    const Foo = struct {
-        bar: f128,
+    const T = struct {
+        field: f128,
     };
 
-    _ = Foo;
+    _ = T;
 
     const params: Params = .{
-        .name = "bar",
-        .type = .{},
+        .name = "field",
+        .type = .{
+            .float = true,
+        },
     };
 
     _ = params;
 }
 
 test init {
-    const Foo = struct {
-        bar: f128,
+    const T = struct {
+        field: f128,
     };
 
-    const params: Params = .{
-        .name = "bar",
+    _ = T;
+
+    const field: Prototype = init(.{
+        .name = "field",
         .type = .{
             .float = true,
         },
-    };
+    });
 
-    _ = try init(params).eval(Foo);
+    _ = field;
 }

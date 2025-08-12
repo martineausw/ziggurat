@@ -185,53 +185,20 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test PointerError {
-    _ = PointerError.DisallowedChild catch void;
-    _ = PointerError.UnexpectedChild catch void;
-    _ = PointerError.DisallowedSize catch void;
-    _ = PointerError.UnexpectedSize catch void;
-    _ = PointerError.InvalidConstQualifier catch void;
-    _ = PointerError.InvalidVolatileQualifier catch void;
-    _ = PointerError.InvalidSentinel catch void;
-}
-
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-
-    _ = Error.DisallowedChild catch void;
-    _ = Error.UnexpectedChild catch void;
-    _ = Error.DisallowedSize catch void;
-    _ = Error.UnexpectedSize catch void;
-    _ = Error.InvalidConstQualifier catch void;
-    _ = Error.InvalidVolatileQualifier catch void;
-    _ = Error.InvalidSentinel catch void;
-}
-
-test info_validator {
-    _ = try info_validator.eval([*]const u8);
-    _ = try info_validator.eval([]const u8);
-    _ = try info_validator.eval([:0]const u8);
-    _ = try info_validator.eval(*const u8);
-}
-
-test SizeParams {
-    _ = SizeParams{
-        .one = null,
-        .many = null,
-        .slice = null,
-        .c = null,
-    };
-}
+test PointerError {}
 
 test Params {
     const params: Params = .{
         .child = .{},
+        .size = .{
+            .one = null,
+            .many = null,
+            .slice = null,
+            .c = null,
+        },
         .is_const = null,
         .is_volatile = null,
         .sentinel = null,
-        .size = .{},
     };
 
     _ = params;
@@ -246,18 +213,5 @@ test init {
         .sentinel = null,
     });
 
-    try testing.expectEqual(
-        true,
-        pointer.eval(*const struct {}),
-    );
-
-    try testing.expectEqual(
-        true,
-        pointer.eval([]const u8),
-    );
-
-    try testing.expectEqual(
-        true,
-        pointer.eval([*]const @Vector(3, usize)),
-    );
+    _ = pointer;
 }

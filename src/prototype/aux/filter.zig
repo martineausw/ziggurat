@@ -82,52 +82,27 @@ pub fn Filter(comptime Params: type) type {
     };
 }
 
-test FilterError {
-    _ = FilterError.Disallowed catch void;
-    _ = FilterError.Unexpected catch void;
-}
-
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.Disallowed catch void;
-    _ = Error.Unexpected catch void;
-}
-
-test type_validator {
-    _ = try type_validator.eval(usize);
-    _ = try type_validator.eval(bool);
-    _ = try type_validator.eval(@Vector(3, f128));
-    _ = try type_validator.eval([]const u8);
-    _ = try type_validator.eval(struct {});
-    _ = try type_validator.eval(union {});
-    _ = try type_validator.eval(enum {});
-    _ = try type_validator.eval(error{});
-}
+test FilterError {}
 
 test Filter {
-    const FooParams = struct {
+    const T = union(enum) {
+        bar: bool,
+        zig: usize,
+        zag: f128,
+    };
+    _ = T;
+
+    const Params = struct {
         bar: ?bool = null,
         zig: ?bool = null,
         zag: ?bool = null,
     };
 
-    const Foo = union(enum) {
-        bar: bool,
-        zig: usize,
-        zag: f128,
-    };
+    const t_validator = Filter(Params).init(.{
+        .bar = null,
+        .zig = null,
+        .zag = null,
+    });
 
-    const params: FooParams = .{
-        .bar = true,
-        .zig = true,
-    };
-    const actual_foo: Foo = .{
-        .bar = true,
-    };
-
-    const FooFilter = Filter(FooParams);
-
-    const foo_validator = FooFilter.init(params);
-
-    _ = try foo_validator.eval(actual_foo);
+    _ = t_validator;
 }

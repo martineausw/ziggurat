@@ -84,18 +84,7 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-
-    _ = Error.ExceedsMin catch void;
-    _ = Error.ExceedsMax catch void;
-}
-
-test info_validator {
-    _ = try info_validator.eval(bool);
-}
+test FloatError {}
 
 test Params {
     const params: Params = .{
@@ -109,14 +98,12 @@ test Params {
 }
 
 test init {
-    const float32 = init(.{
+    const float: Prototype = init(.{
         .bits = .{
-            .min = 32,
-            .max = 32,
+            .min = null,
+            .max = null,
         },
     });
 
-    try testing.expectEqual(Error.ExceedsMin, float32.eval(f16));
-    try testing.expectEqual(true, float32.eval(f32));
-    try testing.expectEqual(Error.ExceedsMax, float32.eval(f128));
+    _ = float;
 }

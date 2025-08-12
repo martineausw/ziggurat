@@ -60,3 +60,17 @@ pub fn init(params: Params) Prototype {
         }.onError,
     };
 }
+
+test ToggleError {}
+
+test Params {
+    const params: Params = null;
+
+    _ = params;
+}
+
+test init {
+    const toggle = init(null);
+
+    _ = toggle;
+}

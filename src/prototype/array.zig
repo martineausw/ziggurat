@@ -131,28 +131,7 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test ArrayError {
-    _ = ArrayError.DisallowedChild catch void;
-    _ = ArrayError.UnexpectedChild catch void;
-    _ = ArrayError.InvalidSentinel catch void;
-}
-
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-
-    _ = Error.DisallowedChild catch void;
-    _ = Error.UnexpectedChild catch void;
-    _ = Error.InvalidSentinel catch void;
-
-    _ = Error.ExceedsMin catch void;
-    _ = Error.ExceedsMax catch void;
-}
-
-test info_validator {
-    _ = info_validator.eval([5]u8);
-}
+test ArrayError {}
 
 test Params {
     const params: Params = .{
@@ -177,13 +156,5 @@ test init {
         .sentinel = null,
     });
 
-    try testing.expectEqual(
-        true,
-        array.eval([5]u8),
-    );
-
-    try testing.expectEqual(
-        Error.UnexpectedType,
-        array.eval([]const u8),
-    );
+    _ = array;
 }

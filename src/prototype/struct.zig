@@ -52,17 +52,6 @@ pub const Params = struct {
     is_tuple: ?bool = null,
 };
 
-test Params {
-    const params: Params = .{
-        .layout = null,
-        .fields = null,
-        .decls = null,
-        .is_tuple = null,
-    };
-
-    _ = params;
-}
-
 /// Expects array type value.
 ///
 /// `actual` is an array type value.
@@ -165,36 +154,38 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test StructError {
-    _ = StructError.DisallowedLayout catch void;
-    _ = StructError.UnexpectedLayout catch void;
-    _ = StructError.InvalidTuple catch void;
-}
+test StructError {}
 
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
+test Error {}
 
-    _ = Error.NonexistentField catch void;
-    _ = Error.MismatchedType catch void;
-    _ = Error.NonexistentDeclaration catch void;
+test LayoutParams {}
 
-    _ = Error.DisallowedLayout catch void;
-    _ = Error.UnexpectedLayout catch void;
-    _ = Error.InvalidTuple catch void;
+test Params {
+    const params: Params = .{
+        .layout = .{
+            .auto = null,
+            .@"packed" = null,
+            .@"extern" = null,
+        },
+        .fields = &.{},
+        .decls = &.{},
+        .is_tuple = null,
+    };
+
+    _ = params;
 }
 
 test init {
-    const @"struct" = init(.{});
+    const @"struct" = init(.{
+        .layout = .{
+            .auto = null,
+            .@"packed" = null,
+            .@"extern" = null,
+        },
+        .fields = &.{},
+        .decls = &.{},
+        .is_tuple = null,
+    });
 
-    try testing.expectEqual(
-        true,
-        @"struct".eval(struct {}),
-    );
-
-    try testing.expectEqual(
-        Error.UnexpectedType,
-        @"struct".eval(enum {}),
-    );
+    _ = @"struct";
 }

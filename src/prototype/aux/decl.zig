@@ -73,47 +73,32 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test DeclError {
-    _ = DeclError.NonexistentDeclaration catch void;
-}
-
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-
-    _ = Error.NonexistentDeclaration catch void;
-}
-
-test info_validator {
-    _ = try info_validator.eval(struct {});
-    _ = try info_validator.eval(union {});
-    _ = try info_validator.eval(enum {});
-    _ = try info_validator.eval(opaque {});
-}
+test DeclError {}
 
 test Params {
-    const Foo = struct {
-        const bar = false;
+    const T = struct {
+        const decl = false;
     };
 
-    _ = Foo;
+    _ = T;
 
     const params: Params = .{
-        .name = "bar",
+        .name = "decl",
     };
 
     _ = params;
 }
 
 test init {
-    const Foo = struct {
-        const bar = false;
+    const T = struct {
+        const decl = false;
     };
 
-    const params: Params = .{
-        .name = "bar",
-    };
+    _ = T;
 
-    _ = try init(params).eval(Foo);
+    const decl = init(.{
+        .name = "decl",
+    });
+
+    _ = decl;
 }

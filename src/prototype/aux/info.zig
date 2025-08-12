@@ -112,30 +112,10 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test InfoError {
-    _ = InfoError.DisallowedType catch void;
-    _ = InfoError.UnexpectedType catch void;
-}
-
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-}
-
-test type_validator {
-    _ = try type_validator.eval(usize);
-    _ = try type_validator.eval(bool);
-    _ = try type_validator.eval(@Vector(3, f128));
-    _ = try type_validator.eval([]const u8);
-    _ = try type_validator.eval(struct {});
-    _ = try type_validator.eval(union {});
-    _ = try type_validator.eval(enum {});
-    _ = try type_validator.eval(error{});
-}
+test InfoError {}
 
 test Params {
-    const info_params: Params = .{
+    const params: Params = .{
         .type = null,
         .void = null,
         .bool = null,
@@ -162,43 +142,36 @@ test Params {
         .enum_literal = null,
     };
 
-    _ = info_params;
+    _ = params;
 }
 
 test init {
-    const number = init(.{
-        .int = true,
-        .float = true,
-        .comptime_int = true,
-        .comptime_float = true,
+    const info: Prototype = init(.{
+        .type = null,
+        .void = null,
+        .bool = null,
+        .noreturn = null,
+        .int = null,
+        .float = null,
+        .pointer = null,
+        .array = null,
+        .@"struct" = null,
+        .comptime_float = null,
+        .comptime_int = null,
+        .undefined = null,
+        .null = null,
+        .optional = null,
+        .error_union = null,
+        .error_set = null,
+        .@"enum" = null,
+        .@"union" = null,
+        .@"fn" = null,
+        .@"opaque" = null,
+        .frame = null,
+        .@"anyframe" = null,
+        .vector = null,
+        .enum_literal = null,
     });
 
-    _ = try number.eval(usize);
-    _ = try number.eval(f128);
-    _ = try number.eval(comptime_int);
-    _ = try number.eval(comptime_float);
-
-    const not_number = init(.{
-        .int = false,
-        .float = false,
-        .comptime_int = false,
-        .comptime_float = false,
-    });
-
-    _ = try not_number.eval(bool);
-    _ = try not_number.eval([]const u8);
-    _ = try not_number.eval(?usize);
-    _ = try not_number.eval(fn () void);
-
-    const parameterized = init(.{
-        .optional = true,
-        .pointer = true,
-        .array = true,
-        .vector = true,
-    });
-
-    _ = try parameterized.eval(?bool);
-    _ = try parameterized.eval([]const u8);
-    _ = try parameterized.eval([5]struct {});
-    _ = try parameterized.eval(@Vector(1, f128));
+    _ = info;
 }

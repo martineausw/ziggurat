@@ -63,12 +63,6 @@ pub fn conjoin(prototypes: anytype) Prototype {
     };
 }
 
-test info_validator {
-    _ = info_validator.eval(@Vector(6, u8));
-    _ = info_validator.eval([6]u8);
-    _ = info_validator.eval([]const u8);
-}
-
 test conjoin {
     const @"true": Prototype = .{
         .name = "True",

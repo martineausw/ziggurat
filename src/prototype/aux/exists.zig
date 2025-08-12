@@ -61,3 +61,17 @@ pub fn init(params: Params) Prototype {
         }.onError,
     };
 }
+
+test ExistsError {}
+
+test Params {
+    const params: Params = null;
+
+    _ = params;
+}
+
+test init {
+    const exists: Prototype = init(null);
+
+    _ = exists;
+}

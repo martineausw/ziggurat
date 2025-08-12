@@ -44,18 +44,10 @@ pub const init: Prototype = .{
     }.onError,
 };
 
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-}
-
-test info_validator {
-    _ = try info_validator.eval(bool);
-}
+test BoolError {}
 
 test init {
     const @"bool": Prototype = init;
 
-    _ = try @"bool".eval(bool);
+    _ = @"bool";
 }

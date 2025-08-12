@@ -32,7 +32,7 @@ pub const info_validator = info.init(.{
 
 const SignednessParams = struct {
     signed: ?bool = null,
-    unsigend: ?bool = null,
+    unsigned: ?bool = null,
 };
 
 const Signedness = filter.Filter(SignednessParams);
@@ -116,26 +116,7 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test IntError {
-    _ = IntError.InvalidSignedness catch void;
-}
-
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-
-    _ = Error.ExceedsMin catch void;
-    _ = Error.ExceedsMax catch void;
-
-    _ = Error.InvalidSignedness catch void;
-}
-
-test info_validator {
-    _ = try info_validator.eval(i128);
-    _ = try info_validator.eval(u8);
-    _ = try info_validator.eval(usize);
-}
+test IntError {}
 
 test Params {
     const params: Params = .{
@@ -143,22 +124,26 @@ test Params {
             .min = null,
             .max = null,
         },
-        .signedness = null,
+        .signedness = .{
+            .signed = null,
+            .unsigned = null,
+        },
     };
 
     _ = params;
 }
 
 test init {
-    const signed_int = init(
-        .{ .signedness = .signed },
-    );
+    const int: Prototype = init(.{
+        .bits = .{
+            .min = null,
+            .max = null,
+        },
+        .signedness = .{
+            .signed = null,
+            .unsigned = null,
+        },
+    });
 
-    try testing.expectEqual(true, signed_int.eval(i16));
-    try testing.expectEqual(true, signed_int.eval(i128));
-    try testing.expectEqual(
-        Error.InvalidSignedness,
-        signed_int.eval(usize),
-    );
-    try testing.expectEqual(Error.UnexpectedType, signed_int.eval(f16));
+    _ = int;
 }

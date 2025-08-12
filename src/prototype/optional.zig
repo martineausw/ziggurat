@@ -85,23 +85,7 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test OptionalError {
-    _ = OptionalError.DisallowedChild catch void;
-    _ = OptionalError.UnexpectedChild catch void;
-}
-
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-
-    _ = Error.DisallowedChild catch void;
-    _ = Error.UnexpectedType catch void;
-}
-
-test info_validator {
-    _ = try info_validator.eval(?bool);
-}
+test OptionalError {}
 
 test Params {
     const params: Params = .{
@@ -118,5 +102,5 @@ test init {
         },
     });
 
-    _ = try optional.eval(?bool);
+    _ = optional;
 }

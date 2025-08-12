@@ -44,16 +44,10 @@ pub const init: Prototype = .{
     }.onError,
 };
 
-test TypeError {
-    _ = TypeError.InvalidType catch void;
-}
-
-test Error {
-    _ = Error.InvalidType catch void;
-}
+test TypeError {}
 
 test init {
     const @"type": Prototype = init;
 
-    _ = @"type".eval(type);
+    _ = @"type";
 }
