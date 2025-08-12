@@ -3,25 +3,23 @@ const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("../Prototype.zig");
+const filter = @import("filter.zig");
 
 const @"type" = @import("../type.zig");
 
 /// Error set for info.
 const InfoError = error{
-    /// Violates type info blacklist.
-    DisallowedType,
-    /// Ignored type info whitelist.
-    UnexpectedType,
+    InvalidArgument,
+    /// Violates type info blacklist assertion.
+    BanishesType,
+    /// Violates type info whitelist assertion.
+    RequiresType,
 };
 
 /// Error set returned by `eval`.
-pub const Error = InfoError || @"type".Error;
+pub const Error = InfoError;
 
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-}
+const type_validator = @"type".init;
 
 /// Parameters used for prototype evaluation.
 ///
@@ -56,36 +54,85 @@ pub const Params = struct {
     @"anyframe": ?bool = null,
     vector: ?bool = null,
     enum_literal: ?bool = null,
-
-    pub fn eval(self: Params, T: type) Error!bool {
-        if (@field(self, @tagName(@typeInfo(T)))) |param| {
-            if (!param) return Error.DisallowedType;
-            return true;
-        }
-
-        inline for (std.meta.fields(@TypeOf(self))) |field| {
-            if (@field(self, field.name)) |value| {
-                if (value) return Error.UnexpectedType;
-            }
-        }
-        return true;
-    }
-
-    pub fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
-        switch (err) {
-            Error.DisallowedType,
-            Error.UnexpectedType,
-            => @compileError(std.fmt.comptimePrint(
-                "{s}.{s}: {s}",
-                .{
-                    prototype.name,
-                    @errorName(err),
-                    @tagName(@typeInfo(actual)),
-                },
-            )),
-        }
-    }
 };
+
+const Filter = filter.Filter(Params);
+
+/// Expects type value.
+///
+/// `actual` is a type value, otherwise returns error from `IsType`.
+///
+/// `actual` active tag of `Type` belongs to the set of param fields set to
+/// true, otherwise returns error.
+///
+/// `actual` active tag of `Type` does not belong to the set param fields
+/// set to false, otherwise returns error.
+pub fn init(params: Params) Prototype {
+    const filter_validator = Filter.init(params);
+    return .{
+        .name = "Info",
+        .eval = struct {
+            fn eval(actual: anytype) Error!bool {
+                _ = type_validator.eval(actual) catch |err|
+                    return switch (err) {
+                        @"type".Error.InvalidArgument => InfoError.InvalidArgument,
+                        else => unreachable,
+                    };
+
+                _ = filter_validator.eval(@typeInfo(actual)) catch |err|
+                    return switch (err) {
+                        filter.Error.Banishes => InfoError.BanishesType,
+                        filter.Error.Requires => InfoError.RequiresType,
+                        else => unreachable,
+                    };
+                return true;
+            }
+        }.eval,
+        .onError = struct {
+            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+                switch (err) {
+                    InfoError.InvalidType,
+                    => type_validator.onError(err, prototype, actual),
+
+                    InfoError.BanishesType,
+                    InfoError.RequiresType,
+                    => @compileError(std.fmt.comptimePrint(
+                        "{s}.{s}: {s}",
+                        .{
+                            prototype.name,
+                            @errorName(err),
+                            @tagName(@typeInfo(actual)),
+                        },
+                    )),
+
+                    else => unreachable,
+                }
+            }
+        }.onError,
+    };
+}
+
+test InfoError {
+    _ = InfoError.DisallowedType catch void;
+    _ = InfoError.UnexpectedType catch void;
+}
+
+test Error {
+    _ = Error.InvalidType catch void;
+    _ = Error.DisallowedType catch void;
+    _ = Error.UnexpectedType catch void;
+}
+
+test type_validator {
+    _ = try type_validator.eval(usize);
+    _ = try type_validator.eval(bool);
+    _ = try type_validator.eval(@Vector(3, f128));
+    _ = try type_validator.eval([]const u8);
+    _ = try type_validator.eval(struct {});
+    _ = try type_validator.eval(union {});
+    _ = try type_validator.eval(enum {});
+    _ = try type_validator.eval(error{});
+}
 
 test Params {
     const info_params: Params = .{
@@ -118,41 +165,6 @@ test Params {
     _ = info_params;
 }
 
-/// Expects type value.
-///
-/// `actual` is a type value, otherwise returns error from `IsType`.
-///
-/// `actual` active tag of `Type` belongs to the set of param fields set to
-/// true, otherwise returns error.
-///
-/// `actual` active tag of `Type` does not belong to the set param fields
-/// set to false, otherwise returns error.
-pub fn init(params: Params) Prototype {
-    const type_validator = @"type".init;
-    return .{
-        .name = "Info",
-        .eval = struct {
-            fn eval(actual: anytype) Error!bool {
-                _ = try type_validator.eval(actual);
-                _ = try params.eval(actual);
-                return true;
-            }
-        }.eval,
-        .onError = struct {
-            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
-                switch (err) {
-                    Error.InvalidType,
-                    => type_validator.onError(err, prototype, actual),
-
-                    Error.DisallowedType,
-                    Error.UnexpectedType,
-                    => params.onError(err, prototype, actual),
-                }
-            }
-        }.onError,
-    };
-}
-
 test init {
     const number = init(.{
         .int = true,
@@ -161,30 +173,10 @@ test init {
         .comptime_float = true,
     });
 
-    try testing.expectEqual(
-        true,
-        number.eval(usize),
-    );
-
-    try testing.expectEqual(
-        true,
-        number.eval(i64),
-    );
-
-    try testing.expectEqual(
-        true,
-        number.eval(f128),
-    );
-
-    try testing.expectEqual(
-        Error.UnexpectedType,
-        number.eval(*comptime_int),
-    );
-
-    try testing.expectEqual(
-        Error.UnexpectedType,
-        number.eval([3]comptime_float),
-    );
+    _ = try number.eval(usize);
+    _ = try number.eval(f128);
+    _ = try number.eval(comptime_int);
+    _ = try number.eval(comptime_float);
 
     const not_number = init(.{
         .int = false,
@@ -193,21 +185,10 @@ test init {
         .comptime_float = false,
     });
 
-    try testing.expectEqual(
-        Error.DisallowedType,
-        not_number.eval(usize),
-    );
-    try testing.expectEqual(
-        Error.DisallowedType,
-        not_number.eval(i64),
-    );
-    try testing.expectEqual(
-        Error.DisallowedType,
-        not_number.eval(f128),
-    );
-
-    try testing.expectEqual(true, not_number.eval(*comptime_int));
-    try testing.expectEqual(true, not_number.eval([3]comptime_float));
+    _ = try not_number.eval(bool);
+    _ = try not_number.eval([]const u8);
+    _ = try not_number.eval(?usize);
+    _ = try not_number.eval(fn () void);
 
     const parameterized = init(.{
         .optional = true,
@@ -216,24 +197,8 @@ test init {
         .vector = true,
     });
 
-    try testing.expectEqual(
-        Error.UnexpectedType,
-        parameterized.eval(usize),
-    );
-    try testing.expectEqual(
-        Error.UnexpectedType,
-        parameterized.eval(i64),
-    );
-    try testing.expectEqual(
-        Error.UnexpectedType,
-        parameterized.eval(f128),
-    );
-    try testing.expectEqual(
-        true,
-        parameterized.eval(*comptime_int),
-    );
-    try testing.expectEqual(
-        true,
-        parameterized.eval([3]comptime_float),
-    );
+    _ = try parameterized.eval(?bool);
+    _ = try parameterized.eval([]const u8);
+    _ = try parameterized.eval([5]struct {});
+    _ = try parameterized.eval(@Vector(1, f128));
 }

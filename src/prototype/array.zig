@@ -11,19 +11,131 @@ const testing = std.testing;
 const Prototype = @import("Prototype.zig");
 const interval = @import("aux/interval.zig");
 const info = @import("aux/info.zig");
+const exists = @import("aux/exists.zig");
 
 /// Error set for array.
 const ArrayError = error{
-    /// Violates `sentinel` assertion.
-    InvalidSentinel,
-    /// Violates `child` blacklist assertion.
-    DisallowedChild,
-    /// Violates `child` whitelist assertion.
-    UnexpectedChild,
+    InvalidArgument,
+    /// Violates `std.builtin.Type.array.child` blacklist assertion.
+    BanishesChildType,
+    RequiresChildType,
+    /// Violates `std.builtin.Type.array.len` assertion.
+    AssertsMinLen,
+    AssertsMaxLen,
+    /// Violates `std.builtin.Type.array.sentinel` assertion.
+    AssertsNotNullSentinel,
+    AssertsNullSentinel,
 };
 
-/// Error set returned by `eval`
-pub const Error = ArrayError || interval.Error || info.Error;
+/// Error set returned by `eval`.
+pub const Error = ArrayError;
+
+/// Validates `actual` to `std.builtin.Type.array`.
+pub const info_validator = info.init(.{
+    .array = true,
+});
+
+/// Parameters for prototype evaluation.
+///
+/// Derived from `std.builtin.Type.Array`.
+pub const Params = struct {
+    /// Evaluates against `std.builtin.Type.array.child`.
+    child: info.Params = .{},
+
+    /// Evaluates against `std.builtin.Type.array.len`
+    len: interval.Params(comptime_int) = .{},
+
+    /// Evaluates against `std.builtin.Type.array.sentinel()`.
+    sentinel: exists.Params = null,
+};
+
+/// Expects array type value.
+///
+/// `actual` assertions:
+///
+/// type info is `std.builtin.Type.array`.
+///
+/// `std.builtin.Type.pointer.child` is within given `params.child`
+/// assertions.
+///
+/// `std.builtin.Type.pointer.len` is within given `params.len`
+/// assertions.
+///
+/// `actual` type info `sentinel()` is not-null when given params is true
+/// or null when given params is false, otherwise returns error.
+pub fn init(params: Params) Prototype {
+    const child_validator = info.init(params.child);
+    const len_validator = interval.init(comptime_int, params.len);
+    const sentinel_validator = exists.init(params.sentinel);
+
+    return .{
+        .name = "Array",
+        .eval = struct {
+            fn eval(actual: anytype) Error!bool {
+                _ = info_validator.eval(actual) catch |err|
+                    return switch (err) {
+                        info.Error.UnexpectedType => ArrayError.InvalidArgument,
+                    };
+
+                const actual_info = switch (@typeInfo(actual)) {
+                    .array => |array_info| array_info,
+                    else => unreachable,
+                };
+
+                _ = child_validator.eval(actual_info.child) catch |err|
+                    return switch (err) {
+                        info.Error.BanishesType => ArrayError.BanishesChildType,
+                        info.Error.RequiresType => ArrayError.RequiresChildType,
+                        else => unreachable,
+                    };
+
+                _ = len_validator.eval(actual_info.len) catch |err|
+                    return switch (err) {
+                        interval.Error.AssertsMin => ArrayError.AssertsMinLen,
+                        interval.Error.AssertsMax => ArrayError.AssertsMaxLen,
+                        else => unreachable,
+                    };
+
+                _ = sentinel_validator.eval(actual_info.sentinel()) catch |err|
+                    return switch (err) {
+                        exists.Error.AssertsNotNull => ArrayError.AssertsNotNullSentinel,
+                        exists.Error.AssertsNull => ArrayError.AssertsNullSentinel,
+                        else => unreachable,
+                    };
+
+                return true;
+            }
+        }.eval,
+        .onError = struct {
+            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+                switch (err) {
+                    ArrayError.InvalidArgument,
+                    => info_validator.onError(err, prototype, actual),
+
+                    ArrayError.BanishesChildType,
+                    ArrayError.RequiresChildType,
+                    => info_validator.onError(err, prototype, @typeInfo(actual).array.child),
+
+                    ArrayError.AssertsMinLen,
+                    ArrayError.AssertsMaxLen,
+                    => len_validator.onError(err, prototype, @typeInfo(actual).array.len),
+
+                    ArrayError.AssertsNotNullSentinel,
+                    ArrayError.AssertsNullSentinel,
+                    => sentinel_validator.onError(err, prototype, @typeInfo(actual).array.sentinel()),
+
+                    else => unreachable,
+                }
+            }
+        }.onError,
+    };
+}
+
+test ArrayError {
+    _ = ArrayError.DisallowedChild catch void;
+    _ = ArrayError.UnexpectedChild catch void;
+    _ = ArrayError.InvalidSentinel catch void;
+}
 
 test Error {
     _ = Error.InvalidType catch void;
@@ -32,32 +144,15 @@ test Error {
 
     _ = Error.DisallowedChild catch void;
     _ = Error.UnexpectedChild catch void;
+    _ = Error.InvalidSentinel catch void;
 
     _ = Error.ExceedsMin catch void;
     _ = Error.ExceedsMax catch void;
 }
 
-pub const info_validator = info.init(.{
-    .array = true,
-});
-
-/// Parameters for prototype evaluation.
-///
-/// Associated with `std.builtin.Type.Array`.
-pub const Params = struct {
-    /// Evaluates against `.child`
-    child: info.Params = .{},
-
-    /// Evaluates against `.len`
-    len: interval.Params(comptime_int) = .{},
-
-    /// Evaluates against `.sentinel()`.
-    ///
-    /// - `null`, no assertion.
-    /// - `true`, asserts not `null`.
-    /// - `false`, asserts `null`.
-    sentinel: ?bool = null,
-};
+test info_validator {
+    _ = info_validator.eval([5]u8);
+}
 
 test Params {
     const params: Params = .{
@@ -70,87 +165,6 @@ test Params {
     };
 
     _ = params;
-}
-
-/// Expects array type value.
-///
-/// `actual` is an array type value.
-///
-/// `actual` type info `len` is within given `params`.
-///
-/// `actual` type info `sentinel()` is not-null when given params is true
-/// or null when given params is false, otherwise returns error.
-pub fn init(params: Params) Prototype {
-    const child_validator = info.init(params.child);
-    const len_validator = interval.init(comptime_int, params.len);
-
-    return .{
-        .name = "Array",
-        .eval = struct {
-            fn eval(actual: anytype) Error!bool {
-                _ = try info_validator.eval(actual);
-
-                const actual_info = switch (@typeInfo(actual)) {
-                    .array => |array_info| array_info,
-                    else => unreachable,
-                };
-
-                _ = child_validator.eval(actual_info.child) catch |err| {
-                    return switch (err) {
-                        info.Error.DisallowedType => Error.DisallowedChild,
-                        info.Error.UnexpectedType => Error.UnexpectedChild,
-                        else => unreachable,
-                    };
-                };
-
-                _ = try len_validator.eval(actual_info.len);
-
-                if (params.sentinel) |sentinel| {
-                    const actual_sentinel =
-                        if (actual_info.sentinel()) |_| {
-                            true;
-                        } else {
-                            false;
-                        };
-
-                    if (sentinel != actual_sentinel) |_|
-                        return Error.InvalidSentinel;
-                }
-
-                return true;
-            }
-        }.eval,
-        .onError = struct {
-            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
-                switch (err) {
-                    Error.InvalidType,
-                    Error.DisallowedType,
-                    Error.UnexpectedType,
-                    => info_validator.onError(err, prototype, actual),
-
-                    Error.DisallowedChild,
-                    Error.UnexpectedChild,
-                    => child_validator.onError(err, prototype, actual),
-
-                    Error.ExceedsMin,
-                    Error.ExceedsMax,
-                    => len_validator.onError(err, prototype, actual),
-
-                    Error.InvalidSentinel,
-                    => std.fmt.comptimePrint("{s}.{s} expects {s}", .{
-                        prototype.name,
-                        @errorName(err),
-                        if (params.is_const.?)
-                            "sentinel value"
-                        else
-                            "sentinel value omitted",
-                    }),
-
-                    else => unreachable,
-                }
-            }
-        }.onError,
-    };
 }
 
 test init {

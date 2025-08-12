@@ -12,27 +12,188 @@ const testing = std.testing;
 const Prototype = @import("Prototype.zig");
 const interval = @import("aux/interval.zig");
 const info = @import("aux/info.zig");
+const filter = @import("aux/filter.zig");
+const toggle = @import("aux/toggle.zig");
+const exists = @import("aux/exists.zig");
 
-/// Error set for pointer
+/// Error set for `prototype.pointer`.
 const PointerError = error{
-    /// Violates `child` blacklist assertion.
-    DisallowedChild,
-    /// Violates `child` whitelist assertion.
-    UnexpectedChild,
-    /// Violates `size` blacklist assertion.
-    DisallowedSize,
-    /// Violates `size` whitelist assertion.
-    UnexpectedSize,
-    /// Violates `is_const` assertion.
-    InvalidConstQualifier,
-    /// Violates `is_volatile` assertion.
-    InvalidVolatileQualifier,
-    /// Violates `sentinel` assertion.
-    InvalidSentinel,
+    InvalidArgument,
+    /// Violates `std.builtin.Type.pointer.child` blacklist assertion.
+    BanishesChildType,
+    RequiresChildType,
+    /// Violates `std.builtin.Type.pointer.size` blacklist assertion.
+    BanishesSize,
+    RequiresSize,
+    /// Violates `std.builtin.Type.pointer.is_const` assertion.
+    AssertsTrueIsConst,
+    AssertsFalseIsConst,
+    /// Violates `std.builtin.Type.pointer.is_volatile` assertion.
+    AssertsTrueIsVolatile,
+    AssertsFalseIsVolatile,
+    /// Violates `std.builtin.Type.pointer.sentinel()` assertion.
+    AssertsNotNullSentinel,
+    AssertsNullSentinel,
 };
 
-/// Error set returned by `eval`
-pub const Error = PointerError || info.Error;
+/// Error set returned by `eval`.
+pub const Error = PointerError;
+
+/// Validates `actual` type info to `std.builtin.Type.pointer`.
+pub const info_validator = info.init(.{
+    .pointer = true,
+});
+
+/// Parameters for `prototype.pointer.size` evaluation.
+///
+/// Derived from `std.builtin.Pointer.Size`.
+const SizeParams = struct {
+    one: ?bool = null,
+    many: ?bool = null,
+    slice: ?bool = null,
+    c: ?bool = null,
+};
+
+const Size = filter.Filter(SizeParams);
+
+/// Parameters for `prototype.pointer` evaluation.
+///
+/// Derived from `std.builtin.Type.Pointer`.
+pub const Params = struct {
+    /// Evaluates against `std.builtin.Type.pointer.child`.
+    child: info.Params = .{},
+    /// Evaluates against `std.builtin.Type.pointer.size`.
+    size: SizeParams = .{},
+    /// Evaluates against `std.builtin.Type.pointer.is_const`.
+    is_const: ?bool = null,
+    /// Evaluates against `std.builtin.Type.pointer.is_volatile`.
+    is_volatile: ?bool = null,
+    /// Evaluates against `std.builtin.Type.pointer.sentinel()`.
+    sentinel: ?bool = null,
+};
+
+/// Expects pointer type value.
+///
+/// `actual` assertions:
+///
+/// type info is `std.builtin.Type.pointer`.
+///
+/// `std.builtin.Type.pointer.size` is within `aux.filter` assertions with
+/// given `params.filter`.
+///
+/// `std.builtin.Type.pointer.child` is within `aux.info` assertions with
+/// given `params.child`.
+///
+/// `std.builtin.Type.pointer.is_const` is within `aux.toggle` assertions
+/// with given `params.is_const`.
+///
+/// `std.builtin.Type.pointer.is_volatile` is within `aux.toggle`
+/// assertions with given `params.is_volatile`.
+///
+/// `std.builtin.Type.pointer.sentinel()` is within `aux.exists`
+/// assertions with given `params.sentinel`.
+pub fn init(params: Params) Prototype {
+    const child_validator = info.init(params.child);
+    const size_validator = Size.init(params.size);
+    const is_const_validator = toggle.init(params.is_const);
+    const is_volatile_validator = toggle.init(params.is_volatile);
+    const sentinel_validator = exists.init(params.sentinel);
+    return .{
+        .name = "Pointer",
+        .eval = struct {
+            fn eval(actual: anytype) Error!bool {
+                _ = info_validator.eval(actual) catch |err|
+                    return switch (err) {
+                        info.Error.InvalidArgument,
+                        info.Error.RequiresType,
+                        => PointerError.InvalidArgument,
+                        else => unreachable,
+                    };
+
+                const actual_info = switch (@typeInfo(actual)) {
+                    .pointer => |pointer_info| pointer_info,
+                    else => unreachable,
+                };
+
+                _ = child_validator.eval(actual_info.child) catch |err|
+                    return switch (err) {
+                        info.Error.BanishesType => PointerError.BanishesChildType,
+                        info.Error.RequiresType => PointerError.RequiresChildType,
+                        else => unreachable,
+                    };
+
+                _ = comptime size_validator.eval(actual_info.size) catch |err|
+                    return switch (err) {
+                        filter.Error.Banishes => PointerError.BanishesSize,
+                        filter.Error.Requires => PointerError.RequiresSize,
+                        else => unreachable,
+                    };
+
+                _ = is_const_validator.eval(actual_info.is_const) catch |err|
+                    return switch (err) {
+                        toggle.Error.AssertsTrue => PointerError.AssertsTrueIsConst,
+                        toggle.Error.AssertsFalse => PointerError.AssertsFalseIsVolatile,
+                        else => unreachable,
+                    };
+
+                _ = is_volatile_validator.eval(actual_info.is_volatile) catch |err|
+                    return switch (err) {
+                        toggle.Error.AssertsTrue => PointerError.AssertsTrueIsVolatile,
+                        toggle.Error.AssertsFalse => PointerError.AssertsFalseIsVolatile,
+                        else => unreachable,
+                    };
+
+                _ = sentinel_validator.eval(actual_info.sentinel()) catch |err|
+                    return switch (err) {
+                        exists.Error.AssertsNotNull => PointerError.AssertsNotNullSentinel,
+                        exists.Error.AssertsNull => PointerError.AssertsNullSentinel,
+                        else => unreachable,
+                    };
+
+                return true;
+            }
+        }.eval,
+        .onError = struct {
+            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+                switch (err) {
+                    PointerError.InvalidArgument,
+                    => info_validator.onError(err, prototype, actual),
+
+                    PointerError.BanishesChildType,
+                    PointerError.RequiresChildType,
+                    => child_validator.onError(err, prototype, @typeInfo(actual).pointer.child),
+
+                    PointerError.BanishesSize,
+                    PointerError.RequiresSize,
+                    => size_validator.onError(err, prototype, @typeInfo(actual).pointer.size),
+
+                    PointerError.AssertsTrueIsConst,
+                    PointerError.AssertsFalseIsConst,
+                    => is_const_validator.onError(err, prototype, @typeInfo(actual).pointer.is_const),
+
+                    PointerError.AssertsTrueIsVolatile,
+                    PointerError.AssertsFalseIsVolatile,
+                    => is_volatile_validator.onError(err, prototype, @typeInfo(actual).pointer.is_volatile),
+
+                    PointerError.AssertsNotNullSentinel,
+                    PointerError.AssertsNullSentinel,
+                    => sentinel_validator.onError(err, prototype, @typeInfo(actual).pointer.sentinel()),
+                    else => unreachable,
+                }
+            }
+        }.onError,
+    };
+}
+
+test PointerError {
+    _ = PointerError.DisallowedChild catch void;
+    _ = PointerError.UnexpectedChild catch void;
+    _ = PointerError.DisallowedSize catch void;
+    _ = PointerError.UnexpectedSize catch void;
+    _ = PointerError.InvalidConstQualifier catch void;
+    _ = PointerError.InvalidVolatileQualifier catch void;
+    _ = PointerError.InvalidSentinel catch void;
+}
 
 test Error {
     _ = Error.InvalidType catch void;
@@ -48,54 +209,12 @@ test Error {
     _ = Error.InvalidSentinel catch void;
 }
 
-pub const info_validator = info.init(.{
-    .pointer = true,
-});
-
-/// Associated with `std.builtin.Pointer.Array.Size`.
-///
-/// For any field:
-/// - `null`, no assertion
-/// - `true`, asserts active tag belongs to subset of `true` members.
-/// - `false`, asserts active tag does not belong to subset of `false` members.
-const SizeParams = struct {
-    one: ?bool = null,
-    many: ?bool = null,
-    slice: ?bool = null,
-    c: ?bool = null,
-
-    pub fn eval(
-        self: SizeParams,
-        comptime size: std.builtin.Type.Pointer.Size,
-    ) Error!bool {
-        if (@field(self, @tagName(size))) |param| {
-            if (!param) return Error.DisallowedSize;
-            return true;
-        }
-
-        inline for (std.meta.fields(@TypeOf(self))) |field| {
-            if (@field(self, field.name)) |value| {
-                if (value) return Error.UnexpectedSize;
-            }
-        }
-        return true;
-    }
-
-    pub fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
-        switch (err) {
-            .DisallowedSize,
-            .UnexpectedSize,
-            => @compileError(std.fmt.comptimePrint(
-                "{s}.{s}: {s}",
-                .{
-                    prototype.name,
-                    @errorName(err),
-                    @tagName(actual),
-                },
-            )),
-        }
-    }
-};
+test info_validator {
+    _ = try info_validator.eval([*]const u8);
+    _ = try info_validator.eval([]const u8);
+    _ = try info_validator.eval([:0]const u8);
+    _ = try info_validator.eval(*const u8);
+}
 
 test SizeParams {
     _ = SizeParams{
@@ -105,38 +224,6 @@ test SizeParams {
         .c = null,
     };
 }
-
-/// Parameters for prototype evaluation.
-///
-/// Associated with `std.builtin.Type.Pointer`
-pub const Params = struct {
-    /// Evaluates against `.child`
-    child: info.Params = .{},
-
-    /// Evaluates against `.size`
-    size: SizeParams = .{},
-
-    /// Evaluates against `.is_const`
-    ///
-    /// - `null`, no assertion.
-    /// - `true`, asserts `true`
-    /// - `false`, asserts `false`
-    is_const: ?bool = null,
-
-    /// Evaluates against `.is_volatile`
-    ///
-    /// - `null`, no assertion.
-    /// - `true`, asserts `true`
-    /// - `false`, asserts `false`
-    is_volatile: ?bool = null,
-
-    /// Evaluates against `.sentinel()`
-    ///
-    /// - `null`, no assertion
-    /// - `true`, asserts returns not `null`
-    /// - `false`, asserts returns `null`
-    sentinel: ?bool = null,
-};
 
 test Params {
     const params: Params = .{
@@ -148,140 +235,6 @@ test Params {
     };
 
     _ = params;
-}
-
-/// Expects pointer type value.
-///
-/// Evaluates:
-///
-/// Passes pointer type into `TypeWithInfo`, returns associated errors.
-///
-/// `actual` active tag of `size` belongs to the set of `InfoParams` fields
-/// set to true, otherwise returns `PointerTypeError.IgnoresNeeded`.
-///
-/// `actual` active tag of `Type` does not belong to the set of params
-/// fields set to false, otherwise returns error.
-///
-/// `actual` type info `is_const` is equal to given params, otherwise
-/// returns error.
-///
-/// `actual` type info `is_volatile` is equal to given params, otherwise
-/// returns error.
-///
-/// `actual` type info `sentinel()` is not-null when given params is true
-/// or null when given params is false, otherwise returns error.
-pub fn init(params: Params) Prototype {
-    const child_validator = info.init(params.child);
-    const size_validator = params.size;
-
-    return .{
-        .name = "Pointer",
-        .eval = struct {
-            fn eval(actual: anytype) Error!bool {
-                _ = try info_validator.eval(actual);
-
-                const actual_info = switch (@typeInfo(actual)) {
-                    .pointer => |pointer_info| pointer_info,
-                    else => unreachable,
-                };
-
-                _ = child_validator.eval(actual_info.child) catch |err| {
-                    return switch (err) {
-                        info.Error.DisallowedType => Error.DisallowedChild,
-                        info.Error.UnexpectedType => Error.UnexpectedChild,
-                        else => unreachable,
-                    };
-                };
-
-                _ = try size_validator.eval(actual_info.size);
-
-                if (params.is_const) |is_const| {
-                    if (actual_info.is_const != is_const)
-                        return Error.InvalidConstQualifier;
-                }
-
-                if (params.is_volatile) |is_const| {
-                    if (actual_info.is_const != is_const)
-                        return Error.InvalidVolatileQualifier;
-                }
-
-                _ = child_validator.eval(actual_info.child) catch |err| {
-                    return switch (err) {
-                        info.Error.DisallowedType => Error.DisallowedChild,
-                        info.Error.UnexpectedType => Error.UnexpectedChild,
-                        else => unreachable,
-                    };
-                };
-
-                if (params.sentinel) |sentinel| {
-                    const actual_sentinel =
-                        if (actual_info.sentinel()) |_| {
-                            true;
-                        } else {
-                            false;
-                        };
-
-                    if (sentinel != actual_sentinel) |_|
-                        return Error.InvalidSentinel;
-                }
-
-                return true;
-            }
-        }.eval,
-        .onError = struct {
-            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
-                switch (err) {
-                    Error.InvalidType,
-                    Error.DisallowedType,
-                    Error.UnexpectedType,
-                    => info_validator.onError(err, prototype, actual),
-
-                    Error.DisallowedChild,
-                    Error.UnexpectedChild,
-                    => child_validator.onError(err, prototype, actual),
-
-                    Error.DisallowedSize,
-                    Error.UnexpectedSize,
-                    => size_validator.onError(err, prototype, actual),
-
-                    Error.InvalidConstQualifier,
-                    => std.fmt.comptimePrint(
-                        "{s}.{s} expects {s}",
-                        .{
-                            prototype.name,
-                            @errorName(err),
-                            if (params.is_const.?)
-                                "const"
-                            else
-                                "const omitted",
-                        },
-                    ),
-                    Error.InvalidVolatileQualifier,
-                    => std.fmt.comptimePrint(
-                        "{s}.{s} expects {s}",
-                        .{
-                            prototype.name,
-                            @errorName(err),
-                            if (params.is_const.?)
-                                "volatile"
-                            else
-                                "volatile omitted",
-                        },
-                    ),
-                    Error.InvalidSentinel,
-                    => std.fmt.comptimePrint("{s}.{s} expects {s}", .{
-                        prototype.name,
-                        @errorName(err),
-                        if (params.is_const.?)
-                            "sentinel value"
-                        else
-                            "sentinel value omitted",
-                    }),
-                    else => unreachable,
-                }
-            }
-        }.onError,
-    };
 }
 
 test init {

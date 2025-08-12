@@ -11,38 +11,25 @@ const Prototype = @import("Prototype.zig");
 const interval = @import("aux/interval.zig");
 const info = @import("aux/info.zig");
 
+const FloatError = error{
+    InvalidArgument,
+    AssertsMinBits,
+    AssertsMaxBits,
+};
+
 /// Errors returned by `eval`
-pub const Error = info.Error || interval.Error;
+pub const Error = FloatError;
 
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-
-    _ = Error.ExceedsMin catch void;
-    _ = Error.ExceedsMax catch void;
-}
-
+/// Validates type info of `actual` to continue.
 pub const info_validator = info.init(.{
     .float = true,
 });
 
-/// Associated with `std.builtin.Type.Float`
+/// Associated with `std.builtin.Type.Float.bits`
 pub const Params = struct {
-    /// Evaluates against `.bits`
+    /// Evaluates against `std.builtin.Type.Float.bits`
     bits: interval.Params(u16) = .{},
 };
-
-test Params {
-    const params: Params = .{
-        .bits = .{
-            .min = null,
-            .max = null,
-        },
-    };
-
-    _ = params;
-}
 
 /// Expects runtime float type value.
 ///
@@ -57,30 +44,68 @@ pub fn init(params: Params) Prototype {
         .name = "Float",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try info_validator.eval(actual);
+                _ = info_validator.eval(actual) catch |err|
+                    return switch (err) {
+                        info.Error.InvalidArgument,
+                        info.Error.RequiresType,
+                        => FloatError.InvalidArgument,
+                        else => unreachable,
+                    };
+
                 const actual_info = switch (@typeInfo(actual)) {
                     .float => |float_info| float_info,
                     else => unreachable,
                 };
-                _ = try bits_validator.eval(actual_info.bits);
+
+                _ = bits_validator.eval(actual_info.bits) catch |err|
+                    return switch (err) {
+                        interval.Error.AssertsMin => FloatError.AssertsMinBits,
+                        interval.Error.AssertsMax => FloatError.AssertsMaxBits,
+                        else => unreachable,
+                    };
+
                 return true;
             }
         }.eval,
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    Error.InvalidType,
-                    Error.DisallowedType,
-                    Error.UnexpectedType,
+                    FloatError.InvalidArgument,
                     => info_validator.onError(err, prototype, actual),
 
-                    Error.ExceedsMin,
-                    Error.ExceedsMax,
-                    => bits_validator.onError(err, prototype, actual),
+                    FloatError.AssertsMinBits,
+                    FloatError.AssertsMaxBits,
+                    => bits_validator.onError(err, prototype, @typeInfo(actual).float.bits),
+
+                    else => unreachable,
                 }
             }
         }.onError,
     };
+}
+
+test Error {
+    _ = Error.InvalidType catch void;
+    _ = Error.DisallowedType catch void;
+    _ = Error.UnexpectedType catch void;
+
+    _ = Error.ExceedsMin catch void;
+    _ = Error.ExceedsMax catch void;
+}
+
+test info_validator {
+    _ = try info_validator.eval(bool);
+}
+
+test Params {
+    const params: Params = .{
+        .bits = .{
+            .min = null,
+            .max = null,
+        },
+    };
+
+    _ = params;
 }
 
 test init {

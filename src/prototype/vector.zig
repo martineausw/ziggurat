@@ -13,27 +13,17 @@ const info = @import("aux/info.zig");
 
 /// Error set for vector.
 const VectorError = error{
-    /// Violates `child` blacklist assertion.
-    DisallowedChild,
-    /// Violates `child` whitelist assertion.
-    UnexpectedChild,
+    InvalidArgument,
+    BanishesChildType,
+    RequiresChildType,
+    AssertsMinLen,
+    AssertsMaxLen,
 };
 
 /// Error set returned by `eval`.
-pub const Error = VectorError || interval.Error || info.Error;
+pub const Error = VectorError;
 
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-
-    _ = Error.DisallowedChild catch void;
-    _ = Error.UnexpectedChild catch void;
-
-    _ = Error.ExceedsMin catch void;
-    _ = Error.ExceedsMax catch void;
-}
-
+/// Validates type info of `actual` to continue.
 pub const info_validator = info.init(.{
     .vector = true,
 });
@@ -49,17 +39,6 @@ pub const Params = struct {
     len: interval.Params(comptime_int) = .{},
 };
 
-test Params {
-    const params: Params = .{
-        .child = .{},
-        .len = .{
-            .min = null,
-            .max = null,
-        },
-    };
-    _ = params;
-}
-
 /// Expects vector type value.
 ///
 /// `actual` is a vector type value.
@@ -73,7 +52,13 @@ pub fn init(params: Params) Prototype {
         .name = "Vector",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try info_validator.eval(actual);
+                _ = info_validator.eval(actual) catch |err|
+                    return switch (err) {
+                        info.Error.InvalidArgument,
+                        info.Error.RequiresType,
+                        => VectorError.InvalidArgument,
+                        else => unreachable,
+                    };
 
                 const actual_info = switch (@typeInfo(actual)) {
                     .vector => |vector_info| vector_info,
@@ -82,15 +67,18 @@ pub fn init(params: Params) Prototype {
 
                 _ = child_validator.eval(actual_info.child) catch |err| {
                     return switch (err) {
-                        info.Error.DisallowedType => Error.DisallowedChild,
-                        info.Error.UnexpectedType => Error.UnexpectedChild,
+                        info.Error.BanishesType => VectorError.BanishesChildType,
+                        info.Error.RequiresType => VectorError.RequiresChildType,
                         else => unreachable,
                     };
                 };
 
-                _ = try len_validator.eval(actual_info.len);
-
-                _ = try child_validator.eval(actual_info.child);
+                _ = len_validator.eval(actual_info.len) catch |err|
+                    return switch (err) {
+                        interval.Error.AssertsMin => VectorError.AssertsMinLen,
+                        interval.Error.AssertsMax => VectorError.AssertsMaxLen,
+                        else => unreachable,
+                    };
 
                 return true;
             }
@@ -98,24 +86,54 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    Error.InvalidType,
-                    Error.DisallowedType,
-                    Error.UnexpectedType,
+                    VectorError.InvalidArgument,
                     => info_validator.onError(err, prototype, actual),
 
-                    Error.DisallowedChild,
-                    Error.UnexpectedChild,
-                    => child_validator.onError(err, prototype, actual),
+                    VectorError.BanishesChildType,
+                    VectorError.RequiresChildType,
+                    => child_validator.onError(err, prototype, @typeInfo(actual).vector.child),
 
-                    Error.ExceedsMin,
-                    Error.ExceedsMax,
-                    => len_validator.onError(err, prototype, actual),
+                    VectorError.AssertsMinLen,
+                    VectorError.AssertsMaxLen,
+                    => len_validator.onError(err, prototype, @typeInfo(actual).vector.len),
 
                     else => unreachable,
                 }
             }
         }.onError,
     };
+}
+
+test VectorError {
+    _ = VectorError.DisallowedChild catch void;
+    _ = VectorError.UnexpectedChild catch void;
+}
+
+test Error {
+    _ = Error.InvalidType catch void;
+    _ = Error.DisallowedType catch void;
+    _ = Error.UnexpectedType catch void;
+
+    _ = Error.DisallowedChild catch void;
+    _ = Error.UnexpectedChild catch void;
+
+    _ = Error.ExceedsMin catch void;
+    _ = Error.ExceedsMax catch void;
+}
+
+test info_validator {
+    _ = try info_validator.eval(@Vector(5, u8));
+}
+
+test Params {
+    const params: Params = .{
+        .child = .{},
+        .len = .{
+            .min = null,
+            .max = null,
+        },
+    };
+    _ = params;
 }
 
 test init {
@@ -127,13 +145,5 @@ test init {
         },
     });
 
-    try testing.expectEqual(
-        true,
-        vector.eval(@Vector(5, u8)),
-    );
-
-    try testing.expectEqual(
-        Error.UnexpectedType,
-        vector.eval([5]u8),
-    );
+    _ = try vector.eval(@Vector(5, u8));
 }

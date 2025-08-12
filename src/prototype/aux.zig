@@ -1,6 +1,8 @@
 //! Auxillary prototypes for convenience.
 const std = @import("std");
 
+pub const filter = @import("aux/filter.zig");
+
 /// Asserts filter type info tags.
 ///
 pub const info = @import("aux/info.zig");
@@ -10,6 +12,13 @@ pub const info = @import("aux/info.zig");
 /// - `min`, asserts inclusive minimum
 /// - `max`, asserts inclusive maximum
 pub const interval = @import("aux/interval.zig");
+
+test filter {
+    const Foo = struct {
+        bar: ?bool = null,
+    };
+    _ = filter.Filter(Foo).init(.{});
+}
 
 test info {
     const info_params: info.Params = .{

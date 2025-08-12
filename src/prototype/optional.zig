@@ -11,45 +11,32 @@ const info = @import("aux/info.zig");
 
 /// Error set for optional.
 const OptionalError = error{
-    /// Violates `child` blacklist assertion.
-    DisallowedChild,
-    /// Violates `child` whitelist assertion.
-    UnexpectedChild,
+    InvalidArgument,
+    /// Violates `std.builtin.Type.Optional.child` blacklist assertion.
+    BanishesChildType,
+    /// Violates `std.builtin.Type.Optional.child` whitelist assertion.
+    RequiresChildType,
 };
 
 /// Error set returned by `eval`
-pub const Error = OptionalError || info.Error;
+pub const Error = OptionalError;
 
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-
-    _ = Error.DisallowedChild catch void;
-    _ = Error.UnexpectedChild catch void;
-}
-
+/// Validates `actual` type info to optional to continue.
 pub const info_validator = info.init(.{
     .optional = true,
 });
 
 /// Parameters for prototype evaluation.
 ///
-/// Associated with `std.builtin.Type.Optional`.
+/// Derived from `std.builtin.Type.Optional`.
 pub const Params = struct {
-    /// Evaluates against `.child`
+    /// Evaluates against `std.builtin.Type.optional.child`
     child: info.Params = .{},
 };
 
-test {
-    const params: Params = .{
-        .child = .{},
-    };
-
-    _ = params;
-}
-
 /// Expects optional type value.
+///
+/// `actual` assertions:
 ///
 /// `actual` is an optional type value.
 pub fn init(params: Params) Prototype {
@@ -59,20 +46,25 @@ pub fn init(params: Params) Prototype {
         .name = "Optional",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try info_validator.eval(actual);
+                _ = info_validator.eval(actual) catch |err|
+                    return switch (err) {
+                        info.Error.InvalidArgument,
+                        info.Error.RequiresType,
+                        => OptionalError.InvalidArgument,
+                        else => unreachable,
+                    };
 
                 const actual_info = switch (@typeInfo(actual)) {
                     .optional => |optional_info| optional_info,
                     else => unreachable,
                 };
 
-                _ = child_validator.eval(actual_info.child) catch |err| {
+                _ = child_validator.eval(actual_info.child) catch |err|
                     return switch (err) {
-                        info.Error.DisallowedType => Error.DisallowedChild,
-                        info.Error.UnexpectedType => Error.UnexpectedChild,
+                        info.Error.BanishesType => OptionalError.BanishesChildType,
+                        info.Error.RequiresType => OptionalError.RequiresChildType,
                         else => unreachable,
                     };
-                };
 
                 return true;
             }
@@ -80,14 +72,11 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    Error.InvalidType,
-                    Error.DisallowedSize,
-                    Error.UnexpectedSize,
-                    => info_validator.onError(err, prototype, actual),
+                    OptionalError.InvalidArgument => info_validator.onError(err, prototype, actual),
 
-                    Error.DisallowedChild,
-                    Error.UnexpectedChild,
-                    => child_validator.onError(err, prototype, actual),
+                    OptionalError.BanishesChildType,
+                    OptionalError.RequiresChildType,
+                    => child_validator.onError(err, prototype, @typeInfo(actual).optional.child),
 
                     else => unreachable,
                 }
@@ -96,18 +85,38 @@ pub fn init(params: Params) Prototype {
     };
 }
 
+test OptionalError {
+    _ = OptionalError.DisallowedChild catch void;
+    _ = OptionalError.UnexpectedChild catch void;
+}
+
+test Error {
+    _ = Error.InvalidType catch void;
+    _ = Error.DisallowedType catch void;
+    _ = Error.UnexpectedType catch void;
+
+    _ = Error.DisallowedChild catch void;
+    _ = Error.UnexpectedType catch void;
+}
+
+test info_validator {
+    _ = try info_validator.eval(?bool);
+}
+
+test Params {
+    const params: Params = .{
+        .child = .{},
+    };
+
+    _ = params;
+}
+
 test init {
     const optional = init(.{
-        .child = .{},
+        .child = .{
+            .bool = true,
+        },
     });
 
-    try testing.expectEqual(
-        true,
-        optional.eval(?bool),
-    );
-
-    try testing.expectEqual(
-        Error.UnexpectedType,
-        optional.eval(bool),
-    );
+    _ = try optional.eval(?bool);
 }

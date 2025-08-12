@@ -10,30 +10,32 @@ const testing = std.testing;
 const Prototype = @import("Prototype.zig");
 const interval = @import("aux/interval.zig");
 const info = @import("aux/info.zig");
+const filter = @import("aux/filter.zig");
 
 /// Error set for int
 const IntError = error{
-    /// Violates `signedness` assertion.
-    InvalidSignedness,
+    InvalidArgument,
+    AssertsMinBits,
+    AssertsMaxBits,
+    /// Violates `std.builtin.Type.Int.signedness` assertion.
+    BanishesSignedness,
+    RequiresSignedness,
 };
 
 /// Error set returned by `eval`
-pub const Error = IntError || interval.Error || info.Error;
+pub const Error = IntError;
 
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-
-    _ = Error.ExceedsMin catch void;
-    _ = Error.ExceedsMax catch void;
-
-    _ = Error.InvalidSignedness catch void;
-}
-
+/// Validates type info of `actual` to continue.
 pub const info_validator = info.init(.{
     .int = true,
 });
+
+const SignednessParams = struct {
+    signed: ?bool = null,
+    unsigend: ?bool = null,
+};
+
+const Signedness = filter.Filter(SignednessParams);
 
 /// Parameters for prototype evaluation
 ///
@@ -46,20 +48,8 @@ pub const Params = struct {
     /// - `null`, no assertion
     /// - `signed`, asserts `signed`
     /// - `unsigned`, asserts `unsigned`
-    signedness: ?std.builtin.Signedness = null,
+    signedness: SignednessParams = .{},
 };
-
-test Params {
-    const params: Params = .{
-        .bits = .{
-            .min = null,
-            .max = null,
-        },
-        .signedness = null,
-    };
-
-    _ = params;
-}
 
 /// Expects runtime int type value.
 ///
@@ -71,24 +61,37 @@ test Params {
 /// returns error.
 pub fn init(params: Params) Prototype {
     const bits_validator = interval.init(u16, params.bits);
+    const signedness_validator = Signedness.init(params.signedness);
 
     return .{
         .name = "Int",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = info_validator.eval(actual) catch |err| return err;
+                _ = info_validator.eval(actual) catch |err|
+                    return switch (err) {
+                        info.Error.InvalidArgument,
+                        info.Error.RequiresType,
+                        => IntError.InvalidArgument,
+                    };
 
                 const actual_info = switch (@typeInfo(actual)) {
                     .int => |int_info| int_info,
                     else => unreachable,
                 };
 
-                _ = bits_validator.eval(actual_info.bits) catch |err| return err;
+                _ = bits_validator.eval(actual_info.bits) catch |err|
+                    return switch (err) {
+                        interval.Error.AssertsMin => IntError.AssertsMinBits,
+                        interval.Error.AssertsMax => IntError.AssertsMaxBits,
+                        else => unreachable,
+                    };
 
-                if (params.signedness) |signedness| {
-                    if (signedness != actual_info.signedness)
-                        return Error.InvalidSignedness;
-                }
+                _ = signedness_validator.eval(actual_info.signedness) catch |err|
+                    return switch (err) {
+                        filter.Error.Banishes => IntError.BanishesSignedness,
+                        filter.Error.Requires => IntError.RequiresSignedness,
+                        else => unreachable,
+                    };
 
                 return true;
             }
@@ -96,31 +99,54 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    Error.InvalidType,
-                    Error.DisallowedType,
-                    Error.UnexpectedType,
-                    => info_validator.onError(err, prototype, actual),
+                    IntError.InvalidArgument => info_validator.onError(err, prototype, actual),
 
-                    Error.ExceedsMin,
-                    Error.ExceedsMax,
-                    => bits_validator.onError(err, prototype, actual),
+                    IntError.AssertsMinBits,
+                    IntError.AssertsMaxBits,
+                    => bits_validator.onError(err, prototype, @typeInfo(actual).int.bits),
 
-                    Error.InvalidSignedness,
-                    => std.fmt.comptimePrint(
-                        "{s}.{s} expects {s}, actual: {s}",
-                        .{
-                            prototype.name,
-                            @errorName(err),
-                            @tagName(params.signedness),
-                            @typeName(actual),
-                        },
-                    ),
+                    IntError.BanishesSignedness,
+                    IntError.RequiresSignedness,
+                    => signedness_validator.onError(err, prototype, @typeInfo(actual).int.signedness),
 
                     else => unreachable,
                 }
             }
         }.onError,
     };
+}
+
+test IntError {
+    _ = IntError.InvalidSignedness catch void;
+}
+
+test Error {
+    _ = Error.InvalidType catch void;
+    _ = Error.DisallowedType catch void;
+    _ = Error.UnexpectedType catch void;
+
+    _ = Error.ExceedsMin catch void;
+    _ = Error.ExceedsMax catch void;
+
+    _ = Error.InvalidSignedness catch void;
+}
+
+test info_validator {
+    _ = try info_validator.eval(i128);
+    _ = try info_validator.eval(u8);
+    _ = try info_validator.eval(usize);
+}
+
+test Params {
+    const params: Params = .{
+        .bits = .{
+            .min = null,
+            .max = null,
+        },
+        .signedness = null,
+    };
+
+    _ = params;
 }
 
 test init {

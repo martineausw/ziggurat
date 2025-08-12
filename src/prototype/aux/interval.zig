@@ -7,23 +7,22 @@ const info = @import("info.zig");
 
 /// Error set for interval.
 const IntervalError = error{
+    InvalidArgument,
     /// Violates inclusive minimum value assertion.
-    ExceedsMin,
+    AssertsMin,
     /// Violates inclusive maximum value assertion.
-    ExceedsMax,
+    AssertsMax,
 };
 
 /// Error set returned by `eval`
-pub const Error = IntervalError || info.Error;
+pub const Error = IntervalError;
 
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-
-    _ = Error.ExceedsMin catch void;
-    _ = Error.ExceedsMax catch void;
-}
+pub const info_validator = info.init(.{
+    .int = true,
+    .float = true,
+    .comptime_int = true,
+    .comptime_float = true,
+});
 
 /// Parameters used for prototype evaluation.
 pub fn Params(comptime T: type) type {
@@ -38,47 +37,7 @@ pub fn Params(comptime T: type) type {
         /// - `null`, no assertion.
         /// - not `null`, asserts greater-than-or-equal-to.
         max: ?T = null,
-
-        pub fn eval(self: Params(T), actual: T) Error!bool {
-            if (!((self.min orelse actual) <= actual))
-                return Error.ExceedsMin;
-            if (!((self.max orelse actual) >= actual))
-                return Error.ExceedsMax;
-            return true;
-        }
-
-        pub fn onError(
-            self: Params(T),
-            err: Error,
-            prototype: Prototype,
-            actual: anytype,
-        ) void {
-            const print_val = switch (err) {
-                Error.ExceedsMin => self.min.?,
-                Error.ExceedsMax => self.max.?,
-                else => unreachable,
-            };
-            @compileError(std.fmt.comptimePrint(
-                "{s}.{s}: {d} actual: @as({s}, {d})",
-                .{
-                    prototype.name,
-                    @errorName(err),
-                    print_val,
-                    @typeName(T),
-                    actual,
-                },
-            ));
-        }
     };
-}
-
-test Params {
-    const params: Params(comptime_int) = .{
-        .min = null,
-        .max = null,
-    };
-
-    _ = params;
 }
 
 /// Expects integer value.
@@ -91,39 +50,73 @@ test Params {
 /// `actual` is less-than-or-equal-to given `params.max`, otherwise returns
 /// error.
 pub fn init(comptime T: type, params: Params(T)) Prototype {
-    const validator_info = info.init(.{
-        .int = true,
-        .comptime_int = true,
-        .float = true,
-        .comptime_float = true,
-    });
-
-    const validator_interval = params;
-
     return .{
         .name = "Interval",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = validator_info.eval(T) catch |err| return err;
-                _ = validator_interval.eval(actual) catch |err| return err;
+                _ = info_validator.eval(T) catch |err|
+                    return switch (err) {
+                        info.Error.InvalidType,
+                        info.Error.ViolatedWhitelistType,
+                        => IntervalError.InvalidArgument,
+                    };
+
+                if (!((params.min orelse actual) <= actual))
+                    return IntervalError.ExceedsMin;
+                if (!((params.max orelse actual) >= actual))
+                    return IntervalError.ExceedsMax;
+
                 return true;
             }
         }.eval,
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    Error.InvalidType,
-                    Error.DisallowedType,
-                    Error.UnexpectedType,
-                    => validator_info.onError(err, prototype, actual),
+                    IntervalError.InvalidArgument,
+                    => info_validator.onError(err, prototype, actual),
 
-                    Error.ExceedsMin,
-                    Error.ExceedsMax,
-                    => validator_interval.onError(err, prototype, actual),
+                    else => @compileError(std.fmt.comptimePrint(
+                        "{s}.{s}: {d}",
+                        .{
+                            prototype.name,
+                            @errorName(err),
+                            actual,
+                        },
+                    )),
                 }
             }
         }.onError,
     };
+}
+
+test IntervalError {
+    _ = IntervalError.ExceedsMin catch void;
+    _ = IntervalError.ExceedsMax catch void;
+}
+
+test Error {
+    _ = Error.InvalidType catch void;
+    _ = Error.DisallowedType catch void;
+    _ = Error.UnexpectedType catch void;
+
+    _ = Error.ExceedsMin catch void;
+    _ = Error.ExceedsMax catch void;
+}
+
+test info_validator {
+    _ = try info_validator.eval(u8);
+    _ = try info_validator.eval(f128);
+    _ = try info_validator.eval(comptime_int);
+    _ = try info_validator.eval(comptime_float);
+}
+
+test Params {
+    const params: Params(comptime_int) = .{
+        .min = null,
+        .max = null,
+    };
+
+    _ = params;
 }
 
 test init {

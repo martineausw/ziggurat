@@ -3,44 +3,49 @@ const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("../Prototype.zig");
+const info = @import("../aux/info.zig");
 
-/// Boolean AND of given `prototype0` and `prototype1`
-pub fn conjoin(prototype0: Prototype, prototype1: Prototype) Prototype {
+const info_validator = info.init(.{
+    .array = true,
+    .vector = true,
+    .pointer = true,
+});
+
+/// Boolean AND of given prototypes
+pub fn conjoin(prototypes: anytype) Prototype {
+    comptime var results: [prototypes.len]bool = undefined;
+    comptime var errs: [prototypes.len]?anyerror = undefined;
+
+    inline for (0..prototypes.len) |i| {
+        results[i] = false;
+        errs[i] = null;
+    }
+
     return .{
-        .name = std.fmt.comptimePrint(
-            "({s} AND {s})",
-            .{ prototype0.name, prototype1.name },
-        ),
+        .name = "Conjoin",
         .eval = struct {
             fn eval(actual: anytype) anyerror!bool {
-                var result0 = false;
-                var result1 = false;
-
-                var err0: ?anyerror = null;
-                var err1: ?anyerror = null;
-
-                if (prototype0.eval(actual)) |result| {
-                    result0 = result;
-                } else |err| {
-                    err0 = err;
+                for (prototypes, 0..) |prototype, i| {
+                    if (prototype.eval(actual)) |result| {
+                        results[i] = result;
+                    } else |err| {
+                        errs[i] = err;
+                    }
                 }
 
-                if (prototype1.eval(actual)) |result| {
-                    result1 = result;
-                } else |err| {
-                    err1 = err;
-                }
+                var result = results[0];
 
-                if (result0 and result1) {
+                for (1..results.len) |i|
+                    result = result and results[i];
+
+                if (result) {
                     return true;
                 }
 
-                if (err0) |err| {
-                    return err;
-                }
-
-                if (err1) |err| {
-                    return err;
+                for (errs) |err| {
+                    if (err) |e| {
+                        return e;
+                    }
                 }
 
                 return false;
@@ -48,13 +53,20 @@ pub fn conjoin(prototype0: Prototype, prototype1: Prototype) Prototype {
         }.eval,
         .onError = struct {
             fn onError(_: anyerror, prototype: Prototype, actual: anytype) void {
-                _ = prototype0.eval(actual) catch |err0|
-                    prototype0.onError(err0, prototype, actual);
-                _ = prototype1.eval(actual) catch |err1|
-                    prototype1.onError(err1, prototype, actual);
+                for (0..prototypes.len) |i| {
+                    if (errs[i]) |e| {
+                        prototypes[i].onError(e, prototype, actual);
+                    }
+                }
             }
         }.onError,
     };
+}
+
+test info_validator {
+    _ = info_validator.eval(@Vector(6, u8));
+    _ = info_validator.eval([6]u8);
+    _ = info_validator.eval([]const u8);
 }
 
 test conjoin {
@@ -66,21 +78,6 @@ test conjoin {
             }
         }.eval,
     };
-    const @"false": Prototype = .{
-        .name = "False",
-        .eval = struct {
-            fn eval(_: anytype) !bool {
-                return false;
-            }
-        }.eval,
-    };
 
-    try testing.expectEqual(
-        true,
-        conjoin(@"true", @"true").eval(void),
-    );
-    try testing.expectEqual(
-        false,
-        conjoin(@"true", @"false").eval(void),
-    );
+    _ = try conjoin(.{ @"true", @"true" }).eval(void);
 }

@@ -4,17 +4,15 @@
 const std = @import("std");
 
 const Prototype = @import("Prototype.zig");
+
+/// Error set for type.
 const TypeError = error{
     /// Violates `actual` is `type` value assertion.
-    InvalidType,
+    InvalidArgument,
 };
 
 /// Errors returned by `eval`
 pub const Error = TypeError;
-
-test Error {
-    _ = Error.InvalidType catch void;
-}
 
 /// Expects type value.
 ///
@@ -26,14 +24,14 @@ pub const init: Prototype = .{
         fn eval(actual: anytype) Error!bool {
             return switch (@typeInfo(@TypeOf(actual))) {
                 .type => true,
-                else => Error.InvalidType,
+                else => TypeError.InvalidArgument,
             };
         }
     }.eval,
     .onError = struct {
         fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
             switch (err) {
-                Error.InvalidType => @compileError(std.fmt.comptimePrint(
+                else => @compileError(std.fmt.comptimePrint(
                     "{s}.{s} expects `type`, actual: {s}",
                     .{
                         prototype.name,
@@ -41,8 +39,21 @@ pub const init: Prototype = .{
                         @typeName(@TypeOf(actual)),
                     },
                 )),
-                else => unreachable,
             }
         }
     }.onError,
 };
+
+test TypeError {
+    _ = TypeError.InvalidType catch void;
+}
+
+test Error {
+    _ = Error.InvalidType catch void;
+}
+
+test init {
+    const @"type": Prototype = init;
+
+    _ = @"type".eval(type);
+}
