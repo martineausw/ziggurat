@@ -10,7 +10,7 @@ pub fn negate(prototype: Prototype) Prototype {
         .name = std.fmt.comptimePrint("(NOT {s})", .{prototype.name}),
         .eval = struct {
             fn eval(actual: anytype) anyerror!bool {
-                if (prototype.eval(actual)) |result| {
+                if (comptime prototype.eval(actual)) |result| {
                     return !result;
                 } else |err| {
                     return err;

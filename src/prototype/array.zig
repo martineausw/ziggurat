@@ -72,7 +72,9 @@ pub fn init(params: Params) Prototype {
         .name = "Array",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = info_validator.eval(actual) catch |err|
+                _ = info_validator.eval(
+                    actual,
+                ) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
                         info.Error.RequiresType,
@@ -80,12 +82,9 @@ pub fn init(params: Params) Prototype {
                         else => unreachable,
                     };
 
-                const actual_info = switch (@typeInfo(actual)) {
-                    .array => |array_info| array_info,
-                    else => unreachable,
-                };
-
-                _ = child_validator.eval(actual_info.child) catch |err|
+                _ = child_validator.eval(
+                    @typeInfo(actual).array.child,
+                ) catch |err|
                     return switch (err) {
                         info.Error.BanishesType,
                         => ArrayError.BanishesChildType,
@@ -94,7 +93,9 @@ pub fn init(params: Params) Prototype {
                         else => unreachable,
                     };
 
-                _ = len_validator.eval(actual_info.len) catch |err|
+                _ = len_validator.eval(
+                    @typeInfo(actual).array.len,
+                ) catch |err|
                     return switch (err) {
                         interval.Error.AssertsMin,
                         => ArrayError.AssertsMinLen,
@@ -104,7 +105,7 @@ pub fn init(params: Params) Prototype {
                     };
 
                 _ = sentinel_validator.eval(
-                    actual_info.sentinel(),
+                    @typeInfo(actual).array.sentinel(),
                 ) catch |err|
                     return switch (err) {
                         exists.Error.AssertsNotNull,
@@ -192,4 +193,139 @@ test init {
     });
 
     _ = array;
+}
+
+test "evaluates array successfully" {
+    const array = init(
+        .{
+            .child = .{},
+            .len = .{
+                .min = null,
+                .max = null,
+            },
+            .sentinel = null,
+        },
+    );
+
+    try std.testing.expectEqual(
+        true,
+        array.eval([5]u8),
+    );
+}
+
+test "coerces ArrayError.InvalidArgument" {
+    const array = init(
+        .{
+            .child = .{},
+            .len = .{
+                .min = null,
+                .max = null,
+            },
+            .sentinel = null,
+        },
+    );
+
+    try std.testing.expectEqual(
+        ArrayError.InvalidArgument,
+        comptime array.eval([3]usize{ 0, 1, 2 }),
+    );
+}
+
+test "coerces ArrayError.RequiresChildType" {
+    const array = init(
+        .{
+            .child = .{
+                .int = true,
+            },
+            .len = .{
+                .min = null,
+                .max = null,
+            },
+            .sentinel = null,
+        },
+    );
+
+    try std.testing.expectEqual(
+        ArrayError.RequiresChildType,
+        array.eval([3]f128),
+    );
+}
+
+test "coerces ArrayError.BanishesChildType" {
+    const array = init(
+        .{
+            .child = .{
+                .int = false,
+            },
+            .len = .{
+                .min = null,
+                .max = null,
+            },
+            .sentinel = null,
+        },
+    );
+
+    try std.testing.expectEqual(
+        ArrayError.BanishesChildType,
+        array.eval([3]usize),
+    );
+}
+
+test "coerces ArrayError.AssertsMinLen and ArrayError.AssertsMaxLen" {
+    const array = init(
+        .{
+            .child = .{},
+            .len = .{
+                .min = 1,
+                .max = 2,
+            },
+            .sentinel = null,
+        },
+    );
+
+    try std.testing.expectEqual(
+        ArrayError.AssertsMinLen,
+        array.eval([0]usize),
+    );
+
+    try std.testing.expectEqual(
+        ArrayError.AssertsMaxLen,
+        array.eval([3]usize),
+    );
+}
+
+test "coerces ArrayError.AssertsNotNullSentinel" {
+    const array = init(
+        .{
+            .child = .{},
+            .len = .{
+                .min = null,
+                .max = null,
+            },
+            .sentinel = true,
+        },
+    );
+
+    try std.testing.expectEqual(
+        ArrayError.AssertsNotNullSentinel,
+        array.eval([3]u8),
+    );
+}
+
+test "coerces ArrayError.AssertsNullSentinel" {
+    const array = init(
+        .{
+            .child = .{},
+            .len = .{
+                .min = null,
+                .max = null,
+            },
+            .sentinel = false,
+        },
+    );
+
+    try std.testing.expectEqual(
+        ArrayError.AssertsNullSentinel,
+        array.eval([3:0]u8),
+    );
 }

@@ -79,7 +79,7 @@ pub fn init(params: Params) Prototype {
                         else => unreachable,
                     };
 
-                _ = comptime filter_validator.eval(
+                _ = filter_validator.eval(
                     @typeInfo(actual),
                 ) catch |err|
                     return switch (err) {

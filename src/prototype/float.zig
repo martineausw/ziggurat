@@ -44,7 +44,7 @@ pub fn init(params: Params) Prototype {
         .name = "Float",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = info_validator.eval(actual) catch |err|
+                _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
                         info.Error.RequiresType,
@@ -52,12 +52,7 @@ pub fn init(params: Params) Prototype {
                         else => unreachable,
                     };
 
-                const actual_info = switch (@typeInfo(actual)) {
-                    .float => |float_info| float_info,
-                    else => unreachable,
-                };
-
-                _ = bits_validator.eval(actual_info.bits) catch |err|
+                _ = bits_validator.eval(@typeInfo(actual).float.bits) catch |err|
                     return switch (err) {
                         interval.Error.AssertsMin,
                         => FloatError.AssertsMinBits,
@@ -121,4 +116,41 @@ test init {
     });
 
     _ = float;
+}
+
+test "evaluates float successfully" {
+    const float = init(.{
+        .bits = .{
+            .min = null,
+            .max = null,
+        },
+    });
+
+    try std.testing.expectEqual(true, float.eval(f128));
+}
+
+test "coerces FloatError.InvalidArgument" {
+    const float = init(.{
+        .bits = .{
+            .min = null,
+            .max = null,
+        },
+    });
+
+    try std.testing.expectEqual(
+        FloatError.InvalidArgument,
+        comptime float.eval(@as(f128, 0.0)),
+    );
+}
+
+test "coerces FloatError.AssertsMinBits and FloatError.AssertsMaxBits" {
+    const float = init(.{
+        .bits = .{
+            .min = 32,
+            .max = 64,
+        },
+    });
+
+    try std.testing.expectEqual(FloatError.AssertsMinBits, float.eval(f16));
+    try std.testing.expectEqual(FloatError.AssertsMaxBits, float.eval(f128));
 }

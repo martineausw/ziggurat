@@ -67,7 +67,7 @@ pub fn init(params: Params) Prototype {
         .name = "Int",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = info_validator.eval(actual) catch |err|
+                _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
                         info.Error.RequiresType,
@@ -87,7 +87,7 @@ pub fn init(params: Params) Prototype {
                         else => unreachable,
                     };
 
-                _ = signedness_validator.eval(
+                _ = comptime signedness_validator.eval(
                     actual_info.signedness,
                 ) catch |err|
                     return switch (err) {
@@ -167,4 +167,70 @@ test init {
     });
 
     _ = int;
+}
+
+test "evaluates int successfully" {
+    const int = init(.{
+        .bits = .{
+            .min = null,
+            .max = null,
+        },
+        .signedness = .{},
+    });
+
+    try std.testing.expectEqual(true, int.eval(i128));
+    try std.testing.expectEqual(true, int.eval(usize));
+}
+
+test "coerces IntError.InvalidArgument" {
+    const int = init(.{
+        .bits = .{
+            .min = null,
+            .max = null,
+        },
+        .signedness = .{},
+    });
+
+    try std.testing.expectEqual(
+        IntError.InvalidArgument,
+        comptime int.eval(@as(i128, 0)),
+    );
+}
+
+test "coerces IntError.AssertsMinBits and IntError.AssertsMaxBits" {
+    const int = init(.{
+        .bits = .{
+            .min = 32,
+            .max = 64,
+        },
+        .signedness = .{},
+    });
+
+    try std.testing.expectEqual(IntError.AssertsMinBits, comptime int.eval(i16));
+    try std.testing.expectEqual(IntError.AssertsMaxBits, comptime int.eval(i128));
+}
+
+test "coerces IntError.BanishesSignedness" {
+    const int = init(.{ .bits = .{
+        .min = null,
+        .max = null,
+    }, .signedness = .{
+        .signed = false,
+    } });
+
+    try std.testing.expectEqual(IntError.BanishesSignedness, comptime int.eval(i128));
+}
+
+test "coerces IntError.RequiresSignedness" {
+    const int = init(.{
+        .bits = .{
+            .min = null,
+            .max = null,
+        },
+        .signedness = .{
+            .unsigned = true,
+        },
+    });
+
+    try std.testing.expectEqual(IntError.RequiresSignedness, comptime int.eval(i128));
 }

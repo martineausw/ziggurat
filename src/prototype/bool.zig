@@ -22,11 +22,14 @@ pub const init: Prototype = .{
     .name = "Bool",
     .eval = struct {
         fn eval(actual: anytype) Error!bool {
-            _ = info_validator.eval(actual) catch |err|
+            _ = comptime info_validator.eval(
+                actual,
+            ) catch |err|
                 return switch (err) {
                     info.Error.InvalidArgument,
                     info.Error.RequiresType,
                     => BoolError.InvalidArgument,
+                    else => unreachable,
                 };
 
             return true;
@@ -56,4 +59,16 @@ test init {
     const @"bool": Prototype = init;
 
     _ = @"bool";
+}
+
+test "evaluates bool successfully" {
+    const @"bool" = init;
+
+    try std.testing.expectEqual(true, @"bool".eval(bool));
+}
+
+test "coerces BoolError.InvalidArgument" {
+    const @"bool" = init;
+
+    try std.testing.expectEqual(BoolError.InvalidArgument, comptime @"bool".eval(true));
 }

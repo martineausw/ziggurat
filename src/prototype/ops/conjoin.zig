@@ -26,7 +26,7 @@ pub fn conjoin(prototypes: anytype) Prototype {
                 }
 
                 inline for (prototypes, 0..) |prototype, i| {
-                    if (prototype.eval(actual)) |result| {
+                    if (comptime prototype.eval(actual)) |result| {
                         results[i] = result;
                     } else |err| {
                         errs[i] = err;
