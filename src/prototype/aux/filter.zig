@@ -6,6 +6,7 @@ const @"type" = @import("../type.zig");
 /// Error set for filter.
 const FilterError = error{
     InvalidArgument,
+    RequiresType,
     /// Violates tag blacklist assertion.
     Banishes,
     /// Violates tag whitelist assertion.
@@ -31,17 +32,10 @@ pub fn Filter(comptime Params: type) type {
                 .name = "Filter",
                 .eval = struct {
                     fn eval(actual: anytype) !bool {
-                        _ = type_validator.eval(actual) catch |err|
-                            return switch (err) {
-                                @"type".Error.InvalidArgument => FilterError.InvalidArgument,
-                            };
-
-                        switch (@typeInfo(actual)) {
-                            .@"union",
-                            .@"enum",
-                            => {},
+                        _ = switch (@typeInfo(@TypeOf(actual))) {
+                            inline .@"union", .@"enum" => {},
                             else => return FilterError.InvalidArgument,
-                        }
+                        };
 
                         // Checks active tag against blacklist
                         if (@field(params, @tagName(actual))) |param| {
@@ -59,14 +53,25 @@ pub fn Filter(comptime Params: type) type {
                     }
                 }.eval,
                 .onError = struct {
-                    fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+                    fn onError(
+                        err: anyerror,
+                        prototype: Prototype,
+                        actual: anytype,
+                    ) void {
                         switch (err) {
                             FilterError.InvalidArgument,
-                            => type_validator.onError(err, prototype, actual),
+                            => comptime type_validator.onError(
+                                err,
+                                prototype,
+                                actual,
+                            ),
 
-                            FilterError.Banishes,
-                            FilterError.Requires,
+                            FilterError.RequiresType,
                             => @compileError(std.fmt.comptimePrint(
+                                "{s}.{s}: expects `union` or `enum`",
+                            )),
+
+                            else => @compileError(std.fmt.comptimePrint(
                                 "{s}.{s}: {s}",
                                 .{
                                     prototype.name,
@@ -109,4 +114,114 @@ test Filter {
     });
 
     _ = t_validator;
+}
+
+test "evaluates whitelist on tagged union" {
+    const U = union(enum) {
+        a: bool,
+        b: usize,
+        c: f128,
+    };
+
+    const Params = struct {
+        a: ?bool,
+        b: ?bool,
+        c: ?bool,
+    };
+
+    const filter = Filter(Params).init(.{
+        .a = true,
+        .b = true,
+        .c = null,
+    });
+
+    try std.testing.expectEqual(
+        true,
+        comptime filter.eval(U{ .a = false }),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        comptime filter.eval(U{ .b = 0 }),
+    );
+}
+
+test "evaluates blacklist on tagged union" {
+    const U = union(enum) {
+        a: bool,
+        b: usize,
+        c: f128,
+    };
+
+    const Params = struct {
+        a: ?bool,
+        b: ?bool,
+        c: ?bool,
+    };
+
+    const filter = Filter(Params).init(.{
+        .a = null,
+        .b = null,
+        .c = false,
+    });
+
+    try std.testing.expectEqual(
+        true,
+        comptime filter.eval(U{ .a = false }),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        comptime filter.eval(U{ .b = 0 }),
+    );
+}
+
+test "coerces FilterError.Requires" {
+    const U = union(enum) {
+        a: bool,
+        b: usize,
+        c: f128,
+    };
+
+    const Params = struct {
+        a: ?bool,
+        b: ?bool,
+        c: ?bool,
+    };
+
+    const filter = Filter(Params).init(.{
+        .a = true,
+        .b = true,
+        .c = null,
+    });
+
+    try std.testing.expectEqual(
+        FilterError.Requires,
+        comptime filter.eval(U{ .c = 0.0 }),
+    );
+}
+
+test "coerces FilterError.Banishes" {
+    const U = union(enum) {
+        a: bool,
+        b: usize,
+        c: f128,
+    };
+
+    const Params = struct {
+        a: ?bool,
+        b: ?bool,
+        c: ?bool,
+    };
+
+    const filter = Filter(Params).init(.{
+        .a = null,
+        .b = null,
+        .c = false,
+    });
+
+    try std.testing.expectEqual(
+        FilterError.Banishes,
+        comptime filter.eval(U{ .c = 0.0 }),
+    );
 }

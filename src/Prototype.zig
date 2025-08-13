@@ -1,15 +1,6 @@
 const std = @import("std");
 const testing = std.testing;
 
-/// Error set for type.
-const ValueError = error{
-    /// Violates `type` assertion.
-    InvalidType,
-};
-
-/// Error set returned by `eval`
-pub const Error = ValueError;
-
 pub const Prototype = @import("prototype/Prototype.zig");
 
 pub const array = @import("prototype/array.zig");
@@ -18,6 +9,7 @@ pub const float = @import("prototype/float.zig");
 pub const int = @import("prototype/int.zig");
 pub const optional = @import("prototype/optional.zig");
 pub const pointer = @import("prototype/pointer.zig");
+pub const @"struct" = @import("prototype/struct.zig");
 pub const @"type" = @import("prototype/type.zig");
 pub const vector = @import("prototype/vector.zig");
 
@@ -25,20 +17,16 @@ pub const aux = @import("prototype/aux.zig");
 pub const ops = @import("prototype/ops.zig");
 
 test Prototype {
-    const @"true": Prototype = .{
-        .name = "True",
+    _ = Prototype{
+        .name = "name",
         .eval = struct {
             fn eval(actual: anytype) anyerror!bool {
                 _ = actual;
                 return true;
+                // return false;
+                // return error.Unimplemented;
             }
         }.eval,
-        .onFail = struct {
-            fn onFail(prototype: Prototype, actual: anytype) void {
-                _ = prototype;
-                _ = actual;
-            }
-        }.onFail,
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 _ = err;
@@ -46,13 +34,17 @@ test Prototype {
                 _ = actual;
             }
         }.onError,
+        .onFail = struct {
+            fn onFail(prototype: Prototype, actual: anytype) void {
+                _ = prototype;
+                _ = actual;
+            }
+        }.onFail,
     };
-
-    _ = @"true";
 }
 
 test array {
-    const array_params: array.Params = .{
+    _ = array.Params{
         .child = .{},
         .len = .{
             .min = null,
@@ -60,64 +52,51 @@ test array {
         },
         .sentinel = null,
     };
-    const array_prototype: Prototype = array.init(array_params);
-
-    _ = array_prototype;
     _ = array.Error;
-    _ = array.info_validator;
+    _ = array.init(.{});
 }
 
 test @"bool" {
-    const bool_prototype: Prototype = @"bool".init;
-
-    _ = bool_prototype;
+    _ = @"bool".init;
     _ = @"bool".Error;
-    _ = @"bool".info_validator;
 }
 
 test float {
-    const float_params: float.Params = .{
+    _ = float.Params{
         .bits = .{
             .min = null,
             .max = null,
         },
     };
-    const float_prototype: Prototype = float.init(float_params);
-
-    _ = float_prototype;
     _ = float.Error;
-    _ = float.info_validator;
+    _ = float.init(.{});
 }
 
 test int {
-    const int_params: int.Params = .{
+    _ = int.Params{
         .bits = .{
             .min = null,
             .max = null,
         },
-        .signedness = null,
+        .signedness = .{
+            .signed = null,
+            .unsigned = null,
+        },
     };
-    const int_prototype: Prototype = int.init(int_params);
-
-    _ = int_prototype;
     _ = int.Error;
     _ = int.info_validator;
 }
 
 test optional {
-    const optional_params: optional.Params = .{
+    _ = optional.Params{
         .child = .{},
     };
-    const optional_prototype: Prototype = optional.init(optional_params);
-
-    _ = optional_prototype;
     _ = optional.Error;
-
-    _ = optional.info_validator;
+    _ = optional.init(.{});
 }
 
 test pointer {
-    const pointer_params: pointer.Params = .{
+    _ = pointer.Params{
         .child = .{},
         .is_const = null,
         .is_volatile = null,
@@ -129,24 +108,32 @@ test pointer {
             .c = null,
         },
     };
-
-    const pointer_prototype: Prototype = pointer.init(pointer_params);
-
-    _ = pointer_prototype;
+    _ = pointer.init(.{});
     _ = pointer.Error;
+}
 
-    _ = pointer.info_validator;
+test @"struct" {
+    _ = @"struct".Error;
+    _ = @"struct".Params{
+        .layout = .{
+            .@"extern" = null,
+            .@"packed" = null,
+            .auto = null,
+        },
+        .fields = &.{},
+        .decls = &.{},
+        .is_tuple = null,
+    };
+    _ = @"struct".init(.{});
 }
 
 test @"type" {
-    const type_prototype: Prototype = @"type".init;
-
-    _ = type_prototype;
+    _ = @"type".init;
     _ = @"type".Error;
 }
 
 test vector {
-    const vector_params: vector.Params = .{
+    _ = vector.Params{
         .child = .{},
         .len = .{
             .min = null,
@@ -154,12 +141,8 @@ test vector {
         },
     };
 
-    const vector_prototype: Prototype = vector.init(vector_params);
-
-    _ = vector_prototype;
     _ = vector.Error;
-
-    _ = vector.info_validator;
+    _ = vector.init(.{});
 }
 
 test aux {

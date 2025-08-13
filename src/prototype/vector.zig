@@ -67,16 +67,20 @@ pub fn init(params: Params) Prototype {
 
                 _ = child_validator.eval(actual_info.child) catch |err| {
                     return switch (err) {
-                        info.Error.BanishesType => VectorError.BanishesChildType,
-                        info.Error.RequiresType => VectorError.RequiresChildType,
+                        info.Error.BanishesType,
+                        => VectorError.BanishesChildType,
+                        info.Error.RequiresType,
+                        => VectorError.RequiresChildType,
                         else => unreachable,
                     };
                 };
 
                 _ = len_validator.eval(actual_info.len) catch |err|
                     return switch (err) {
-                        interval.Error.AssertsMin => VectorError.AssertsMinLen,
-                        interval.Error.AssertsMax => VectorError.AssertsMaxLen,
+                        interval.Error.AssertsMin,
+                        => VectorError.AssertsMinLen,
+                        interval.Error.AssertsMax,
+                        => VectorError.AssertsMaxLen,
                         else => unreachable,
                     };
 
@@ -84,18 +88,30 @@ pub fn init(params: Params) Prototype {
             }
         }.eval,
         .onError = struct {
-            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+            fn onError(
+                err: anyerror,
+                prototype: Prototype,
+                actual: anytype,
+            ) void {
                 switch (err) {
                     VectorError.InvalidArgument,
                     => info_validator.onError(err, prototype, actual),
 
                     VectorError.BanishesChildType,
                     VectorError.RequiresChildType,
-                    => child_validator.onError(err, prototype, @typeInfo(actual).vector.child),
+                    => child_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).vector.child,
+                    ),
 
                     VectorError.AssertsMinLen,
                     VectorError.AssertsMaxLen,
-                    => len_validator.onError(err, prototype, @typeInfo(actual).vector.len),
+                    => len_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).vector.len,
+                    ),
 
                     else => unreachable,
                 }

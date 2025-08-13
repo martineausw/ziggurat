@@ -1,17 +1,13 @@
 //! Auxillary prototypes for convenience.
 const std = @import("std");
 
+pub const decl = @import("aux/decl.zig");
+pub const exists = @import("aux/exists.zig");
+pub const field = @import("aux/field.zig");
 pub const filter = @import("aux/filter.zig");
-
-/// Asserts filter type info tags.
-///
 pub const info = @import("aux/info.zig");
-
-/// Asserts inclusive interval on number values.
-///
-/// - `min`, asserts inclusive minimum
-/// - `max`, asserts inclusive maximum
 pub const interval = @import("aux/interval.zig");
+pub const toggle = @import("aux/interval.zig");
 
 test filter {
     const Foo = struct {

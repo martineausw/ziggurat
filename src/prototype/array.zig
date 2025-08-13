@@ -74,7 +74,8 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.UnexpectedType => ArrayError.InvalidArgument,
+                        info.Error.UnexpectedType,
+                        => ArrayError.InvalidArgument,
                     };
 
                 const actual_info = switch (@typeInfo(actual)) {
@@ -84,22 +85,30 @@ pub fn init(params: Params) Prototype {
 
                 _ = child_validator.eval(actual_info.child) catch |err|
                     return switch (err) {
-                        info.Error.BanishesType => ArrayError.BanishesChildType,
-                        info.Error.RequiresType => ArrayError.RequiresChildType,
+                        info.Error.BanishesType,
+                        => ArrayError.BanishesChildType,
+                        info.Error.RequiresType,
+                        => ArrayError.RequiresChildType,
                         else => unreachable,
                     };
 
                 _ = len_validator.eval(actual_info.len) catch |err|
                     return switch (err) {
-                        interval.Error.AssertsMin => ArrayError.AssertsMinLen,
-                        interval.Error.AssertsMax => ArrayError.AssertsMaxLen,
+                        interval.Error.AssertsMin,
+                        => ArrayError.AssertsMinLen,
+                        interval.Error.AssertsMax,
+                        => ArrayError.AssertsMaxLen,
                         else => unreachable,
                     };
 
-                _ = sentinel_validator.eval(actual_info.sentinel()) catch |err|
+                _ = sentinel_validator.eval(
+                    actual_info.sentinel(),
+                ) catch |err|
                     return switch (err) {
-                        exists.Error.AssertsNotNull => ArrayError.AssertsNotNullSentinel,
-                        exists.Error.AssertsNull => ArrayError.AssertsNullSentinel,
+                        exists.Error.AssertsNotNull,
+                        => ArrayError.AssertsNotNullSentinel,
+                        exists.Error.AssertsNull,
+                        => ArrayError.AssertsNullSentinel,
                         else => unreachable,
                     };
 
@@ -107,22 +116,38 @@ pub fn init(params: Params) Prototype {
             }
         }.eval,
         .onError = struct {
-            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+            fn onError(
+                err: anyerror,
+                prototype: Prototype,
+                actual: anytype,
+            ) void {
                 switch (err) {
                     ArrayError.InvalidArgument,
                     => info_validator.onError(err, prototype, actual),
 
                     ArrayError.BanishesChildType,
                     ArrayError.RequiresChildType,
-                    => info_validator.onError(err, prototype, @typeInfo(actual).array.child),
+                    => info_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).array.child,
+                    ),
 
                     ArrayError.AssertsMinLen,
                     ArrayError.AssertsMaxLen,
-                    => len_validator.onError(err, prototype, @typeInfo(actual).array.len),
+                    => len_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).array.len,
+                    ),
 
                     ArrayError.AssertsNotNullSentinel,
                     ArrayError.AssertsNullSentinel,
-                    => sentinel_validator.onError(err, prototype, @typeInfo(actual).array.sentinel()),
+                    => sentinel_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).array.sentinel(),
+                    ),
 
                     else => unreachable,
                 }

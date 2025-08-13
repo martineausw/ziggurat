@@ -21,6 +21,7 @@ const StructError = error{
     BanishesLayout,
     RequiresLayout,
     AssertsStructFieldName,
+    RequiresStructFieldType,
     BanishesStructFieldType,
     AssertsDeclName,
     AssertsTrueIsTuple,
@@ -46,8 +47,8 @@ const Layout = filter.Filter(LayoutParams);
 /// Associated with `std.builtin.Type.Struct`.
 pub const Params = struct {
     layout: LayoutParams = .{},
-    fields: []const field.Params = .{},
-    decls: []const decl.Params = .{},
+    fields: []const field.Params = &.{},
+    decls: []const decl.Params = &.{},
     is_tuple: ?bool = null,
 };
 
@@ -73,19 +74,25 @@ pub fn init(params: Params) Prototype {
                     else => unreachable,
                 };
 
-                _ = layout_validator.eval(actual_info.layout) catch |err| return switch (err) {
-                    filter.Error.Disallowed => StructError.BanishesLayout,
-                    filter.Error.Unexpected => StructError.RequiresLayout,
-                    else => unreachable,
-                };
+                _ = layout_validator.eval(actual_info.layout) catch |err|
+                    return switch (err) {
+                        filter.Error.Disallowed,
+                        => StructError.BanishesLayout,
+                        filter.Error.Unexpected,
+                        => StructError.RequiresLayout,
+                        else => unreachable,
+                    };
 
                 inline for (params.fields) |param_field| {
                     const field_validator = field.init(param_field);
                     _ = field_validator.eval(actual) catch |err|
                         return switch (err) {
-                            field.Error.AssertsFieldName => StructError.AssertsStructFieldName,
-                            field.Error.BanishesFieldType => StructError.BanishesStructFieldType,
-                            field.Error.RequiresFieldType => StructError.RequiresStructFieldType,
+                            field.Error.AssertsFieldName,
+                            => StructError.AssertsStructFieldName,
+                            field.Error.BanishesFieldType,
+                            => StructError.BanishesStructFieldType,
+                            field.Error.RequiresFieldType,
+                            => StructError.RequiresStructFieldType,
                             else => unreachable,
                         };
                 }
@@ -94,15 +101,18 @@ pub fn init(params: Params) Prototype {
                     const decl_validator = field.init(param_decl);
                     _ = decl_validator.eval(actual) catch |err|
                         return switch (err) {
-                            decl.Error.AssertsDecl => StructError.AssertsDeclName,
+                            decl.Error.AssertsDecl,
+                            => StructError.AssertsDeclName,
                             else => unreachable,
                         };
                 }
 
                 _ = is_tuple_validator.eval(actual_info.is_tuple) catch |err|
                     return switch (err) {
-                        toggle.Error.AssertsTrue => StructError.AssertsTrueIsTuple,
-                        toggle.Error.AssertsFalse => StructError.AssertsFalseIsTuple,
+                        toggle.Error.AssertsTrue,
+                        => StructError.AssertsTrueIsTuple,
+                        toggle.Error.AssertsFalse,
+                        => StructError.AssertsFalseIsTuple,
                         else => unreachable,
                     };
 
@@ -117,7 +127,11 @@ pub fn init(params: Params) Prototype {
 
                     StructError.BanishesLayout,
                     StructError.RequiresLayout,
-                    => layout_validator.onError(err, prototype, @typeInfo(actual).@"struct".layout),
+                    => layout_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).@"struct".layout,
+                    ),
 
                     StructError.AssertsStructFieldName,
                     StructError.BanishesStructFieldType,
@@ -125,7 +139,12 @@ pub fn init(params: Params) Prototype {
                     => {
                         inline for (params.fields) |param_field| {
                             const field_validator = field.init(param_field);
-                            _ = field_validator.eval(actual) catch field_validator.onError(err, prototype, actual);
+                            _ = field_validator.eval(actual) catch
+                                field_validator.onError(
+                                    err,
+                                    prototype,
+                                    actual,
+                                );
                         }
                     },
 
@@ -133,13 +152,22 @@ pub fn init(params: Params) Prototype {
                     => {
                         inline for (params.decls) |param_decl| {
                             const decl_validator = field.init(param_decl);
-                            _ = decl_validator.eval(actual) catch decl_validator.onError(err, prototype, actual);
+                            _ = decl_validator.eval(actual) catch
+                                decl_validator.onError(
+                                    err,
+                                    prototype,
+                                    actual,
+                                );
                         }
                     },
 
                     StructError.AssertsTrueIsTuple,
                     StructError.AssertsFalseIsTuple,
-                    => is_tuple_validator.onError(err, prototype, @typeInfo(actual).@"struct".is_tuple),
+                    => is_tuple_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).@"struct".is_tuple,
+                    ),
 
                     Error.InvalidType,
                     Error.DisallowedType,

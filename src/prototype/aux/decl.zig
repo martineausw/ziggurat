@@ -7,6 +7,7 @@ const info = @import("info.zig");
 /// Error set for declaration.
 const DeclError = error{
     InvalidArgument,
+    RequiresType,
     /// Violates `std.builtin.Type.Declaration.name` assertion.
     AssertsDecl,
 };
@@ -19,7 +20,6 @@ pub const info_validator = info.init(.{
     .@"struct" = true,
     .@"enum" = true,
     .@"union" = true,
-    .@"opaque" = true,
 });
 
 /// Parameters used for prototype evaluation.
@@ -34,14 +34,25 @@ pub fn init(params: Params) Prototype {
     return .{
         .name = "Decl",
         .eval = struct {
-            fn eval(actual: anytype) Error!bool {
-                _ = info_validator.eval(actual) catch |err|
+            fn eval(actual: anytype) DeclError!bool {
+                _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
-                        info.Error.RequiresType,
                         => DeclError.InvalidArgument,
+                        info.Error.RequiresType,
+                        => DeclError.RequiresType,
                         else => unreachable,
                     };
+
+                // if (@TypeOf(actual) != type) return DeclError.InvalidArgument;
+
+                // switch (@typeInfo(actual)) {
+                //     .@"struct",
+                //     .@"enum",
+                //     .@"union",
+                //     => {},
+                //     else => unreachable,
+                // }
 
                 if (!@hasDecl(actual, params.name)) {
                     return DeclError.AssertsDecl;
@@ -51,10 +62,15 @@ pub fn init(params: Params) Prototype {
             }
         }.eval,
         .onError = struct {
-            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+            fn onError(
+                err: anyerror,
+                prototype: Prototype,
+                actual: anytype,
+            ) void {
                 switch (err) {
                     DeclError.InvalidArgument,
-                    => info_validator.onError(err, prototype, actual),
+                    DeclError.RequiresType,
+                    => info_validator.onError.?(err, prototype, actual),
 
                     DeclError.AssertsDecl,
                     => @compileError(std.fmt.comptimePrint(
@@ -104,4 +120,136 @@ test init {
     });
 
     _ = decl;
+}
+
+test "evaluates struct with given decl" {
+    const T: type = struct {
+        const decl = void;
+    };
+
+    const params: Params = .{
+        .name = "decl",
+    };
+
+    const has_decl: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        true,
+        has_decl.eval(T),
+    );
+}
+
+test "evaluates union with given decl" {
+    const T: type = struct {
+        const decl = void;
+    };
+
+    const params: Params = .{
+        .name = "decl",
+    };
+
+    const has_decl: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        true,
+        has_decl.eval(T),
+    );
+}
+
+test "evaluates enum with given decl" {
+    const T: type = struct {
+        const decl = void;
+    };
+
+    const params: Params = .{
+        .name = "decl",
+    };
+
+    const has_decl: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        true,
+        has_decl.eval(T),
+    );
+}
+
+test "coerces DeclError.AssertsDecl from struct" {
+    const T: type = struct {};
+
+    const params: Params = .{
+        .name = "decl",
+    };
+
+    const has_decl: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        Error.AssertsDecl,
+        has_decl.eval(T),
+    );
+
+    // has_decl.onError.?(Error.AssertsDecl, has_decl, T);
+}
+
+test "coerces DeclError.AssertsDecl from union" {
+    const T: type = union {};
+
+    const params: Params = .{
+        .name = "decl",
+    };
+
+    const has_decl: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        Error.AssertsDecl,
+        has_decl.eval(T),
+    );
+
+    // comptime has_decl.onError.?(Error.AssertsDecl, has_decl, T);
+}
+
+test "coerces DeclError.AssertsDecl from enum" {
+    const T: type = enum {};
+
+    const params: Params = .{
+        .name = "decl",
+    };
+
+    const has_decl: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        Error.AssertsDecl,
+        has_decl.eval(T),
+    );
+
+    // comptime has_decl.onError.?(Error.AssertsDecl, has_decl, T);
+}
+
+test "coerces DeclError.RequiresType" {
+    const params: Params = .{
+        .name = "decl",
+    };
+
+    const has_decl: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        Error.RequiresType,
+        has_decl.eval(bool),
+    );
+
+    // comptime has_decl.onError.?(Error.RequiresType, has_decl, bool);
+}
+
+test "coerces DeclError.InvalidArgument" {
+    const params: Params = .{
+        .name = "decl",
+    };
+
+    const has_decl: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        comptime has_decl.eval(false),
+    );
+
+    // comptime has_decl.onError.?(Error.RequiresType, has_decl, bool);
 }

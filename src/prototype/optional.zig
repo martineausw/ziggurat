@@ -61,8 +61,10 @@ pub fn init(params: Params) Prototype {
 
                 _ = child_validator.eval(actual_info.child) catch |err|
                     return switch (err) {
-                        info.Error.BanishesType => OptionalError.BanishesChildType,
-                        info.Error.RequiresType => OptionalError.RequiresChildType,
+                        info.Error.BanishesType,
+                        => OptionalError.BanishesChildType,
+                        info.Error.RequiresType,
+                        => OptionalError.RequiresChildType,
                         else => unreachable,
                     };
 
@@ -72,11 +74,19 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    OptionalError.InvalidArgument => info_validator.onError(err, prototype, actual),
+                    OptionalError.InvalidArgument => info_validator.onError(
+                        err,
+                        prototype,
+                        actual,
+                    ),
 
                     OptionalError.BanishesChildType,
                     OptionalError.RequiresChildType,
-                    => child_validator.onError(err, prototype, @typeInfo(actual).optional.child),
+                    => child_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).optional.child,
+                    ),
 
                     else => unreachable,
                 }

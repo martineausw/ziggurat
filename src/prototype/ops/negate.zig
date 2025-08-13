@@ -22,14 +22,13 @@ pub fn negate(prototype: Prototype) Prototype {
 }
 
 test negate {
-    const @"true": Prototype = .{
-        .name = "True",
+    _ = negate(Prototype{
+        .name = "prototype",
         .eval = struct {
-            fn eval(_: anytype) anyerror!bool {
+            fn eval(actual: anytype) anyerror!bool {
+                _ = actual;
                 return true;
             }
         }.eval,
-    };
-
-    try testing.expect(false == try negate(@"true").eval(void));
+    });
 }

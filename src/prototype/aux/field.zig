@@ -7,6 +7,7 @@ const info = @import("info.zig");
 /// Error set for field.
 const FieldError = error{
     InvalidArgument,
+    RequiresType,
     /// Violates `std.builtin.Type.StructField.name` or
     /// `std.builtin.Type.UnionField.name` assertion.
     AssertsFieldName,
@@ -46,8 +47,10 @@ pub fn init(params: Params) Prototype {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
-                        info.Error.RequiresType,
                         => FieldError.InvalidArgument,
+                        info.Error.RequiresType,
+                        => FieldError.RequiresType,
+                        else => unreachable,
                     };
 
                 if (!@hasField(actual, params.name)) {
@@ -68,7 +71,11 @@ pub fn init(params: Params) Prototype {
             }
         }.eval,
         .onError = struct {
-            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+            fn onError(
+                err: anyerror,
+                prototype: Prototype,
+                actual: anytype,
+            ) void {
                 switch (err) {
                     FieldError.InvalidArgument,
                     => info_validator.onError(err, prototype, actual),
@@ -139,4 +146,102 @@ test init {
     });
 
     _ = field;
+}
+
+test "evaluates struct with given field successfully" {
+    const T = struct {
+        field: bool,
+    };
+
+    const params: Params = .{
+        .name = "field",
+        .type = .{
+            .bool = true,
+        },
+    };
+
+    const has_field: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        true,
+        has_field.eval(T),
+    );
+}
+
+test "evaluates union with given field successfully" {
+    const T = union {
+        field: bool,
+    };
+
+    const params: Params = .{
+        .name = "field",
+        .type = .{
+            .bool = true,
+        },
+    };
+
+    const has_field: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        true,
+        has_field.eval(T),
+    );
+}
+
+test "coerces FieldError.AssertsFieldName" {
+    const T = struct {};
+
+    const params: Params = .{
+        .name = "field",
+        .type = .{
+            .bool = true,
+        },
+    };
+
+    const has_field: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        FieldError.AssertsFieldName,
+        has_field.eval(T),
+    );
+}
+
+test "coerces FieldError.RequiresFieldType" {
+    const T = struct {
+        field: ?bool,
+    };
+
+    const params: Params = .{
+        .name = "field",
+        .type = .{
+            .bool = true,
+        },
+    };
+
+    const has_field: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        FieldError.RequiresFieldType,
+        comptime has_field.eval(T),
+    );
+}
+
+test "coerces FieldError.BanishesFieldType" {
+    const T = struct {
+        field: bool,
+    };
+
+    const params: Params = .{
+        .name = "field",
+        .type = .{
+            .bool = false,
+        },
+    };
+
+    const has_field: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        FieldError.BanishesFieldType,
+        comptime has_field.eval(T),
+    );
 }

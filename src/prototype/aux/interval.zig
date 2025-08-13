@@ -56,21 +56,25 @@ pub fn init(comptime T: type, params: Params(T)) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(T) catch |err|
                     return switch (err) {
-                        info.Error.InvalidType,
-                        info.Error.ViolatedWhitelistType,
+                        info.Error.InvalidArgument,
                         => IntervalError.InvalidArgument,
+                        else => unreachable,
                     };
 
                 if (!((params.min orelse actual) <= actual))
-                    return IntervalError.ExceedsMin;
+                    return IntervalError.AssertsMin;
                 if (!((params.max orelse actual) >= actual))
-                    return IntervalError.ExceedsMax;
+                    return IntervalError.AssertsMax;
 
                 return true;
             }
         }.eval,
         .onError = struct {
-            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+            fn onError(
+                err: anyerror,
+                prototype: Prototype,
+                actual: anytype,
+            ) void {
                 switch (err) {
                     IntervalError.InvalidArgument,
                     => info_validator.onError(err, prototype, actual),
@@ -111,4 +115,112 @@ test init {
     });
 
     _ = interval;
+}
+
+test "evaluates runtime integers within interval" {
+    const usize_interval = init(usize, .{
+        .min = 0,
+        .max = 2,
+    });
+
+    try std.testing.expectEqual(true, usize_interval.eval(@as(usize, 0)));
+    try std.testing.expectEqual(true, usize_interval.eval(@as(usize, 1)));
+    try std.testing.expectEqual(true, usize_interval.eval(@as(usize, 2)));
+
+    const i128_interval = init(i128, .{
+        .min = -1,
+        .max = 1,
+    });
+
+    try std.testing.expectEqual(true, i128_interval.eval(@as(i128, -1)));
+    try std.testing.expectEqual(true, i128_interval.eval(@as(i128, 0)));
+    try std.testing.expectEqual(true, i128_interval.eval(@as(i128, 1)));
+}
+
+test "evaluates runtime floats within interval" {
+    const f16_interval = init(f16, .{
+        .min = -1.0,
+        .max = 1.0,
+    });
+
+    try std.testing.expectEqual(true, f16_interval.eval(@as(f16, -1.0)));
+    try std.testing.expectEqual(true, f16_interval.eval(@as(f16, 0.0)));
+    try std.testing.expectEqual(true, f16_interval.eval(@as(f16, 1.0)));
+
+    const i128_interval = init(f128, .{
+        .min = -1.0,
+        .max = 1.0,
+    });
+
+    try std.testing.expectEqual(true, i128_interval.eval(@as(f128, -1)));
+    try std.testing.expectEqual(true, i128_interval.eval(@as(f128, 0)));
+    try std.testing.expectEqual(true, i128_interval.eval(@as(f128, 1)));
+}
+
+test "evaluates comptime_int within interval" {
+    const interval = init(comptime_int, .{
+        .min = -1,
+        .max = 1,
+    });
+
+    try std.testing.expectEqual(
+        true,
+        interval.eval(@as(comptime_int, -1)),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        interval.eval(@as(comptime_int, 0)),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        interval.eval(@as(comptime_int, 1)),
+    );
+}
+
+test "evaluates comptime_float within interval" {
+    const interval = init(comptime_float, .{
+        .min = -1,
+        .max = 1,
+    });
+
+    try std.testing.expectEqual(
+        true,
+        interval.eval(@as(comptime_float, -1)),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        interval.eval(@as(comptime_float, 0)),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        interval.eval(@as(comptime_float, 1)),
+    );
+}
+
+test "coerces IntervalError.AssertsMin" {
+    const interval = init(comptime_float, .{
+        .min = -1,
+        .max = 1,
+    });
+
+    try std.testing.expectEqual(
+        IntervalError.AssertsMin,
+        interval.eval(@as(comptime_float, -1.001)),
+    );
+}
+
+test "coerces IntervalError.AssertsMax" {
+    const interval = init(comptime_float, .{
+        .min = -1,
+        .max = 1,
+    });
+
+    try std.testing.expectEqual(
+        IntervalError.AssertsMax,
+        interval.eval(@as(comptime_float, 1.001)),
+    );
 }

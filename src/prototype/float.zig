@@ -59,8 +59,10 @@ pub fn init(params: Params) Prototype {
 
                 _ = bits_validator.eval(actual_info.bits) catch |err|
                     return switch (err) {
-                        interval.Error.AssertsMin => FloatError.AssertsMinBits,
-                        interval.Error.AssertsMax => FloatError.AssertsMaxBits,
+                        interval.Error.AssertsMin,
+                        => FloatError.AssertsMinBits,
+                        interval.Error.AssertsMax,
+                        => FloatError.AssertsMaxBits,
                         else => unreachable,
                     };
 
@@ -68,14 +70,22 @@ pub fn init(params: Params) Prototype {
             }
         }.eval,
         .onError = struct {
-            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+            fn onError(
+                err: anyerror,
+                prototype: Prototype,
+                actual: anytype,
+            ) void {
                 switch (err) {
                     FloatError.InvalidArgument,
                     => info_validator.onError(err, prototype, actual),
 
                     FloatError.AssertsMinBits,
                     FloatError.AssertsMaxBits,
-                    => bits_validator.onError(err, prototype, @typeInfo(actual).float.bits),
+                    => bits_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).float.bits,
+                    ),
 
                     else => unreachable,
                 }

@@ -86,7 +86,9 @@ pub fn init(params: Params) Prototype {
                         else => unreachable,
                     };
 
-                _ = signedness_validator.eval(actual_info.signedness) catch |err|
+                _ = signedness_validator.eval(
+                    actual_info.signedness,
+                ) catch |err|
                     return switch (err) {
                         filter.Error.Banishes => IntError.BanishesSignedness,
                         filter.Error.Requires => IntError.RequiresSignedness,
@@ -99,15 +101,27 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    IntError.InvalidArgument => info_validator.onError(err, prototype, actual),
+                    IntError.InvalidArgument => info_validator.onError(
+                        err,
+                        prototype,
+                        actual,
+                    ),
 
                     IntError.AssertsMinBits,
                     IntError.AssertsMaxBits,
-                    => bits_validator.onError(err, prototype, @typeInfo(actual).int.bits),
+                    => bits_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).int.bits,
+                    ),
 
                     IntError.BanishesSignedness,
                     IntError.RequiresSignedness,
-                    => signedness_validator.onError(err, prototype, @typeInfo(actual).int.signedness),
+                    => signedness_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).int.signedness,
+                    ),
 
                     else => unreachable,
                 }

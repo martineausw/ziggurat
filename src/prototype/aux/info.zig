@@ -73,34 +73,42 @@ pub fn init(params: Params) Prototype {
         .name = "Info",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = type_validator.eval(actual) catch |err|
+                _ = comptime type_validator.eval(actual) catch |err|
                     return switch (err) {
                         @"type".Error.InvalidArgument => InfoError.InvalidArgument,
                         else => unreachable,
                     };
 
-                _ = filter_validator.eval(@typeInfo(actual)) catch |err|
+                _ = comptime filter_validator.eval(
+                    @typeInfo(actual),
+                ) catch |err|
                     return switch (err) {
                         filter.Error.Banishes => InfoError.BanishesType,
                         filter.Error.Requires => InfoError.RequiresType,
                         else => unreachable,
                     };
+
                 return true;
             }
         }.eval,
         .onError = struct {
-            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+            fn onError(
+                err: anyerror,
+                prototype: Prototype,
+                actual: anytype,
+            ) void {
                 switch (err) {
-                    InfoError.InvalidType,
-                    => type_validator.onError(err, prototype, actual),
+                    InfoError.InvalidArgument,
+                    => type_validator.onError.?(err, prototype, actual),
 
                     InfoError.BanishesType,
                     InfoError.RequiresType,
                     => @compileError(std.fmt.comptimePrint(
-                        "{s}.{s}: {s}",
+                        "{s}.{s}: expect: {any}, actual: {s}",
                         .{
                             prototype.name,
                             @errorName(err),
+                            params,
                             @tagName(@typeInfo(actual)),
                         },
                     )),
@@ -178,4 +186,238 @@ test init {
     });
 
     _ = info;
+}
+
+test "evaluates types against whitelist successfully" {
+    const params: Params = .{
+        .int = true,
+        .float = true,
+        .comptime_int = true,
+        .comptime_float = true,
+    };
+
+    const number: Prototype = init(params);
+
+    try std.testing.expectEqual(true, number.eval(usize));
+    try std.testing.expectEqual(true, number.eval(u8));
+    try std.testing.expectEqual(true, number.eval(i128));
+
+    try std.testing.expectEqual(true, number.eval(f16));
+    try std.testing.expectEqual(true, number.eval(f128));
+
+    try std.testing.expectEqual(true, number.eval(comptime_int));
+    try std.testing.expectEqual(true, number.eval(comptime_float));
+}
+
+test "evaluates types against blacklist successfully" {
+    const params: Params = .{
+        .type = false,
+        .void = false,
+        .bool = false,
+        .noreturn = false,
+        .pointer = false,
+        .array = false,
+        .@"struct" = false,
+        .undefined = false,
+        .null = false,
+        .optional = false,
+        .error_union = false,
+        .error_set = false,
+        .@"enum" = false,
+        .@"union" = false,
+        .@"fn" = false,
+        .@"opaque" = false,
+        .frame = false,
+        .@"anyframe" = false,
+        .vector = false,
+        .enum_literal = false,
+    };
+
+    const number: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        true,
+        comptime number.eval(usize),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        comptime number.eval(u8),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        comptime number.eval(i128),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        comptime number.eval(f16),
+    );
+    try std.testing.expectEqual(
+        true,
+        comptime number.eval(f128),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        comptime number.eval(comptime_int),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        comptime number.eval(comptime_float),
+    );
+}
+
+test "evaluates types against whitelist unsuccessfully" {
+    const params: Params = .{
+        .type = true,
+        .void = true,
+        .bool = true,
+        .noreturn = true,
+        .pointer = true,
+        .array = true,
+        .@"struct" = true,
+        .undefined = true,
+        .null = true,
+        .optional = true,
+        .error_union = true,
+        .error_set = true,
+        .@"enum" = true,
+        .@"union" = true,
+        .@"fn" = true,
+        .@"opaque" = true,
+        .frame = true,
+        .@"anyframe" = true,
+        .vector = true,
+        .enum_literal = true,
+    };
+
+    const number: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        Error.RequiresType,
+        comptime number.eval(usize),
+    );
+
+    try std.testing.expectEqual(
+        Error.RequiresType,
+        comptime number.eval(u8),
+    );
+
+    try std.testing.expectEqual(
+        Error.RequiresType,
+        comptime number.eval(i128),
+    );
+
+    try std.testing.expectEqual(
+        Error.RequiresType,
+        comptime number.eval(f16),
+    );
+
+    try std.testing.expectEqual(
+        Error.RequiresType,
+        comptime number.eval(f128),
+    );
+
+    try std.testing.expectEqual(
+        Error.RequiresType,
+        comptime number.eval(comptime_int),
+    );
+
+    try std.testing.expectEqual(
+        Error.RequiresType,
+        comptime number.eval(comptime_float),
+    );
+}
+
+test "evaluates types against blacklist unsuccessfully" {
+    const params: Params = .{
+        .int = false,
+        .float = false,
+        .comptime_int = false,
+        .comptime_float = false,
+    };
+
+    const number: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        Error.BanishesType,
+        comptime number.eval(usize),
+    );
+
+    try std.testing.expectEqual(
+        Error.BanishesType,
+        comptime number.eval(u8),
+    );
+
+    try std.testing.expectEqual(
+        Error.BanishesType,
+        comptime number.eval(i128),
+    );
+
+    try std.testing.expectEqual(
+        Error.BanishesType,
+        comptime number.eval(f16),
+    );
+    try std.testing.expectEqual(
+        Error.BanishesType,
+        comptime number.eval(f128),
+    );
+
+    try std.testing.expectEqual(
+        Error.BanishesType,
+        comptime number.eval(comptime_int),
+    );
+    try std.testing.expectEqual(
+        Error.BanishesType,
+        comptime number.eval(comptime_float),
+    );
+}
+
+test "evaluates invalid values" {
+    const params: Params = .{
+        .int = false,
+        .float = false,
+        .comptime_int = false,
+        .comptime_float = false,
+    };
+
+    const number: Prototype = init(params);
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        comptime number.eval(@as(usize, 0)),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        comptime number.eval(@as(u8, 'a')),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        comptime number.eval(@as(i128, 0)),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        comptime number.eval(@as(f16, 0.0)),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        comptime number.eval(@as(f128, 0.0)),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        comptime number.eval(@as(comptime_int, 0)),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        comptime number.eval(@as(comptime_float, 0.0)),
+    );
 }

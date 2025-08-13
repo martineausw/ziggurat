@@ -5,9 +5,8 @@ const info = @import("info.zig");
 
 const ExistsError = error{
     InvalidArgument,
-    /// Violates `actual` is not `null` when `params` is equal to `true`.
+    RequiresType,
     AssertsNotNull,
-    /// Violates `actual` is `null` when `params` is equal to `true`.
     AssertsNull,
 };
 
@@ -27,8 +26,9 @@ pub fn init(params: Params) Prototype {
                 _ = info_validator.eval(@TypeOf(actual)) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
-                        info.Error.RequiresType,
                         => ExistsError.InvalidArgument,
+                        info.Error.RequiresType,
+                        => ExistsError.RequiresType,
                         else => unreachable,
                     };
 
@@ -53,11 +53,13 @@ pub fn init(params: Params) Prototype {
                     ExistsError.InvalidArgument,
                     => info_validator.onError(err, prototype, actual),
 
-                    else => @compileError(std.fmt.comptimePrint("{s}.{s}: {any}", .{
-                        prototype.name,
-                        @errorName(err),
-                        actual,
-                    })),
+                    else => @compileError(
+                        std.fmt.comptimePrint("{s}.{s}: {any}", .{
+                            prototype.name,
+                            @errorName(err),
+                            actual,
+                        }),
+                    ),
                 }
             }
         }.onError,
@@ -76,4 +78,48 @@ test init {
     const exists: Prototype = init(null);
 
     _ = exists;
+}
+
+test "evaluates exists successfully" {
+    const no_assertion = init(null);
+    const asserts_not_null = init(true);
+    const asserts_null = init(false);
+
+    try std.testing.expectEqual(
+        true,
+        no_assertion.eval(@as(?u8, 'a')),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        no_assertion.eval(@as(?u8, null)),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        asserts_not_null.eval(@as(?u8, 'a')),
+    );
+
+    try std.testing.expectEqual(
+        true,
+        asserts_null.eval(@as(?u8, null)),
+    );
+}
+
+test "coerces ExistsError.AssertsNotNull" {
+    const asserts_not_null = init(true);
+
+    try std.testing.expectEqual(
+        ExistsError.AssertsNotNull,
+        asserts_not_null.eval(@as(?u8, null)),
+    );
+}
+
+test "coerces FilterError.Banishes" {
+    const asserts_null = init(false);
+
+    try std.testing.expectEqual(
+        ExistsError.AssertsNull,
+        asserts_null.eval(@as(?u8, 'a')),
+    );
 }

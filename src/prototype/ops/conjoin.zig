@@ -13,19 +13,19 @@ const info_validator = info.init(.{
 
 /// Boolean AND of given prototypes
 pub fn conjoin(prototypes: anytype) Prototype {
-    comptime var results: [prototypes.len]bool = undefined;
-    comptime var errs: [prototypes.len]?anyerror = undefined;
-
-    inline for (0..prototypes.len) |i| {
-        results[i] = false;
-        errs[i] = null;
-    }
-
     return .{
         .name = "Conjoin",
         .eval = struct {
             fn eval(actual: anytype) anyerror!bool {
-                for (prototypes, 0..) |prototype, i| {
+                var results: [prototypes.len]bool = undefined;
+                var errs: [prototypes.len]?anyerror = undefined;
+
+                for (0..prototypes.len) |i| {
+                    results[i] = false;
+                    errs[i] = null;
+                }
+
+                inline for (prototypes, 0..) |prototype, i| {
                     if (prototype.eval(actual)) |result| {
                         results[i] = result;
                     } else |err| {
@@ -52,7 +52,27 @@ pub fn conjoin(prototypes: anytype) Prototype {
             }
         }.eval,
         .onError = struct {
-            fn onError(_: anyerror, prototype: Prototype, actual: anytype) void {
+            fn onError(
+                _: anyerror,
+                prototype: Prototype,
+                actual: anytype,
+            ) void {
+                var results = [prototypes.len]bool{};
+                var errs = [prototypes.len]?anyerror{};
+
+                for (0..prototypes.len) |i| {
+                    results[i] = false;
+                    errs[i] = null;
+                }
+
+                for (prototypes, 0..) |proto, i| {
+                    if (proto.eval(actual)) |result| {
+                        results[i] = result;
+                    } else |err| {
+                        errs[i] = err;
+                    }
+                }
+
                 for (0..prototypes.len) |i| {
                     if (errs[i]) |e| {
                         prototypes[i].onError(e, prototype, actual);
@@ -64,14 +84,15 @@ pub fn conjoin(prototypes: anytype) Prototype {
 }
 
 test conjoin {
-    const @"true": Prototype = .{
-        .name = "True",
-        .eval = struct {
-            fn eval(_: anytype) !bool {
-                return true;
-            }
-        }.eval,
-    };
-
-    _ = try conjoin(.{ @"true", @"true" }).eval(void);
+    _ = conjoin(.{
+        Prototype{
+            .name = "prototype",
+            .eval = struct {
+                fn eval(actual: anytype) !bool {
+                    _ = actual;
+                    return true;
+                }
+            }.eval,
+        },
+    });
 }

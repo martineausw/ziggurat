@@ -11,12 +11,12 @@ const Prototype = @import("prototype/Prototype.zig");
 pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type: type) type {
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
-            if (prototype.eval(actual)) |result| {
+            if (comptime prototype.eval(actual)) |result| {
                 if (!result) if (prototype.onFail) |onFail|
-                    onFail(prototype, actual);
+                    comptime onFail(prototype, actual);
             } else |err| {
                 if (prototype.onError) |onError|
-                    onError(err, prototype, actual);
+                    comptime onError(err, prototype, actual);
             }
 
             return struct {

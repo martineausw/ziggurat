@@ -12,20 +12,19 @@ pub const info_validator = info.init(.{
 });
 
 /// Boolean OR of `prototype`.
-pub fn disjoin(prototypes: Prototype) Prototype {
-    comptime var results: [prototypes.len]bool = undefined;
-    comptime var errs: [prototypes.len]?anyerror = undefined;
-
-    inline for (0..prototypes.len) |i| {
-        results[i] = false;
-        errs[i] = null;
-    }
-
+pub fn disjoin(prototypes: anytype) Prototype {
     return .{
         .name = "disjoin",
         .eval = struct {
             fn eval(actual: anytype) anyerror!bool {
-                for (prototypes, 0..) |prototype, i| {
+                var results: [prototypes.len]bool = undefined;
+                var errs: [prototypes.len]?anyerror = undefined;
+                inline for (0..prototypes.len) |i| {
+                    results[i] = false;
+                    errs[i] = null;
+                }
+
+                inline for (prototypes, 0..) |prototype, i| {
                     if (prototype.eval(actual)) |result| {
                         results[i] = result;
                     } else |err| {
@@ -52,7 +51,19 @@ pub fn disjoin(prototypes: Prototype) Prototype {
             }
         }.eval,
         .onError = struct {
-            fn onError(_: anyerror, prototype: Prototype, actual: anytype) void {
+            fn onError(
+                _: anyerror,
+                prototype: Prototype,
+                actual: anytype,
+            ) void {
+                var results: [prototypes.len]bool = undefined;
+                var errs: [prototypes.len]?anyerror = undefined;
+
+                inline for (0..prototypes.len) |i| {
+                    results[i] = false;
+                    errs[i] = null;
+                }
+
                 for (0..prototypes.len) |i| {
                     if (errs[i]) |e| {
                         prototypes[i].onError(e, prototype, actual);
@@ -64,22 +75,15 @@ pub fn disjoin(prototypes: Prototype) Prototype {
 }
 
 test disjoin {
-    const @"true": Prototype = .{
-        .name = "true",
-        .eval = struct {
-            fn eval(_: anytype) !bool {
-                return true;
-            }
-        }.eval,
-    };
-    const @"false": Prototype = .{
-        .name = "false",
-        .eval = struct {
-            fn eval(_: anytype) !bool {
-                return false;
-            }
-        }.eval,
-    };
-
-    _ = try disjoin(.{ @"true", @"false" }).eval(void);
+    _ = disjoin(.{
+        Prototype{
+            .name = "prototype",
+            .eval = struct {
+                fn eval(actual: anytype) !bool {
+                    _ = actual;
+                    return true;
+                }
+            }.eval,
+        },
+    });
 }

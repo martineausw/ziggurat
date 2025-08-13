@@ -22,10 +22,8 @@ pub const init: Prototype = .{
 
     .eval = struct {
         fn eval(actual: anytype) Error!bool {
-            return switch (@typeInfo(@TypeOf(actual))) {
-                .type => true,
-                else => TypeError.InvalidArgument,
-            };
+            if (@TypeOf(actual) != type) return TypeError.InvalidArgument;
+            return true;
         }
     }.eval,
     .onError = struct {
@@ -52,4 +50,125 @@ test init {
     const @"type": Prototype = init;
 
     _ = @"type";
+}
+
+test "evaluates types successfully" {
+    const @"type": Prototype = init;
+
+    try std.testing.expectEqual(true, @"type".eval(usize));
+    try std.testing.expectEqual(true, @"type".eval(u8));
+    try std.testing.expectEqual(true, @"type".eval(i128));
+    try std.testing.expectEqual(true, @"type".eval(i8));
+    try std.testing.expectEqual(true, @"type".eval(f128));
+    try std.testing.expectEqual(true, @"type".eval(f16));
+    try std.testing.expectEqual(true, @"type".eval(bool));
+    try std.testing.expectEqual(true, @"type".eval(?bool));
+    try std.testing.expectEqual(true, @"type".eval(comptime_float));
+    try std.testing.expectEqual(true, @"type".eval(comptime_int));
+    try std.testing.expectEqual(true, @"type".eval(struct {}));
+    try std.testing.expectEqual(true, @"type".eval(union {}));
+    try std.testing.expectEqual(true, @"type".eval(enum {}));
+    try std.testing.expectEqual(true, @"type".eval(error{}));
+    try std.testing.expectEqual(true, @"type".eval(fn () void));
+    try std.testing.expectEqual(true, @"type".eval([]const u8));
+    try std.testing.expectEqual(true, @"type".eval([*]enum {}));
+    try std.testing.expectEqual(
+        true,
+        @"type".eval(*const volatile struct {}),
+    );
+    try std.testing.expectEqual(true, @"type".eval([3]i128));
+    try std.testing.expectEqual(true, @"type".eval(@Vector(3, f128)));
+}
+
+test "evaluates types unsuccessfully" {
+    const @"type": Prototype = init;
+
+    try std.testing.expectEqual(
+        TypeError.InvalidArgument,
+        @"type".eval(@as(usize, 0)),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval(@as(u8, 'a')),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval(@as(i128, 0)),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval(@as(i8, 0)),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval(@as(f128, 0.0)),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval(@as(f16, 0.0)),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval(false),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval(@as(comptime_float, 0.0)),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval(@as(comptime_int, 0)),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval(struct {}{}),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval((union { a: bool }){ .a = false }),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval((enum { a }).a),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval((error{Coerced}).Coerced),
+    );
+
+    try std.testing.expectEqual(Error.InvalidArgument, @"type".eval(struct {
+        fn foo() void {}
+    }.foo));
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval(@as([]const u8, "hello")),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval(@as(?bool, null)),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval([3]i128{ 0, 1, 2 }),
+    );
+
+    try std.testing.expectEqual(
+        Error.InvalidArgument,
+        @"type".eval(@Vector(3, f128){ 0.0, 0.0, 0.0 }),
+    );
 }

@@ -117,36 +117,54 @@ pub fn init(params: Params) Prototype {
 
                 _ = child_validator.eval(actual_info.child) catch |err|
                     return switch (err) {
-                        info.Error.BanishesType => PointerError.BanishesChildType,
-                        info.Error.RequiresType => PointerError.RequiresChildType,
+                        info.Error.BanishesType,
+                        => PointerError.BanishesChildType,
+                        info.Error.RequiresType,
+                        => PointerError.RequiresChildType,
                         else => unreachable,
                     };
 
-                _ = comptime size_validator.eval(actual_info.size) catch |err|
+                _ = comptime size_validator.eval(
+                    actual_info.size,
+                ) catch |err|
                     return switch (err) {
-                        filter.Error.Banishes => PointerError.BanishesSize,
-                        filter.Error.Requires => PointerError.RequiresSize,
+                        filter.Error.Banishes,
+                        => PointerError.BanishesSize,
+                        filter.Error.Requires,
+                        => PointerError.RequiresSize,
                         else => unreachable,
                     };
 
-                _ = is_const_validator.eval(actual_info.is_const) catch |err|
+                _ = is_const_validator.eval(
+                    actual_info.is_const,
+                ) catch |err|
                     return switch (err) {
-                        toggle.Error.AssertsTrue => PointerError.AssertsTrueIsConst,
-                        toggle.Error.AssertsFalse => PointerError.AssertsFalseIsVolatile,
+                        toggle.Error.AssertsTrue,
+                        => PointerError.AssertsTrueIsConst,
+                        toggle.Error.AssertsFalse,
+                        => PointerError.AssertsFalseIsVolatile,
                         else => unreachable,
                     };
 
-                _ = is_volatile_validator.eval(actual_info.is_volatile) catch |err|
+                _ = is_volatile_validator.eval(
+                    actual_info.is_volatile,
+                ) catch |err|
                     return switch (err) {
-                        toggle.Error.AssertsTrue => PointerError.AssertsTrueIsVolatile,
-                        toggle.Error.AssertsFalse => PointerError.AssertsFalseIsVolatile,
+                        toggle.Error.AssertsTrue,
+                        => PointerError.AssertsTrueIsVolatile,
+                        toggle.Error.AssertsFalse,
+                        => PointerError.AssertsFalseIsVolatile,
                         else => unreachable,
                     };
 
-                _ = sentinel_validator.eval(actual_info.sentinel()) catch |err|
+                _ = sentinel_validator.eval(
+                    actual_info.sentinel(),
+                ) catch |err|
                     return switch (err) {
-                        exists.Error.AssertsNotNull => PointerError.AssertsNotNullSentinel,
-                        exists.Error.AssertsNull => PointerError.AssertsNullSentinel,
+                        exists.Error.AssertsNotNull,
+                        => PointerError.AssertsNotNullSentinel,
+                        exists.Error.AssertsNull,
+                        => PointerError.AssertsNullSentinel,
                         else => unreachable,
                     };
 
@@ -154,30 +172,54 @@ pub fn init(params: Params) Prototype {
             }
         }.eval,
         .onError = struct {
-            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+            fn onError(
+                err: anyerror,
+                prototype: Prototype,
+                actual: anytype,
+            ) void {
                 switch (err) {
                     PointerError.InvalidArgument,
                     => info_validator.onError(err, prototype, actual),
 
                     PointerError.BanishesChildType,
                     PointerError.RequiresChildType,
-                    => child_validator.onError(err, prototype, @typeInfo(actual).pointer.child),
+                    => child_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).pointer.child,
+                    ),
 
                     PointerError.BanishesSize,
                     PointerError.RequiresSize,
-                    => size_validator.onError(err, prototype, @typeInfo(actual).pointer.size),
+                    => size_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).pointer.size,
+                    ),
 
                     PointerError.AssertsTrueIsConst,
                     PointerError.AssertsFalseIsConst,
-                    => is_const_validator.onError(err, prototype, @typeInfo(actual).pointer.is_const),
+                    => is_const_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).pointer.is_const,
+                    ),
 
                     PointerError.AssertsTrueIsVolatile,
                     PointerError.AssertsFalseIsVolatile,
-                    => is_volatile_validator.onError(err, prototype, @typeInfo(actual).pointer.is_volatile),
+                    => is_volatile_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).pointer.is_volatile,
+                    ),
 
                     PointerError.AssertsNotNullSentinel,
                     PointerError.AssertsNullSentinel,
-                    => sentinel_validator.onError(err, prototype, @typeInfo(actual).pointer.sentinel()),
+                    => sentinel_validator.onError(
+                        err,
+                        prototype,
+                        @typeInfo(actual).pointer.sentinel(),
+                    ),
                     else => unreachable,
                 }
             }
@@ -191,8 +233,8 @@ test PointerError {
     _ = PointerError.BanishesChildType catch void;
     _ = PointerError.RequiresChildType catch void;
 
-    _ = PointerError.AssertsMinLen catch void;
-    _ = PointerError.AssertsMaxLen catch void;
+    _ = PointerError.BanishesSize catch void;
+    _ = PointerError.RequiresSize catch void;
 
     _ = PointerError.AssertsTrueIsConst catch void;
     _ = PointerError.AssertsFalseIsConst catch void;

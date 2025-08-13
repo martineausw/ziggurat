@@ -33,7 +33,11 @@ pub const init: Prototype = .{
         }
     }.eval,
     .onError = struct {
-        fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+        fn onError(
+            err: anyerror,
+            prototype: Prototype,
+            actual: anytype,
+        ) void {
             switch (err) {
                 BoolError.InvalidArgument,
                 => info_validator.onError(err, prototype, actual),

@@ -27,6 +27,7 @@ pub fn init(params: Params) Prototype {
                         info.Error.InvalidArgument,
                         info.Error.RequiresType,
                         => ToggleError.InvalidArgument,
+                        else => unreachable,
                     };
 
                 if (params) |param| {
@@ -45,16 +46,22 @@ pub fn init(params: Params) Prototype {
             }
         }.eval,
         .onError = struct {
-            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
+            fn onError(
+                err: anyerror,
+                prototype: Prototype,
+                actual: anytype,
+            ) void {
                 switch (err) {
                     ToggleError.InvalidArgument,
                     => info_validator.onError(err, prototype, actual),
 
-                    else => @compileError(std.fmt.comptimePrint("{s}.{s}: {s}", .{
-                        prototype.name,
-                        @errorName(err),
-                        if (actual) "true" else "false",
-                    })),
+                    else => @compileError(
+                        std.fmt.comptimePrint("{s}.{s}: {s}", .{
+                            prototype.name,
+                            @errorName(err),
+                            if (actual) "true" else "false",
+                        }),
+                    ),
                 }
             }
         }.onError,
@@ -77,4 +84,33 @@ test init {
     const toggle = init(null);
 
     _ = toggle;
+}
+
+test "evaluates toggle successfully" {
+    const is_null = init(null);
+    const is_true = init(true);
+    const is_false = init(false);
+
+    try std.testing.expectEqual(true, is_null.eval(true));
+    try std.testing.expectEqual(true, is_null.eval(false));
+    try std.testing.expectEqual(true, is_true.eval(true));
+    try std.testing.expectEqual(true, is_false.eval(false));
+}
+
+test "coerces ToggleError.AssertsFalse" {
+    const is_false = init(false);
+
+    try std.testing.expectEqual(
+        ToggleError.AssertsFalse,
+        is_false.eval(true),
+    );
+}
+
+test "coerces ToggleError.AssertsTrue" {
+    const is_true = init(true);
+
+    try std.testing.expectEqual(
+        ToggleError.AssertsTrue,
+        is_true.eval(false),
+    );
 }
