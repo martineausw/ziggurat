@@ -72,6 +72,7 @@ pub fn init(params: Params) Prototype {
                         info.Error.InvalidArgument,
                         info.Error.RequiresType,
                         => IntError.InvalidArgument,
+                        else => unreachable,
                     };
 
                 const actual_info = switch (@typeInfo(actual)) {

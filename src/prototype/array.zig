@@ -74,7 +74,8 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.UnexpectedType,
+                        info.Error.InvalidArgument,
+                        info.Error.RequiresType,
                         => ArrayError.InvalidArgument,
                     };
 
