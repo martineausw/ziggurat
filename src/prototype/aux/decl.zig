@@ -233,7 +233,7 @@ test "coerces DeclError.RequiresType" {
 
     try std.testing.expectEqual(
         Error.RequiresType,
-        has_decl.eval(bool),
+        comptime has_decl.eval(bool),
     );
 
     // comptime has_decl.onError.?(Error.RequiresType, has_decl, bool);
