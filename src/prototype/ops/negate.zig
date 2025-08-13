@@ -32,3 +32,49 @@ test negate {
         }.eval,
     });
 }
+
+test "evaluates negate to true" {
+    const is_true: Prototype = .{
+        .name = "true",
+        .eval = struct {
+            fn eval(_: anytype) !bool {
+                return true;
+            }
+        }.eval,
+    };
+
+    const is_false: Prototype = .{
+        .name = "false",
+        .eval = struct {
+            fn eval(_: anytype) !bool {
+                return false;
+            }
+        }.eval,
+    };
+
+    try std.testing.expectEqual(true, negate(is_false).eval(void));
+    try std.testing.expectEqual(true, negate(negate(is_true)).eval(void));
+}
+
+test "evaluates negate to false" {
+    const is_true: Prototype = .{
+        .name = "true",
+        .eval = struct {
+            fn eval(_: anytype) !bool {
+                return true;
+            }
+        }.eval,
+    };
+
+    const is_false: Prototype = .{
+        .name = "false",
+        .eval = struct {
+            fn eval(_: anytype) !bool {
+                return false;
+            }
+        }.eval,
+    };
+
+    try std.testing.expectEqual(false, negate(is_true).eval(void));
+    try std.testing.expectEqual(false, negate(negate(is_false)).eval(void));
+}

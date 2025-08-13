@@ -44,16 +44,6 @@ pub fn init(params: Params) Prototype {
                         else => unreachable,
                     };
 
-                // if (@TypeOf(actual) != type) return DeclError.InvalidArgument;
-
-                // switch (@typeInfo(actual)) {
-                //     .@"struct",
-                //     .@"enum",
-                //     .@"union",
-                //     => {},
-                //     else => unreachable,
-                // }
-
                 if (!@hasDecl(actual, params.name)) {
                     return DeclError.AssertsDecl;
                 }
