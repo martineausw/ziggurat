@@ -102,22 +102,9 @@ pub fn init(params: Params) Prototype {
 }
 
 test FieldError {
-    _ = FieldError.NonexistentField catch void;
-    _ = FieldError.MismatchedType catch void;
-}
-
-test Error {
-    _ = Error.InvalidType catch void;
-    _ = Error.DisallowedType catch void;
-    _ = Error.UnexpectedType catch void;
-
-    _ = Error.NonexistentField catch void;
-    _ = Error.MismatchedType catch void;
-}
-
-test info_validator {
-    _ = try info_validator.eval(struct {});
-    _ = try info_validator.eval(union {});
+    _ = FieldError.InvalidArgument catch void;
+    _ = FieldError.AssertsFieldName catch void;
+    _ = FieldError.BanishesFieldType catch void;
 }
 
 test Params {

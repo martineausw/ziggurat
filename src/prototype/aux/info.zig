@@ -112,7 +112,11 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test InfoError {}
+test InfoError {
+    _ = InfoError.InvalidArgument catch void;
+    _ = InfoError.BanishesType catch void;
+    _ = InfoError.RequiresType catch void;
+}
 
 test Params {
     const params: Params = .{

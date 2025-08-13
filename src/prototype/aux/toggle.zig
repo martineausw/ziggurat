@@ -61,7 +61,11 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test ToggleError {}
+test ToggleError {
+    _ = ToggleError.InvalidArgument catch void;
+    _ = ToggleError.AssertsTrue catch void;
+    _ = ToggleError.AssertsFalse catch void;
+}
 
 test Params {
     const params: Params = null;

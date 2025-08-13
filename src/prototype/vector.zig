@@ -104,7 +104,15 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test VectorError {}
+test VectorError {
+    _ = VectorError.InvalidArgument catch void;
+
+    _ = VectorError.BanishesChildType catch void;
+    _ = VectorError.RequiresChildType catch void;
+
+    _ = VectorError.AssertsMinLen catch void;
+    _ = VectorError.AssertsMaxLen catch void;
+}
 
 test Params {
     const params: Params = .{

@@ -84,7 +84,12 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test FloatError {}
+test FloatError {
+    _ = FloatError.InvalidArgument catch void;
+
+    _ = FloatError.AssertsMinBits catch void;
+    _ = FloatError.AssertsMaxBits catch void;
+}
 
 test Params {
     const params: Params = .{

@@ -44,7 +44,9 @@ pub const init: Prototype = .{
     }.onError,
 };
 
-test TypeError {}
+test TypeError {
+    _ = TypeError.InvalidArgument catch void;
+}
 
 test init {
     const @"type": Prototype = init;

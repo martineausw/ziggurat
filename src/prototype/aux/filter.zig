@@ -12,7 +12,7 @@ const FilterError = error{
     Requires,
 };
 
-/// Errors returned by `eval`.
+/// Error set for filter.
 pub const Error = FilterError;
 
 pub const type_validator = @"type".init;
@@ -82,7 +82,11 @@ pub fn Filter(comptime Params: type) type {
     };
 }
 
-test FilterError {}
+test FilterError {
+    _ = FilterError.InvalidArgument catch void;
+    _ = FilterError.Banishes catch void;
+    _ = FilterError.Requires catch void;
+}
 
 test Filter {
     const T = union(enum) {

@@ -131,7 +131,15 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test ArrayError {}
+test ArrayError {
+    _ = ArrayError.InvalidArgument catch void;
+    _ = ArrayError.BanishesChildType catch void;
+    _ = ArrayError.RequiresChildType catch void;
+    _ = ArrayError.AssertsMinLen catch void;
+    _ = ArrayError.AssertsMaxLen catch void;
+    _ = ArrayError.AssertsNotNullSentinel catch void;
+    _ = ArrayError.AssertsNullSentinel catch void;
+}
 
 test Params {
     const params: Params = .{

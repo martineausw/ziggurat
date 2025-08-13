@@ -21,7 +21,6 @@ const StructError = error{
     BanishesLayout,
     RequiresLayout,
     AssertsStructFieldName,
-    RequiresStructFieldType,
     BanishesStructFieldType,
     AssertsDeclName,
     AssertsTrueIsTuple,
@@ -154,11 +153,20 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test StructError {}
+test StructError {
+    _ = StructError.InvalidArgument catch void;
 
-test Error {}
+    _ = StructError.BanishesLayout catch void;
+    _ = StructError.RequiresLayout catch void;
 
-test LayoutParams {}
+    _ = StructError.AssertsStructFieldName catch void;
+    _ = StructError.RequiresStructFieldType catch void;
+
+    _ = StructError.AssertsDeclName catch void;
+
+    _ = StructError.AssertsTrueIsTuple catch void;
+    _ = StructError.AssertsFalseIsTuple catch void;
+}
 
 test Params {
     const params: Params = .{

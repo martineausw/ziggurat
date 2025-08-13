@@ -85,7 +85,11 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test OptionalError {}
+test OptionalError {
+    _ = OptionalError.InvalidArgument catch void;
+    _ = OptionalError.BanishesChildType catch void;
+    _ = OptionalError.RequiresChildType catch void;
+}
 
 test Params {
     const params: Params = .{

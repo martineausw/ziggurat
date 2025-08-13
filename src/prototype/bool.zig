@@ -44,7 +44,9 @@ pub const init: Prototype = .{
     }.onError,
 };
 
-test BoolError {}
+test BoolError {
+    _ = BoolError.InvalidArgument catch void;
+}
 
 test init {
     const @"bool": Prototype = init;

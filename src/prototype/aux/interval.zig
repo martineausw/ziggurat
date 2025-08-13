@@ -89,7 +89,11 @@ pub fn init(comptime T: type, params: Params(T)) Prototype {
     };
 }
 
-test IntervalError {}
+test IntervalError {
+    _ = IntervalError.InvalidArgument catch void;
+    _ = IntervalError.AssertsMin catch void;
+    _ = IntervalError.AssertsMax catch void;
+}
 
 test Params {
     const params: Params(comptime_int) = .{

@@ -73,7 +73,10 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test DeclError {}
+test DeclError {
+    _ = DeclError.InvalidArgument catch void;
+    _ = DeclError.AssertsDecl catch void;
+}
 
 test Params {
     const T = struct {

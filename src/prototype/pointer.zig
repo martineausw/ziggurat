@@ -185,7 +185,24 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test PointerError {}
+test PointerError {
+    _ = PointerError.InvalidArgument catch void;
+
+    _ = PointerError.BanishesChildType catch void;
+    _ = PointerError.RequiresChildType catch void;
+
+    _ = PointerError.AssertsMinLen catch void;
+    _ = PointerError.AssertsMaxLen catch void;
+
+    _ = PointerError.AssertsTrueIsConst catch void;
+    _ = PointerError.AssertsFalseIsConst catch void;
+
+    _ = PointerError.AssertsTrueIsVolatile catch void;
+    _ = PointerError.AssertsFalseIsVolatile catch void;
+
+    _ = PointerError.AssertsNotNullSentinel catch void;
+    _ = PointerError.AssertsNullSentinel catch void;
+}
 
 test Params {
     const params: Params = .{

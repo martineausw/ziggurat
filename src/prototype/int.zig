@@ -116,7 +116,13 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test IntError {}
+test IntError {
+    _ = IntError.InvalidArgument catch void;
+    _ = IntError.AssertsMinBits catch void;
+    _ = IntError.AssertsMaxBits catch void;
+    _ = IntError.BanishesSignedness catch void;
+    _ = IntError.RequiresSignedness catch void;
+}
 
 test Params {
     const params: Params = .{

@@ -5,7 +5,9 @@ const info = @import("info.zig");
 
 const ExistsError = error{
     InvalidArgument,
+    /// Violates `actual` is not `null` when `params` is equal to `true`.
     AssertsNotNull,
+    /// Violates `actual` is `null` when `params` is equal to `true`.
     AssertsNull,
 };
 
