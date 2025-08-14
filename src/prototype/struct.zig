@@ -67,18 +67,19 @@ pub fn init(params: Params) Prototype {
         .name = "Array",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try info_validator.eval(actual);
-
-                const actual_info = switch (@typeInfo(actual)) {
-                    .@"struct" => |struct_info| struct_info,
-                    else => unreachable,
-                };
-
-                _ = layout_validator.eval(actual_info.layout) catch |err|
+                _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        filter.Error.Disallowed,
+                        info.Error.InvalidArgument,
+                        info.Error.RequiresType,
+                        => StructError.InvalidArgument,
+                        else => unreachable,
+                    };
+
+                _ = comptime layout_validator.eval(@typeInfo(actual).@"struct".layout) catch |err|
+                    return switch (err) {
+                        filter.Error.Banishes,
                         => StructError.BanishesLayout,
-                        filter.Error.Unexpected,
+                        filter.Error.Requires,
                         => StructError.RequiresLayout,
                         else => unreachable,
                     };
@@ -98,7 +99,7 @@ pub fn init(params: Params) Prototype {
                 }
 
                 inline for (params.decls) |param_decl| {
-                    const decl_validator = field.init(param_decl);
+                    const decl_validator = decl.init(param_decl);
                     _ = decl_validator.eval(actual) catch |err|
                         return switch (err) {
                             decl.Error.AssertsDecl,
@@ -107,7 +108,7 @@ pub fn init(params: Params) Prototype {
                         };
                 }
 
-                _ = is_tuple_validator.eval(actual_info.is_tuple) catch |err|
+                _ = is_tuple_validator.eval(@typeInfo(actual).@"struct".is_tuple) catch |err|
                     return switch (err) {
                         toggle.Error.AssertsTrue,
                         => StructError.AssertsTrueIsTuple,
@@ -224,4 +225,158 @@ test init {
     });
 
     _ = @"struct";
+}
+
+test "evaluates struct successfully" {
+    const @"struct" = init(.{
+        .layout = .{
+            .@"extern" = null,
+            .@"packed" = null,
+            .auto = null,
+        },
+        .fields = &.{},
+        .decls = &.{},
+        .is_tuple = null,
+    });
+
+    try std.testing.expectEqual(true, @"struct".eval(struct {}));
+}
+
+test "coerces StructError.BanishesLayout" {
+    const @"struct" = init(.{
+        .layout = .{
+            .@"extern" = null,
+            .@"packed" = false,
+            .auto = null,
+        },
+        .fields = &.{},
+        .decls = &.{},
+        .is_tuple = null,
+    });
+
+    try std.testing.expectEqual(StructError.BanishesLayout, comptime @"struct".eval(packed struct {}));
+}
+
+test "coerces StructError.RequiresLayout" {
+    const @"struct" = init(.{
+        .layout = .{
+            .@"extern" = true,
+            .@"packed" = null,
+            .auto = true,
+        },
+        .fields = &.{},
+        .decls = &.{},
+        .is_tuple = null,
+    });
+
+    try std.testing.expectEqual(StructError.RequiresLayout, comptime @"struct".eval(packed struct {}));
+}
+
+test "coerces StructError.AssertsStructFieldName" {
+    const @"struct" = init(.{
+        .layout = .{
+            .@"extern" = null,
+            .@"packed" = null,
+            .auto = null,
+        },
+        .fields = &.{
+            .{ .name = "field", .type = .{ .bool = true } },
+        },
+        .decls = &.{},
+        .is_tuple = null,
+    });
+
+    try std.testing.expectEqual(
+        StructError.AssertsStructFieldName,
+        @"struct".eval(struct { foo: bool }),
+    );
+}
+test "coerces StructError.RequiresStructFieldType" {
+    const @"struct" = init(.{
+        .layout = .{
+            .@"extern" = null,
+            .@"packed" = null,
+            .auto = null,
+        },
+        .fields = &.{
+            .{
+                .name = "field",
+                .type = .{ .int = true },
+            },
+        },
+        .decls = &.{},
+        .is_tuple = null,
+    });
+
+    try std.testing.expectEqual(
+        StructError.RequiresStructFieldType,
+        @"struct".eval(struct { field: bool }),
+    );
+}
+test "coerces StructError.BanishesStructFieldType" {
+    const @"struct" = init(.{
+        .layout = .{
+            .@"extern" = null,
+            .@"packed" = null,
+            .auto = null,
+        },
+        .fields = &.{
+            .{
+                .name = "field",
+                .type = .{ .bool = false },
+            },
+        },
+        .decls = &.{},
+        .is_tuple = null,
+    });
+
+    try std.testing.expectEqual(
+        StructError.BanishesStructFieldType,
+        @"struct".eval(struct { field: bool }),
+    );
+}
+test "coerces StructError.AssertsDeclName" {
+    const @"struct" = init(.{
+        .layout = .{
+            .@"extern" = null,
+            .@"packed" = null,
+            .auto = null,
+        },
+        .fields = &.{},
+        .decls = &.{.{ .name = "decl" }},
+        .is_tuple = null,
+    });
+
+    try std.testing.expectEqual(StructError.AssertsDeclName, @"struct".eval(struct {
+        const decl = 0;
+    }));
+}
+test "coerces StructError.AssertsTrueIsTuple" {
+    const @"struct" = init(.{
+        .layout = .{
+            .@"extern" = null,
+            .@"packed" = null,
+            .auto = null,
+        },
+        .fields = &.{},
+        .decls = &.{},
+        .is_tuple = true,
+    });
+
+    try std.testing.expectEqual(StructError.AssertsTrueIsTuple, @"struct".eval(struct {}));
+}
+
+test "coerces StructError.AssertsFalseIsTuple" {
+    const @"struct" = init(.{
+        .layout = .{
+            .@"extern" = null,
+            .@"packed" = null,
+            .auto = null,
+        },
+        .fields = &.{},
+        .decls = &.{},
+        .is_tuple = false,
+    });
+
+    try std.testing.expectEqual(StructError.AssertsFalseIsTuple, @"struct".eval(struct { bool, bool, comptime_int }));
 }

@@ -118,3 +118,31 @@ test init {
 
     _ = optional;
 }
+
+test "evaluates optional successfully" {
+    const optional = init(.{
+        .child = .{},
+    });
+
+    try std.testing.expectEqual(true, optional.eval(?bool));
+}
+
+test "coerces OptionalError.BanishesChildType" {
+    const optional = init(.{
+        .child = .{
+            .bool = false,
+        },
+    });
+
+    try std.testing.expectEqual(OptionalError.BanishesChildType, optional.eval(?bool));
+}
+
+test "coerces OptionalError.RequiresChildType" {
+    const optional = init(.{
+        .child = .{
+            .int = true,
+        },
+    });
+
+    try std.testing.expectEqual(OptionalError.RequiresChildType, optional.eval(?bool));
+}

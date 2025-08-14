@@ -110,12 +110,7 @@ pub fn init(params: Params) Prototype {
                         else => unreachable,
                     };
 
-                const actual_info = switch (@typeInfo(actual)) {
-                    .pointer => |pointer_info| pointer_info,
-                    else => unreachable,
-                };
-
-                _ = child_validator.eval(actual_info.child) catch |err|
+                _ = comptime child_validator.eval(@typeInfo(actual).pointer.child) catch |err|
                     return switch (err) {
                         info.Error.BanishesType,
                         => PointerError.BanishesChildType,
@@ -125,7 +120,7 @@ pub fn init(params: Params) Prototype {
                     };
 
                 _ = comptime size_validator.eval(
-                    actual_info.size,
+                    @typeInfo(actual).pointer.size,
                 ) catch |err|
                     return switch (err) {
                         filter.Error.Banishes,
@@ -136,18 +131,18 @@ pub fn init(params: Params) Prototype {
                     };
 
                 _ = is_const_validator.eval(
-                    actual_info.is_const,
+                    @typeInfo(actual).pointer.is_const,
                 ) catch |err|
                     return switch (err) {
                         toggle.Error.AssertsTrue,
                         => PointerError.AssertsTrueIsConst,
                         toggle.Error.AssertsFalse,
-                        => PointerError.AssertsFalseIsVolatile,
+                        => PointerError.AssertsFalseIsConst,
                         else => unreachable,
                     };
 
                 _ = is_volatile_validator.eval(
-                    actual_info.is_volatile,
+                    @typeInfo(actual).pointer.is_volatile,
                 ) catch |err|
                     return switch (err) {
                         toggle.Error.AssertsTrue,
@@ -158,7 +153,7 @@ pub fn init(params: Params) Prototype {
                     };
 
                 _ = sentinel_validator.eval(
-                    actual_info.sentinel(),
+                    @typeInfo(actual).pointer.sentinel(),
                 ) catch |err|
                     return switch (err) {
                         exists.Error.AssertsNotNull,
@@ -273,4 +268,199 @@ test init {
     });
 
     _ = pointer;
+}
+
+test "evaluates pointer successfully" {
+    const pointer = init(.{
+        .child = .{},
+        .size = .{
+            .one = null,
+            .many = null,
+            .slice = null,
+            .c = null,
+        },
+        .is_const = null,
+        .is_volatile = null,
+        .sentinel = null,
+    });
+
+    try std.testing.expectEqual(true, pointer.eval(*f128));
+    try std.testing.expectEqual(true, pointer.eval(*const f128));
+    try std.testing.expectEqual(true, pointer.eval(*const volatile f128));
+
+    try std.testing.expectEqual(true, pointer.eval([]f128));
+    try std.testing.expectEqual(true, pointer.eval([]const f128));
+    try std.testing.expectEqual(true, pointer.eval([]const volatile f128));
+
+    try std.testing.expectEqual(true, pointer.eval([*]f128));
+    try std.testing.expectEqual(true, pointer.eval([*]const f128));
+    try std.testing.expectEqual(true, pointer.eval([*]const volatile f128));
+}
+
+test "coerces PointerError.BanishesChildType" {
+    const pointer = init(.{
+        .child = .{
+            .float = false,
+        },
+        .size = .{
+            .one = null,
+            .many = null,
+            .slice = null,
+            .c = null,
+        },
+        .is_const = null,
+        .is_volatile = null,
+        .sentinel = null,
+    });
+
+    try std.testing.expectEqual(PointerError.BanishesChildType, comptime pointer.eval(*f128));
+}
+
+test "coerces PointerError.RequiresChildType" {
+    const pointer = init(.{
+        .child = .{
+            .int = true,
+        },
+        .size = .{
+            .one = null,
+            .many = null,
+            .slice = null,
+            .c = null,
+        },
+        .is_const = null,
+        .is_volatile = null,
+        .sentinel = null,
+    });
+    try std.testing.expectEqual(PointerError.RequiresChildType, comptime pointer.eval(*f128));
+}
+
+test "coerces PointerError.BanishesSize" {
+    const pointer = init(.{
+        .child = .{},
+        .size = .{
+            .one = false,
+            .many = null,
+            .slice = null,
+            .c = null,
+        },
+        .is_const = null,
+        .is_volatile = null,
+        .sentinel = null,
+    });
+
+    try std.testing.expectEqual(PointerError.BanishesSize, comptime pointer.eval(*f128));
+}
+
+test "coerces PointerError.RequiresSize" {
+    const pointer = init(.{
+        .child = .{},
+        .size = .{
+            .one = null,
+            .many = true,
+            .slice = true,
+            .c = true,
+        },
+        .is_const = null,
+        .is_volatile = null,
+        .sentinel = null,
+    });
+    try std.testing.expectEqual(PointerError.RequiresSize, comptime pointer.eval(*f128));
+}
+
+test "coerces PointerError.AssertsTrueIsConst" {
+    const pointer = init(.{
+        .child = .{},
+        .size = .{
+            .one = null,
+            .many = null,
+            .slice = null,
+            .c = null,
+        },
+        .is_const = true,
+        .is_volatile = null,
+        .sentinel = null,
+    });
+    try std.testing.expectEqual(PointerError.AssertsTrueIsConst, pointer.eval(*f128));
+}
+
+test "coerces PointerError.AssertsFalseIsConst" {
+    const pointer = init(.{
+        .child = .{},
+        .size = .{
+            .one = null,
+            .many = null,
+            .slice = null,
+            .c = null,
+        },
+        .is_const = false,
+        .is_volatile = null,
+        .sentinel = null,
+    });
+    try std.testing.expectEqual(PointerError.AssertsFalseIsConst, pointer.eval(*const f128));
+}
+
+test "coerces PointerError.AssertsTrueIsVolatile" {
+    const pointer = init(.{
+        .child = .{},
+        .size = .{
+            .one = null,
+            .many = null,
+            .slice = null,
+            .c = null,
+        },
+        .is_const = null,
+        .is_volatile = true,
+        .sentinel = null,
+    });
+
+    try std.testing.expectEqual(PointerError.AssertsTrueIsVolatile, pointer.eval(*f128));
+}
+
+test "coerces PointerError.AssertsFalseIsVolatile" {
+    const pointer = init(.{
+        .child = .{},
+        .size = .{
+            .one = null,
+            .many = null,
+            .slice = null,
+            .c = null,
+        },
+        .is_const = null,
+        .is_volatile = false,
+        .sentinel = null,
+    });
+
+    try std.testing.expectEqual(PointerError.AssertsFalseIsVolatile, pointer.eval(*volatile f128));
+}
+
+test "coerces PointerError.AssertsNotNullSentinel" {
+    const pointer = init(.{
+        .child = .{},
+        .size = .{
+            .one = null,
+            .many = null,
+            .slice = null,
+            .c = null,
+        },
+        .is_const = null,
+        .is_volatile = null,
+        .sentinel = true,
+    });
+    try std.testing.expectEqual(PointerError.AssertsNotNullSentinel, pointer.eval([]f128));
+}
+
+test "coerces PointerError.AssertsNullSentinel" {
+    const pointer = init(.{
+        .child = .{},
+        .size = .{
+            .one = null,
+            .many = null,
+            .slice = null,
+            .c = null,
+        },
+        .is_const = null,
+        .is_volatile = null,
+        .sentinel = false,
+    });
+    try std.testing.expectEqual(PointerError.AssertsNullSentinel, pointer.eval([:0]f128));
 }

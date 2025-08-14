@@ -152,3 +152,69 @@ test init {
 
     _ = vector;
 }
+
+test "evaluates vector successfully" {
+    const vector = init(.{
+        .child = .{},
+        .len = .{
+            .min = null,
+            .max = null,
+        },
+    });
+
+    try std.testing.expectEqual(true, vector.eval(@Vector(3, f128)));
+}
+
+test "coerces VectorError.BanishesChildType" {
+    const vector = init(.{
+        .child = .{
+            .float = false,
+        },
+        .len = .{
+            .min = null,
+            .max = null,
+        },
+    });
+
+    try std.testing.expectEqual(
+        VectorError.BanishesChildType,
+        comptime vector.eval(@Vector(3, f128)),
+    );
+}
+
+test "coerces VectorError.RequiresChildType" {
+    const vector = init(.{
+        .child = .{
+            .int = true,
+        },
+        .len = .{
+            .min = null,
+            .max = null,
+        },
+    });
+
+    try std.testing.expectEqual(
+        VectorError.RequiresChildType,
+        comptime vector.eval(@Vector(3, f128)),
+    );
+}
+
+test "coerces VectorError.AssertsMinLen and VectoreError.AssertsMaxLen" {
+    const vector = init(.{
+        .child = .{},
+        .len = .{
+            .min = 1,
+            .max = 2,
+        },
+    });
+
+    try std.testing.expectEqual(
+        VectorError.AssertsMinLen,
+        comptime vector.eval(@Vector(0, f128)),
+    );
+
+    try std.testing.expectEqual(
+        VectorError.AssertsMaxLen,
+        comptime vector.eval(@Vector(3, f128)),
+    );
+}
