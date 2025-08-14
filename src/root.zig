@@ -1,7 +1,7 @@
 //! 0.14.1 microlibrary to introduce type constraints.
 const std = @import("std");
 
-pub const Prototype = @import("Prototype.zig");
+pub const Prototype = @import("prototype/Prototype.zig");
 pub const sign = @import("sign.zig").sign;
 
 pub const aux = @import("prototype/aux.zig");

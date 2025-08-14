@@ -1,8 +1,6 @@
 const std = @import("std");
 const testing = std.testing;
 
-pub const Prototype = @import("prototype/Prototype.zig");
-
 pub const array = @import("prototype/array.zig");
 pub const @"bool" = @import("prototype/bool.zig");
 pub const float = @import("prototype/float.zig");
@@ -12,36 +10,6 @@ pub const pointer = @import("prototype/pointer.zig");
 pub const @"struct" = @import("prototype/struct.zig");
 pub const @"type" = @import("prototype/type.zig");
 pub const vector = @import("prototype/vector.zig");
-
-pub const aux = @import("prototype/aux.zig");
-pub const ops = @import("prototype/ops.zig");
-
-test Prototype {
-    _ = Prototype{
-        .name = "name",
-        .eval = struct {
-            fn eval(actual: anytype) anyerror!bool {
-                _ = actual;
-                return true;
-                // return false;
-                // return error.Unimplemented;
-            }
-        }.eval,
-        .onError = struct {
-            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
-                _ = err;
-                _ = prototype;
-                _ = actual;
-            }
-        }.onError,
-        .onFail = struct {
-            fn onFail(prototype: Prototype, actual: anytype) void {
-                _ = prototype;
-                _ = actual;
-            }
-        }.onFail,
-    };
-}
 
 test array {
     _ = array.Params{
