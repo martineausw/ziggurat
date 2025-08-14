@@ -73,7 +73,7 @@ pub fn init(params: Params) Prototype {
         .name = "Info",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = comptime type_validator.eval(actual) catch |err|
+                _ = type_validator.eval(actual) catch |err|
                     return switch (err) {
                         @"type".Error.InvalidArgument => InfoError.InvalidArgument,
                         else => unreachable,
@@ -109,7 +109,7 @@ pub fn init(params: Params) Prototype {
                             prototype.name,
                             @errorName(err),
                             params,
-                            @tagName(@typeInfo(actual)),
+                            @typeName(@typeInfo(actual)),
                         },
                     )),
 

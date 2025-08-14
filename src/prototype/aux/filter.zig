@@ -6,7 +6,6 @@ const @"type" = @import("../type.zig");
 /// Error set for filter.
 const FilterError = error{
     InvalidArgument,
-    RequiresType,
     /// Violates tag blacklist assertion.
     Banishes,
     /// Violates tag whitelist assertion.
@@ -66,17 +65,12 @@ pub fn Filter(comptime Params: type) type {
                                 actual,
                             ),
 
-                            FilterError.RequiresType,
-                            => @compileError(std.fmt.comptimePrint(
-                                "{s}.{s}: expects `union` or `enum`",
-                            )),
-
                             else => @compileError(std.fmt.comptimePrint(
                                 "{s}.{s}: {s}",
                                 .{
                                     prototype.name,
                                     @errorName(err),
-                                    @tagName(std.meta.activeTag(actual)),
+                                    @typeName(actual),
                                 },
                             )),
                         }

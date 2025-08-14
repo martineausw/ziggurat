@@ -110,7 +110,7 @@ pub fn init(params: Params) Prototype {
                         else => unreachable,
                     };
 
-                _ = comptime child_validator.eval(@typeInfo(actual).pointer.child) catch |err|
+                _ = child_validator.eval(@typeInfo(actual).pointer.child) catch |err|
                     return switch (err) {
                         info.Error.BanishesType,
                         => PointerError.BanishesChildType,
@@ -313,7 +313,10 @@ test "coerces PointerError.BanishesChildType" {
         .sentinel = null,
     });
 
-    try std.testing.expectEqual(PointerError.BanishesChildType, comptime pointer.eval(*f128));
+    try std.testing.expectEqual(
+        PointerError.BanishesChildType,
+        comptime pointer.eval(*f128),
+    );
 }
 
 test "coerces PointerError.RequiresChildType" {
@@ -331,7 +334,10 @@ test "coerces PointerError.RequiresChildType" {
         .is_volatile = null,
         .sentinel = null,
     });
-    try std.testing.expectEqual(PointerError.RequiresChildType, comptime pointer.eval(*f128));
+    try std.testing.expectEqual(
+        PointerError.RequiresChildType,
+        comptime pointer.eval(*f128),
+    );
 }
 
 test "coerces PointerError.BanishesSize" {
@@ -348,7 +354,10 @@ test "coerces PointerError.BanishesSize" {
         .sentinel = null,
     });
 
-    try std.testing.expectEqual(PointerError.BanishesSize, comptime pointer.eval(*f128));
+    try std.testing.expectEqual(
+        PointerError.BanishesSize,
+        comptime pointer.eval(*f128),
+    );
 }
 
 test "coerces PointerError.RequiresSize" {
@@ -364,7 +373,10 @@ test "coerces PointerError.RequiresSize" {
         .is_volatile = null,
         .sentinel = null,
     });
-    try std.testing.expectEqual(PointerError.RequiresSize, comptime pointer.eval(*f128));
+    try std.testing.expectEqual(
+        PointerError.RequiresSize,
+        comptime pointer.eval(*f128),
+    );
 }
 
 test "coerces PointerError.AssertsTrueIsConst" {
@@ -380,7 +392,10 @@ test "coerces PointerError.AssertsTrueIsConst" {
         .is_volatile = null,
         .sentinel = null,
     });
-    try std.testing.expectEqual(PointerError.AssertsTrueIsConst, pointer.eval(*f128));
+    try std.testing.expectEqual(
+        PointerError.AssertsTrueIsConst,
+        pointer.eval(*f128),
+    );
 }
 
 test "coerces PointerError.AssertsFalseIsConst" {
@@ -396,7 +411,10 @@ test "coerces PointerError.AssertsFalseIsConst" {
         .is_volatile = null,
         .sentinel = null,
     });
-    try std.testing.expectEqual(PointerError.AssertsFalseIsConst, pointer.eval(*const f128));
+    try std.testing.expectEqual(
+        PointerError.AssertsFalseIsConst,
+        pointer.eval(*const f128),
+    );
 }
 
 test "coerces PointerError.AssertsTrueIsVolatile" {
@@ -413,7 +431,10 @@ test "coerces PointerError.AssertsTrueIsVolatile" {
         .sentinel = null,
     });
 
-    try std.testing.expectEqual(PointerError.AssertsTrueIsVolatile, pointer.eval(*f128));
+    try std.testing.expectEqual(
+        PointerError.AssertsTrueIsVolatile,
+        pointer.eval(*f128),
+    );
 }
 
 test "coerces PointerError.AssertsFalseIsVolatile" {
@@ -430,7 +451,10 @@ test "coerces PointerError.AssertsFalseIsVolatile" {
         .sentinel = null,
     });
 
-    try std.testing.expectEqual(PointerError.AssertsFalseIsVolatile, pointer.eval(*volatile f128));
+    try std.testing.expectEqual(
+        PointerError.AssertsFalseIsVolatile,
+        pointer.eval(*volatile f128),
+    );
 }
 
 test "coerces PointerError.AssertsNotNullSentinel" {
@@ -446,7 +470,10 @@ test "coerces PointerError.AssertsNotNullSentinel" {
         .is_volatile = null,
         .sentinel = true,
     });
-    try std.testing.expectEqual(PointerError.AssertsNotNullSentinel, pointer.eval([]f128));
+    try std.testing.expectEqual(
+        PointerError.AssertsNotNullSentinel,
+        pointer.eval([]f128),
+    );
 }
 
 test "coerces PointerError.AssertsNullSentinel" {
@@ -462,5 +489,8 @@ test "coerces PointerError.AssertsNullSentinel" {
         .is_volatile = null,
         .sentinel = false,
     });
-    try std.testing.expectEqual(PointerError.AssertsNullSentinel, pointer.eval([:0]f128));
+    try std.testing.expectEqual(
+        PointerError.AssertsNullSentinel,
+        pointer.eval([:0]f128),
+    );
 }

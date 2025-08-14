@@ -72,7 +72,7 @@ pub fn init(params: Params) Prototype {
         .name = "Array",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = info_validator.eval(
+                _ = comptime info_validator.eval(
                     actual,
                 ) catch |err|
                     return switch (err) {
@@ -82,7 +82,7 @@ pub fn init(params: Params) Prototype {
                         else => unreachable,
                     };
 
-                _ = child_validator.eval(
+                _ = comptime child_validator.eval(
                     @typeInfo(actual).array.child,
                 ) catch |err|
                     return switch (err) {
@@ -247,7 +247,7 @@ test "coerces ArrayError.RequiresChildType" {
 
     try std.testing.expectEqual(
         ArrayError.RequiresChildType,
-        array.eval([3]f128),
+        comptime array.eval([3]f128),
     );
 }
 
@@ -267,7 +267,7 @@ test "coerces ArrayError.BanishesChildType" {
 
     try std.testing.expectEqual(
         ArrayError.BanishesChildType,
-        array.eval([3]usize),
+        comptime array.eval([3]usize),
     );
 }
 
