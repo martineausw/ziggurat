@@ -112,14 +112,3 @@ test vector {
     _ = vector.Error;
     _ = vector.init(.{});
 }
-
-test aux {
-    _ = aux.info;
-    _ = aux.interval;
-}
-
-test ops {
-    _ = ops.conjoin;
-    _ = ops.disjoin;
-    _ = ops.negate;
-}
