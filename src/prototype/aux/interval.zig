@@ -25,20 +25,19 @@ pub const info_validator = info.init(.{
 });
 
 /// Parameters used for prototype evaluation.
-pub fn Params(comptime T: type) type {
-    return struct {
-        /// Evaluates against `actual` value
-        ///
-        /// - `null`, no assertion.
-        /// - not `null`, asserts less-than-or-equal-to.
-        min: ?T = null,
-        /// Evaluates against `actual` value
-        ///
-        /// - `null`, no assertion.
-        /// - not `null`, asserts greater-than-or-equal-to.
-        max: ?T = null,
-    };
-}
+pub const Params = struct {
+    /// Evaluates against `actual` value
+    ///
+    /// - `null`, no assertion.
+    /// - not `null`, asserts less-than-or-equal-to.
+    min: ?f128 = null,
+    /// Evaluates against `actual` value
+    ///
+    /// - `null`, no assertion.
+    /// - not `null`, asserts greater-than-or-equal-to.
+    max: ?f128 = null,
+    tolerance: ?f128 = null,
+};
 
 /// Expects integer value.
 ///
@@ -49,22 +48,35 @@ pub fn Params(comptime T: type) type {
 ///
 /// `actual` is less-than-or-equal-to given `params.max`, otherwise returns
 /// error.
-pub fn init(comptime T: type, params: Params(T)) Prototype {
+pub fn init(params: Params) Prototype {
     return .{
         .name = "Interval",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = info_validator.eval(T) catch |err|
+                _ = info_validator.eval(@TypeOf(actual)) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
                         => IntervalError.InvalidArgument,
                         else => unreachable,
                     };
 
-                if (!((params.min orelse actual) <= actual))
+                const tolerance = params.tolerance orelse std.math.floatEps(f128);
+                const min = params.min orelse std.math.floatMin(f128);
+                const max = params.max orelse std.math.floatMax(f128);
+
+                const value = switch (@typeInfo(@TypeOf(actual))) {
+                    .comptime_int, .int => @as(f128, @floatFromInt(actual)),
+                    .comptime_float, .float => @as(f128, @floatCast(actual)),
+                    else => unreachable,
+                };
+
+                if (!std.math.approxEqAbs(f128, min, value, tolerance) and min > value) {
                     return IntervalError.AssertsMin;
-                if (!((params.max orelse actual) >= actual))
+                }
+
+                if (!std.math.approxEqAbs(f128, max, value, tolerance) and max < value) {
                     return IntervalError.AssertsMax;
+                }
 
                 return true;
             }
@@ -100,7 +112,7 @@ test IntervalError {
 }
 
 test Params {
-    const params: Params(comptime_int) = .{
+    const params: Params = .{
         .min = null,
         .max = null,
     };
@@ -109,7 +121,7 @@ test Params {
 }
 
 test init {
-    const interval: Prototype = init(comptime_int, .{
+    const interval: Prototype = init(.{
         .min = null,
         .max = null,
     });
@@ -118,7 +130,7 @@ test init {
 }
 
 test "evaluates runtime integers within interval" {
-    const usize_interval = init(usize, .{
+    const usize_interval = init(.{
         .min = 0,
         .max = 2,
     });
@@ -127,7 +139,7 @@ test "evaluates runtime integers within interval" {
     try std.testing.expectEqual(true, usize_interval.eval(@as(usize, 1)));
     try std.testing.expectEqual(true, usize_interval.eval(@as(usize, 2)));
 
-    const i128_interval = init(i128, .{
+    const i128_interval = init(.{
         .min = -1,
         .max = 1,
     });
@@ -138,7 +150,7 @@ test "evaluates runtime integers within interval" {
 }
 
 test "evaluates runtime floats within interval" {
-    const f16_interval = init(f16, .{
+    const f16_interval = init(.{
         .min = -1.0,
         .max = 1.0,
     });
@@ -147,7 +159,7 @@ test "evaluates runtime floats within interval" {
     try std.testing.expectEqual(true, f16_interval.eval(@as(f16, 0.0)));
     try std.testing.expectEqual(true, f16_interval.eval(@as(f16, 1.0)));
 
-    const i128_interval = init(f128, .{
+    const i128_interval = init(.{
         .min = -1.0,
         .max = 1.0,
     });
@@ -158,7 +170,7 @@ test "evaluates runtime floats within interval" {
 }
 
 test "evaluates comptime_int within interval" {
-    const interval = init(comptime_int, .{
+    const interval = init(.{
         .min = -1,
         .max = 1,
     });
@@ -180,7 +192,7 @@ test "evaluates comptime_int within interval" {
 }
 
 test "evaluates comptime_float within interval" {
-    const interval = init(comptime_float, .{
+    const interval = init(.{
         .min = -1,
         .max = 1,
     });
@@ -202,7 +214,7 @@ test "evaluates comptime_float within interval" {
 }
 
 test "coerces IntervalError.AssertsMin" {
-    const interval = init(comptime_float, .{
+    const interval = init(.{
         .min = -1,
         .max = 1,
     });
@@ -214,7 +226,7 @@ test "coerces IntervalError.AssertsMin" {
 }
 
 test "coerces IntervalError.AssertsMax" {
-    const interval = init(comptime_float, .{
+    const interval = init(.{
         .min = -1,
         .max = 1,
     });

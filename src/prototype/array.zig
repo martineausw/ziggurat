@@ -43,7 +43,7 @@ pub const Params = struct {
     child: info.Params = .{},
 
     /// Evaluates against `std.builtin.Type.array.len`
-    len: interval.Params(comptime_int) = .{},
+    len: interval.Params = .{},
 
     /// Evaluates against `std.builtin.Type.array.sentinel()`.
     sentinel: exists.Params = null,
@@ -65,7 +65,7 @@ pub const Params = struct {
 /// or null when given params is false, otherwise returns error.
 pub fn init(params: Params) Prototype {
     const child_validator = info.init(params.child);
-    const len_validator = interval.init(comptime_int, params.len);
+    const len_validator = interval.init(params.len);
     const sentinel_validator = exists.init(params.sentinel);
 
     return .{

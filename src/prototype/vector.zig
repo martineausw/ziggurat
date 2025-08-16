@@ -36,7 +36,7 @@ pub const Params = struct {
     child: info.Params = .{},
 
     /// Evaluates against `.len`.
-    len: interval.Params(comptime_int) = .{},
+    len: interval.Params = .{},
 };
 
 /// Expects vector type value.
@@ -46,7 +46,7 @@ pub const Params = struct {
 /// `actual` type info `len` is within given `params`.
 pub fn init(params: Params) Prototype {
     const child_validator = info.init(params.child);
-    const len_validator = interval.init(comptime_int, params.len);
+    const len_validator = interval.init(params.len);
 
     return .{
         .name = "Vector",

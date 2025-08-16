@@ -56,12 +56,12 @@ test info {
 }
 
 test interval {
-    const interval_params: interval.Params(comptime_int) = .{
+    const interval_params: interval.Params = .{
         .min = null,
         .max = null,
     };
 
-    const interval_prototype = interval.init(comptime_int, interval_params);
+    const interval_prototype = interval.init(interval_params);
 
     _ = interval_prototype;
     _ = interval.Error;

@@ -28,7 +28,7 @@ pub const info_validator = info.init(.{
 /// Associated with `std.builtin.Type.Float.bits`
 pub const Params = struct {
     /// Evaluates against `std.builtin.Type.Float.bits`
-    bits: interval.Params(u16) = .{},
+    bits: interval.Params = .{},
 };
 
 /// Expects runtime float type value.
@@ -38,7 +38,7 @@ pub const Params = struct {
 /// `actual` type info `bits` is within given `params`, otherwise returns
 /// error.
 pub fn init(params: Params) Prototype {
-    const bits_validator = interval.init(u16, params.bits);
+    const bits_validator = interval.init(params.bits);
 
     return .{
         .name = "Float",

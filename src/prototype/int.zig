@@ -42,7 +42,7 @@ const Signedness = filter.Filter(SignednessParams);
 /// Associated with `std.builtin.Type.Int`
 pub const Params = struct {
     /// Evaluates against `.bits`
-    bits: interval.Params(u16) = .{},
+    bits: interval.Params = .{},
     /// Evaluates against `.signedness`
     ///
     /// - `null`, no assertion
@@ -60,7 +60,7 @@ pub const Params = struct {
 /// `actual` type info `signedness` is equal to given `params`, otherwise
 /// returns error.
 pub fn init(params: Params) Prototype {
-    const bits_validator = interval.init(u16, params.bits);
+    const bits_validator = interval.init(params.bits);
     const signedness_validator = Signedness.init(params.signedness);
 
     return .{
