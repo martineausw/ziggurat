@@ -1,4 +1,4 @@
-//! Auxillary prototype for declaration within given type.
+//! Auxillary prototype for asserting a declaration within a given type.
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
@@ -8,7 +8,6 @@ const info = @import("info.zig");
 const DeclError = error{
     InvalidArgument,
     RequiresType,
-    /// Violates `std.builtin.Type.Declaration.name` assertion.
     AssertsDecl,
 };
 

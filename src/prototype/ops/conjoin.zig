@@ -57,8 +57,8 @@ pub fn conjoin(prototypes: anytype) Prototype {
                 prototype: Prototype,
                 actual: anytype,
             ) void {
-                var results = [prototypes.len]bool{};
-                var errs = [prototypes.len]?anyerror{};
+                var results: [prototypes.len]bool = undefined;
+                var errs: [prototypes.len]?anyerror = undefined;
 
                 for (0..prototypes.len) |i| {
                     results[i] = false;
