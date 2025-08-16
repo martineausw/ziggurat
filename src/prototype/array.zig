@@ -126,11 +126,11 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     ArrayError.InvalidArgument,
-                    => info_validator.onError(err, prototype, actual),
+                    => info_validator.onError.?(err, prototype, actual),
 
                     ArrayError.BanishesChildType,
                     ArrayError.RequiresChildType,
-                    => info_validator.onError(
+                    => info_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).array.child,
@@ -138,7 +138,7 @@ pub fn init(params: Params) Prototype {
 
                     ArrayError.AssertsMinLen,
                     ArrayError.AssertsMaxLen,
-                    => len_validator.onError(
+                    => len_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).array.len,
@@ -146,7 +146,7 @@ pub fn init(params: Params) Prototype {
 
                     ArrayError.AssertsNotNullSentinel,
                     ArrayError.AssertsNullSentinel,
-                    => sentinel_validator.onError(
+                    => sentinel_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).array.sentinel(),

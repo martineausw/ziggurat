@@ -59,7 +59,7 @@ pub fn Filter(comptime Params: type) type {
                     ) void {
                         switch (err) {
                             FilterError.InvalidArgument,
-                            => comptime type_validator.onError(
+                            => comptime type_validator.onError.?(
                                 err,
                                 prototype,
                                 actual,

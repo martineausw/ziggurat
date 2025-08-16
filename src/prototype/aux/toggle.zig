@@ -53,7 +53,7 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     ToggleError.InvalidArgument,
-                    => info_validator.onError(err, prototype, actual),
+                    => info_validator.onError.?(err, prototype, actual),
 
                     else => @compileError(
                         std.fmt.comptimePrint("{s}.{s}: {s}", .{

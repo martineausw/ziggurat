@@ -102,7 +102,7 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    IntError.InvalidArgument => info_validator.onError(
+                    IntError.InvalidArgument => info_validator.onError.?(
                         err,
                         prototype,
                         actual,
@@ -110,7 +110,7 @@ pub fn init(params: Params) Prototype {
 
                     IntError.AssertsMinBits,
                     IntError.AssertsMaxBits,
-                    => bits_validator.onError(
+                    => bits_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).int.bits,
@@ -118,7 +118,7 @@ pub fn init(params: Params) Prototype {
 
                     IntError.BanishesSignedness,
                     IntError.RequiresSignedness,
-                    => signedness_validator.onError(
+                    => signedness_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).int.signedness,

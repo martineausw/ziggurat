@@ -72,11 +72,11 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     FloatError.InvalidArgument,
-                    => info_validator.onError(err, prototype, actual),
+                    => info_validator.onError.?(err, prototype, actual),
 
                     FloatError.AssertsMinBits,
                     FloatError.AssertsMaxBits,
-                    => bits_validator.onError(
+                    => bits_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).float.bits,

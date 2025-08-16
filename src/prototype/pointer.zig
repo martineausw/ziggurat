@@ -174,11 +174,11 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     PointerError.InvalidArgument,
-                    => info_validator.onError(err, prototype, actual),
+                    => info_validator.onError.?(err, prototype, actual),
 
                     PointerError.BanishesChildType,
                     PointerError.RequiresChildType,
-                    => child_validator.onError(
+                    => child_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).pointer.child,
@@ -186,7 +186,7 @@ pub fn init(params: Params) Prototype {
 
                     PointerError.BanishesSize,
                     PointerError.RequiresSize,
-                    => size_validator.onError(
+                    => size_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).pointer.size,
@@ -194,7 +194,7 @@ pub fn init(params: Params) Prototype {
 
                     PointerError.AssertsTrueIsConst,
                     PointerError.AssertsFalseIsConst,
-                    => is_const_validator.onError(
+                    => is_const_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).pointer.is_const,
@@ -202,7 +202,7 @@ pub fn init(params: Params) Prototype {
 
                     PointerError.AssertsTrueIsVolatile,
                     PointerError.AssertsFalseIsVolatile,
-                    => is_volatile_validator.onError(
+                    => is_volatile_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).pointer.is_volatile,
@@ -210,7 +210,7 @@ pub fn init(params: Params) Prototype {
 
                     PointerError.AssertsNotNullSentinel,
                     PointerError.AssertsNullSentinel,
-                    => sentinel_validator.onError(
+                    => sentinel_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).pointer.sentinel(),

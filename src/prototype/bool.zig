@@ -43,7 +43,7 @@ pub const init: Prototype = .{
         ) void {
             switch (err) {
                 BoolError.InvalidArgument,
-                => info_validator.onError(err, prototype, actual),
+                => info_validator.onError.?(err, prototype, actual),
 
                 else => unreachable,
             }

@@ -124,11 +124,11 @@ pub fn init(params: Params) Prototype {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
                     StructError.InvalidArgument,
-                    => info_validator.onError(err, prototype, actual),
+                    => info_validator.onError.?(err, prototype, actual),
 
                     StructError.BanishesLayout,
                     StructError.RequiresLayout,
-                    => layout_validator.onError(
+                    => layout_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).@"struct".layout,
@@ -141,7 +141,7 @@ pub fn init(params: Params) Prototype {
                         inline for (params.fields) |param_field| {
                             const field_validator = field.init(param_field);
                             _ = field_validator.eval(actual) catch
-                                field_validator.onError(
+                                field_validator.onError.?(
                                     err,
                                     prototype,
                                     actual,
@@ -154,7 +154,7 @@ pub fn init(params: Params) Prototype {
                         inline for (params.decls) |param_decl| {
                             const decl_validator = field.init(param_decl);
                             _ = decl_validator.eval(actual) catch
-                                decl_validator.onError(
+                                decl_validator.onError.?(
                                     err,
                                     prototype,
                                     actual,
@@ -164,7 +164,7 @@ pub fn init(params: Params) Prototype {
 
                     StructError.AssertsTrueIsTuple,
                     StructError.AssertsFalseIsTuple,
-                    => is_tuple_validator.onError(
+                    => is_tuple_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).@"struct".is_tuple,
@@ -173,7 +173,7 @@ pub fn init(params: Params) Prototype {
                     Error.InvalidType,
                     Error.DisallowedType,
                     Error.UnexpectedType,
-                    => info_validator.onError(err, prototype, actual),
+                    => info_validator.onError.?(err, prototype, actual),
 
                     else => unreachable,
                 }

@@ -77,7 +77,7 @@ pub fn init(comptime T: type, params: Params(T)) Prototype {
             ) void {
                 switch (err) {
                     IntervalError.InvalidArgument,
-                    => info_validator.onError(err, prototype, actual),
+                    => info_validator.onError.?(err, prototype, actual),
 
                     else => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: {d}",

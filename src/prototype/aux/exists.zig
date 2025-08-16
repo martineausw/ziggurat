@@ -51,7 +51,7 @@ pub fn init(params: Params) Prototype {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
                     ExistsError.InvalidArgument,
-                    => info_validator.onError(err, prototype, actual),
+                    => info_validator.onError.?(err, prototype, actual),
 
                     else => @compileError(
                         std.fmt.comptimePrint("{s}.{s}: {any}", .{

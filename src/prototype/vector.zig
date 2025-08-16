@@ -95,11 +95,11 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     VectorError.InvalidArgument,
-                    => info_validator.onError(err, prototype, actual),
+                    => info_validator.onError.?(err, prototype, actual),
 
                     VectorError.BanishesChildType,
                     VectorError.RequiresChildType,
-                    => child_validator.onError(
+                    => child_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).vector.child,
@@ -107,7 +107,7 @@ pub fn init(params: Params) Prototype {
 
                     VectorError.AssertsMinLen,
                     VectorError.AssertsMaxLen,
-                    => len_validator.onError(
+                    => len_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).vector.len,

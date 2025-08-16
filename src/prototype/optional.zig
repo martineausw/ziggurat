@@ -74,7 +74,7 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    OptionalError.InvalidArgument => info_validator.onError(
+                    OptionalError.InvalidArgument => info_validator.onError.?(
                         err,
                         prototype,
                         actual,
@@ -82,7 +82,7 @@ pub fn init(params: Params) Prototype {
 
                     OptionalError.BanishesChildType,
                     OptionalError.RequiresChildType,
-                    => child_validator.onError(
+                    => child_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).optional.child,

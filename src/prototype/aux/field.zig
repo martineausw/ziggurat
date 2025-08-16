@@ -78,7 +78,7 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     FieldError.InvalidArgument,
-                    => info_validator.onError(err, prototype, actual),
+                    => info_validator.onError.?(err, prototype, actual),
 
                     FieldError.AssertsFieldName,
                     => @compileError(std.fmt.comptimePrint(
