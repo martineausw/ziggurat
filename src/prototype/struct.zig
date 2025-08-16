@@ -18,12 +18,13 @@ const toggle = @import("aux/toggle.zig");
 /// Error set for array.
 const StructError = error{
     InvalidArgument,
+    RequiresTypeInfo,
     BanishesLayout,
     RequiresLayout,
-    AssertsStructFieldName,
-    RequiresStructFieldType,
-    BanishesStructFieldType,
-    AssertsDeclName,
+    AssertsStructField,
+    RequiresStructFieldTypeInfo,
+    BanishesStructFieldTypeInfo,
+    AssertsDecl,
     AssertsTrueIsTuple,
     AssertsFalseIsTuple,
 };
@@ -70,8 +71,9 @@ pub fn init(params: Params) Prototype {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
-                        info.Error.RequiresType,
                         => StructError.InvalidArgument,
+                        info.Error.RequiresTypeInfo,
+                        => StructError.RequiresTypeInfo,
                         else => unreachable,
                     };
 
@@ -88,12 +90,12 @@ pub fn init(params: Params) Prototype {
                     const field_validator = field.init(param_field);
                     _ = field_validator.eval(actual) catch |err|
                         return switch (err) {
-                            field.Error.AssertsFieldName,
-                            => StructError.AssertsStructFieldName,
-                            field.Error.BanishesFieldType,
-                            => StructError.BanishesStructFieldType,
-                            field.Error.RequiresFieldType,
-                            => StructError.RequiresStructFieldType,
+                            field.Error.AssertsField,
+                            => StructError.AssertsStructField,
+                            field.Error.BanishesFieldTypeInfo,
+                            => StructError.BanishesStructFieldTypeInfo,
+                            field.Error.RequiresFieldTypeInfo,
+                            => StructError.RequiresStructFieldTypeInfo,
                             else => unreachable,
                         };
                 }
@@ -103,7 +105,7 @@ pub fn init(params: Params) Prototype {
                     _ = decl_validator.eval(actual) catch |err|
                         return switch (err) {
                             decl.Error.AssertsDecl,
-                            => StructError.AssertsDeclName,
+                            => StructError.AssertsDecl,
                             else => unreachable,
                         };
                 }
@@ -134,9 +136,9 @@ pub fn init(params: Params) Prototype {
                         @typeInfo(actual).@"struct".layout,
                     ),
 
-                    StructError.AssertsStructFieldName,
-                    StructError.BanishesStructFieldType,
-                    StructError.RequiresStructFieldType,
+                    StructError.AssertsStructField,
+                    StructError.BanishesStructFieldTypeInfo,
+                    StructError.RequiresStructFieldTypeInfo,
                     => {
                         inline for (params.fields) |param_field| {
                             const field_validator = field.init(param_field);
@@ -188,10 +190,11 @@ test StructError {
     _ = StructError.BanishesLayout catch void;
     _ = StructError.RequiresLayout catch void;
 
-    _ = StructError.AssertsStructFieldName catch void;
-    _ = StructError.RequiresStructFieldType catch void;
+    _ = StructError.AssertsStructField catch void;
+    _ = StructError.RequiresStructFieldTypeInfo catch void;
+    _ = StructError.BanishesStructFieldTypeInfo catch void;
 
-    _ = StructError.AssertsDeclName catch void;
+    _ = StructError.AssertsDecl catch void;
 
     _ = StructError.AssertsTrueIsTuple catch void;
     _ = StructError.AssertsFalseIsTuple catch void;
@@ -287,7 +290,7 @@ test "coerces StructError.AssertsStructFieldName" {
     });
 
     try std.testing.expectEqual(
-        StructError.AssertsStructFieldName,
+        StructError.AssertsStructField,
         @"struct".eval(struct { foo: bool }),
     );
 }
@@ -309,7 +312,7 @@ test "coerces StructError.RequiresStructFieldType" {
     });
 
     try std.testing.expectEqual(
-        StructError.RequiresStructFieldType,
+        StructError.RequiresStructFieldTypeInfo,
         @"struct".eval(struct { field: bool }),
     );
 }
@@ -331,7 +334,7 @@ test "coerces StructError.BanishesStructFieldType" {
     });
 
     try std.testing.expectEqual(
-        StructError.BanishesStructFieldType,
+        StructError.BanishesStructFieldTypeInfo,
         @"struct".eval(struct { field: bool }),
     );
 }
@@ -347,7 +350,7 @@ test "coerces StructError.AssertsDeclName" {
         .is_tuple = null,
     });
 
-    try std.testing.expectEqual(StructError.AssertsDeclName, @"struct".eval(struct {
+    try std.testing.expectEqual(StructError.AssertsDecl, @"struct".eval(struct {
         const decl = 0;
     }));
 }

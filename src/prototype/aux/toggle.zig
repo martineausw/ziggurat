@@ -5,6 +5,7 @@ const info = @import("../aux/info.zig");
 
 const ToggleError = error{
     InvalidArgument,
+    RequiresTypeInfo,
     AssertsTrue,
     AssertsFalse,
 };
@@ -25,8 +26,9 @@ pub fn init(params: Params) Prototype {
                 _ = info_validator.eval(@TypeOf(actual)) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
-                        info.Error.RequiresType,
                         => ToggleError.InvalidArgument,
+                        info.Error.RequiresTypeInfo,
+                        => ToggleError.RequiresTypeInfo,
                         else => unreachable,
                     };
 
@@ -53,6 +55,7 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     ToggleError.InvalidArgument,
+                    ToggleError.RequiresTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
                     else => @compileError(

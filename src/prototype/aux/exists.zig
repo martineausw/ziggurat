@@ -5,7 +5,7 @@ const info = @import("info.zig");
 
 const ExistsError = error{
     InvalidArgument,
-    RequiresType,
+    RequiresTypeInfo,
     AssertsNotNull,
     AssertsNull,
 };
@@ -27,8 +27,8 @@ pub fn init(params: Params) Prototype {
                     return switch (err) {
                         info.Error.InvalidArgument,
                         => ExistsError.InvalidArgument,
-                        info.Error.RequiresType,
-                        => ExistsError.RequiresType,
+                        info.Error.RequiresTypeInfo,
+                        => ExistsError.RequiresTypeInfo,
                         else => unreachable,
                     };
 

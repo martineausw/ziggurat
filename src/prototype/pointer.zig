@@ -19,9 +19,10 @@ const exists = @import("aux/exists.zig");
 /// Error set for `prototype.pointer`.
 const PointerError = error{
     InvalidArgument,
+    RequiresTypeInfo,
     /// Violates `std.builtin.Type.pointer.child` blacklist assertion.
-    BanishesChildType,
-    RequiresChildType,
+    BanishesChildTypeInfo,
+    RequiresChildTypeInfo,
     /// Violates `std.builtin.Type.pointer.size` blacklist assertion.
     BanishesSize,
     RequiresSize,
@@ -105,17 +106,18 @@ pub fn init(params: Params) Prototype {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
-                        info.Error.RequiresType,
                         => PointerError.InvalidArgument,
+                        info.Error.RequiresTypeInfo,
+                        => PointerError.RequiresTypeInfo,
                         else => unreachable,
                     };
 
                 _ = child_validator.eval(@typeInfo(actual).pointer.child) catch |err|
                     return switch (err) {
-                        info.Error.BanishesType,
-                        => PointerError.BanishesChildType,
-                        info.Error.RequiresType,
-                        => PointerError.RequiresChildType,
+                        info.Error.BanishesTypeInfo,
+                        => PointerError.BanishesChildTypeInfo,
+                        info.Error.RequiresTypeInfo,
+                        => PointerError.RequiresChildTypeInfo,
                         else => unreachable,
                     };
 
@@ -174,10 +176,11 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     PointerError.InvalidArgument,
+                    PointerError.RequiresTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
-                    PointerError.BanishesChildType,
-                    PointerError.RequiresChildType,
+                    PointerError.BanishesChildTypeInfo,
+                    PointerError.RequiresChildTypeInfo,
                     => child_validator.onError.?(
                         err,
                         prototype,
@@ -224,9 +227,10 @@ pub fn init(params: Params) Prototype {
 
 test PointerError {
     _ = PointerError.InvalidArgument catch void;
+    _ = PointerError.RequiresTypeInfo catch void;
 
-    _ = PointerError.BanishesChildType catch void;
-    _ = PointerError.RequiresChildType catch void;
+    _ = PointerError.BanishesChildTypeInfo catch void;
+    _ = PointerError.RequiresChildTypeInfo catch void;
 
     _ = PointerError.BanishesSize catch void;
     _ = PointerError.RequiresSize catch void;
@@ -314,7 +318,7 @@ test "coerces PointerError.BanishesChildType" {
     });
 
     try std.testing.expectEqual(
-        PointerError.BanishesChildType,
+        PointerError.BanishesChildTypeInfo,
         comptime pointer.eval(*f128),
     );
 }
@@ -335,7 +339,7 @@ test "coerces PointerError.RequiresChildType" {
         .sentinel = null,
     });
     try std.testing.expectEqual(
-        PointerError.RequiresChildType,
+        PointerError.RequiresChildTypeInfo,
         comptime pointer.eval(*f128),
     );
 }

@@ -26,7 +26,7 @@ pub fn init(params: Params) Prototype {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
-                        info.Error.RequiresType,
+                        info.Error.RequiresTypeInfo,
                         => ChildError.InvalidArgument,
                         else => unreachable,
                     };
@@ -77,7 +77,7 @@ test init {
     _ = child;
 }
 
-test "evaluates child successfully" {
+test "passes child successfully" {
     const int = @import("../int.zig");
     const child = init(int.init(
         .{ .bits = .{ .min = 32, .max = 32 } },

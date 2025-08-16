@@ -27,8 +27,9 @@ pub const init: Prototype = .{
             ) catch |err|
                 return switch (err) {
                     info.Error.InvalidArgument,
-                    info.Error.RequiresType,
                     => BoolError.InvalidArgument,
+                    info.Error.RequiresTypeInfo,
+                    => BoolError.RequiresTypeInfo,
                     else => unreachable,
                 };
 
@@ -43,6 +44,7 @@ pub const init: Prototype = .{
         ) void {
             switch (err) {
                 BoolError.InvalidArgument,
+                BoolError.RequiresTypeInfo,
                 => info_validator.onError.?(err, prototype, actual),
 
                 else => unreachable,

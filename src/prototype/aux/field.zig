@@ -7,14 +7,14 @@ const info = @import("info.zig");
 /// Error set for field.
 const FieldError = error{
     InvalidArgument,
-    RequiresType,
+    RequiresTypeInfo,
     /// Violates `std.builtin.Type.StructField.name` or
     /// `std.builtin.Type.UnionField.name` assertion.
-    AssertsFieldName,
+    AssertsField,
     /// Violates `std.builtin.Type.StructField.type` or
     /// `std.builtin.Type.UnionField.type` assertion.
-    BanishesFieldType,
-    RequiresFieldType,
+    BanishesFieldTypeInfo,
+    RequiresFieldTypeInfo,
 };
 
 /// Errors returned by `eval`
@@ -48,13 +48,13 @@ pub fn init(params: Params) Prototype {
                     return switch (err) {
                         info.Error.InvalidArgument,
                         => FieldError.InvalidArgument,
-                        info.Error.RequiresType,
-                        => FieldError.RequiresType,
+                        info.Error.RequiresTypeInfo,
+                        => FieldError.RequiresTypeInfo,
                         else => unreachable,
                     };
 
                 if (!@hasField(actual, params.name)) {
-                    return FieldError.AssertsFieldName;
+                    return FieldError.AssertsField;
                 }
 
                 _ = info.init(params.type).eval(@FieldType(
@@ -62,8 +62,8 @@ pub fn init(params: Params) Prototype {
                     params.name,
                 )) catch |err|
                     return switch (err) {
-                        info.Error.BanishesType => FieldError.BanishesFieldType,
-                        info.Error.RequiresType => FieldError.RequiresFieldType,
+                        info.Error.BanishesTypeInfo => FieldError.BanishesFieldTypeInfo,
+                        info.Error.RequiresTypeInfo => FieldError.RequiresFieldTypeInfo,
                         else => unreachable,
                     };
 
@@ -78,9 +78,10 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     FieldError.InvalidArgument,
+                    FieldError.RequiresTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
-                    FieldError.AssertsFieldName,
+                    FieldError.AssertsField,
                     => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: {s}",
                         .{
@@ -90,8 +91,8 @@ pub fn init(params: Params) Prototype {
                         },
                     )),
 
-                    FieldError.BanishesFieldType,
-                    FieldError.RequiresFieldType,
+                    FieldError.BanishesFieldTypeInfo,
+                    FieldError.RequiresFieldTypeInfo,
                     => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: {s}",
                         .{
@@ -110,8 +111,8 @@ pub fn init(params: Params) Prototype {
 
 test FieldError {
     _ = FieldError.InvalidArgument catch void;
-    _ = FieldError.AssertsFieldName catch void;
-    _ = FieldError.BanishesFieldType catch void;
+    _ = FieldError.AssertsField catch void;
+    _ = FieldError.BanishesFieldTypeInfo catch void;
 }
 
 test Params {
@@ -188,7 +189,7 @@ test "evaluates union with given field successfully" {
     );
 }
 
-test "coerces FieldError.AssertsFieldName" {
+test "coerces FieldError.AssertsField" {
     const T = struct {};
 
     const params: Params = .{
@@ -201,7 +202,7 @@ test "coerces FieldError.AssertsFieldName" {
     const has_field: Prototype = init(params);
 
     try std.testing.expectEqual(
-        FieldError.AssertsFieldName,
+        FieldError.AssertsField,
         has_field.eval(T),
     );
 }
@@ -221,7 +222,7 @@ test "coerces FieldError.RequiresFieldType" {
     const has_field: Prototype = init(params);
 
     try std.testing.expectEqual(
-        FieldError.RequiresFieldType,
+        FieldError.RequiresFieldTypeInfo,
         comptime has_field.eval(T),
     );
 }
@@ -241,7 +242,7 @@ test "coerces FieldError.BanishesFieldType" {
     const has_field: Prototype = init(params);
 
     try std.testing.expectEqual(
-        FieldError.BanishesFieldType,
+        FieldError.BanishesFieldTypeInfo,
         comptime has_field.eval(T),
     );
 }

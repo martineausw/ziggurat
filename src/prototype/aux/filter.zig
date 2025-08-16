@@ -59,6 +59,7 @@ pub fn Filter(comptime Params: type) type {
                     ) void {
                         switch (err) {
                             FilterError.InvalidArgument,
+                            FilterError.RequiresTypeInfo,
                             => comptime type_validator.onError.?(
                                 err,
                                 prototype,

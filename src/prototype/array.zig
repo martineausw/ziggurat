@@ -16,9 +16,10 @@ const exists = @import("aux/exists.zig");
 /// Error set for array.
 const ArrayError = error{
     InvalidArgument,
+    RequiresTypeInfo,
     /// Violates `std.builtin.Type.array.child` blacklist assertion.
-    BanishesChildType,
-    RequiresChildType,
+    BanishesChildTypeInfo,
+    RequiresChildTypeInfo,
     /// Violates `std.builtin.Type.array.len` assertion.
     AssertsMinLen,
     AssertsMaxLen,
@@ -77,8 +78,9 @@ pub fn init(params: Params) Prototype {
                 ) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
-                        info.Error.RequiresType,
                         => ArrayError.InvalidArgument,
+                        info.Error.RequiresTypeInfo,
+                        => ArrayError.RequiresTypeInfo,
                         else => unreachable,
                     };
 
@@ -86,10 +88,10 @@ pub fn init(params: Params) Prototype {
                     @typeInfo(actual).array.child,
                 ) catch |err|
                     return switch (err) {
-                        info.Error.BanishesType,
-                        => ArrayError.BanishesChildType,
-                        info.Error.RequiresType,
-                        => ArrayError.RequiresChildType,
+                        info.Error.BanishesTypeInfo,
+                        => ArrayError.BanishesChildTypeInfo,
+                        info.Error.RequiresTypeInfo,
+                        => ArrayError.RequiresChildTypeInfo,
                         else => unreachable,
                     };
 
@@ -126,10 +128,11 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     ArrayError.InvalidArgument,
+                    ArrayError.RequiresTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
-                    ArrayError.BanishesChildType,
-                    ArrayError.RequiresChildType,
+                    ArrayError.BanishesChildTypeInfo,
+                    ArrayError.RequiresChildTypeInfo,
                     => info_validator.onError.?(
                         err,
                         prototype,
@@ -161,8 +164,9 @@ pub fn init(params: Params) Prototype {
 
 test ArrayError {
     _ = ArrayError.InvalidArgument catch void;
-    _ = ArrayError.BanishesChildType catch void;
-    _ = ArrayError.RequiresChildType catch void;
+    _ = ArrayError.RequiresTypeInfo catch void;
+    _ = ArrayError.BanishesChildTypeInfo catch void;
+    _ = ArrayError.RequiresChildTypeInfo catch void;
     _ = ArrayError.AssertsMinLen catch void;
     _ = ArrayError.AssertsMaxLen catch void;
     _ = ArrayError.AssertsNotNullSentinel catch void;
@@ -246,7 +250,7 @@ test "coerces ArrayError.RequiresChildType" {
     );
 
     try std.testing.expectEqual(
-        ArrayError.RequiresChildType,
+        ArrayError.RequiresChildTypeInfo,
         comptime array.eval([3]f128),
     );
 }
@@ -266,7 +270,7 @@ test "coerces ArrayError.BanishesChildType" {
     );
 
     try std.testing.expectEqual(
-        ArrayError.BanishesChildType,
+        ArrayError.BanishesChildTypeInfo,
         comptime array.eval([3]usize),
     );
 }

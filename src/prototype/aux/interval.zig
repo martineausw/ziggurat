@@ -8,6 +8,7 @@ const info = @import("info.zig");
 /// Error set for interval.
 const IntervalError = error{
     InvalidArgument,
+    RequiresTypeInfo,
     /// Violates inclusive minimum value assertion.
     AssertsMin,
     /// Violates inclusive maximum value assertion.
@@ -57,6 +58,8 @@ pub fn init(params: Params) Prototype {
                     return switch (err) {
                         info.Error.InvalidArgument,
                         => IntervalError.InvalidArgument,
+                        info.Error.RequiresTypeInfo,
+                        => IntervalError.RequiresTypeInfo,
                         else => unreachable,
                     };
 
@@ -89,6 +92,7 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     IntervalError.InvalidArgument,
+                    IntervalError.RequiresTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
                     else => @compileError(std.fmt.comptimePrint(
@@ -107,6 +111,7 @@ pub fn init(params: Params) Prototype {
 
 test IntervalError {
     _ = IntervalError.InvalidArgument catch void;
+    _ = IntervalError.RequiresTypeInfo catch void;
     _ = IntervalError.AssertsMin catch void;
     _ = IntervalError.AssertsMax catch void;
 }

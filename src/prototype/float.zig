@@ -13,6 +13,7 @@ const info = @import("aux/info.zig");
 
 const FloatError = error{
     InvalidArgument,
+    RequiresTypeInfo,
     AssertsMinBits,
     AssertsMaxBits,
 };
@@ -47,8 +48,9 @@ pub fn init(params: Params) Prototype {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
-                        info.Error.RequiresType,
                         => FloatError.InvalidArgument,
+                        info.Error.RequiresTypeInfo,
+                        => FloatError.RequiresTypeInfo,
                         else => unreachable,
                     };
 
@@ -91,6 +93,7 @@ pub fn init(params: Params) Prototype {
 
 test FloatError {
     _ = FloatError.InvalidArgument catch void;
+    _ = FloatError.RequiresTypeInfo catch void;
 
     _ = FloatError.AssertsMinBits catch void;
     _ = FloatError.AssertsMaxBits catch void;

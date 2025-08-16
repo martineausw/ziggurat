@@ -7,7 +7,7 @@ const info = @import("info.zig");
 /// Error set for declaration.
 const DeclError = error{
     InvalidArgument,
-    RequiresType,
+    RequiresTypeInfo,
     AssertsDecl,
 };
 
@@ -38,8 +38,8 @@ pub fn init(params: Params) Prototype {
                     return switch (err) {
                         info.Error.InvalidArgument,
                         => DeclError.InvalidArgument,
-                        info.Error.RequiresType,
-                        => DeclError.RequiresType,
+                        info.Error.RequiresTypeInfo,
+                        => DeclError.RequiresTypeInfo,
                         else => unreachable,
                     };
 
@@ -58,7 +58,7 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     DeclError.InvalidArgument,
-                    DeclError.RequiresType,
+                    DeclError.RequiresTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
                     DeclError.AssertsDecl,
@@ -213,7 +213,7 @@ test "coerces DeclError.AssertsDecl from enum" {
     // comptime has_decl.onError.?(Error.AssertsDecl, has_decl, T);
 }
 
-test "coerces DeclError.RequiresType" {
+test "coerces DeclError.RequiresTypeInfo" {
     const params: Params = .{
         .name = "decl",
     };
@@ -221,11 +221,11 @@ test "coerces DeclError.RequiresType" {
     const has_decl: Prototype = init(params);
 
     try std.testing.expectEqual(
-        Error.RequiresType,
+        Error.RequiresTypeInfo,
         comptime has_decl.eval(bool),
     );
 
-    // comptime has_decl.onError.?(Error.RequiresType, has_decl, bool);
+    // comptime has_decl.onError.?(Error.RequiresTypeInfo, has_decl, bool);
 }
 
 test "coerces DeclError.InvalidArgument" {
@@ -240,5 +240,5 @@ test "coerces DeclError.InvalidArgument" {
         comptime has_decl.eval(false),
     );
 
-    // comptime has_decl.onError.?(Error.RequiresType, has_decl, bool);
+    // comptime has_decl.onError.?(Error.RequiresTypeInfo, has_decl, bool);
 }

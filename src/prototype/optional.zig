@@ -12,10 +12,11 @@ const info = @import("aux/info.zig");
 /// Error set for optional.
 const OptionalError = error{
     InvalidArgument,
+    RequiresTypeInfo,
     /// Violates `std.builtin.Type.Optional.child` blacklist assertion.
-    BanishesChildType,
+    BanishesChildTypeInfo,
     /// Violates `std.builtin.Type.Optional.child` whitelist assertion.
-    RequiresChildType,
+    RequiresChildTypeInfo,
 };
 
 /// Error set returned by `eval`
@@ -49,8 +50,9 @@ pub fn init(params: Params) Prototype {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
-                        info.Error.RequiresType,
                         => OptionalError.InvalidArgument,
+                        info.Error.RequiresTypeInfo,
+                        => OptionalError.RequiresTypeInfo,
                         else => unreachable,
                     };
 
@@ -61,10 +63,10 @@ pub fn init(params: Params) Prototype {
 
                 _ = child_validator.eval(actual_info.child) catch |err|
                     return switch (err) {
-                        info.Error.BanishesType,
-                        => OptionalError.BanishesChildType,
-                        info.Error.RequiresType,
-                        => OptionalError.RequiresChildType,
+                        info.Error.BanishesTypeInfo,
+                        => OptionalError.BanishesChildTypeInfo,
+                        info.Error.RequiresTypeInfo,
+                        => OptionalError.RequiresChildTypeInfo,
                         else => unreachable,
                     };
 
@@ -74,14 +76,16 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    OptionalError.InvalidArgument => info_validator.onError.?(
+                    OptionalError.InvalidArgument,
+                    OptionalError.RequiresTypeInfo,
+                    => info_validator.onError.?(
                         err,
                         prototype,
                         actual,
                     ),
 
-                    OptionalError.BanishesChildType,
-                    OptionalError.RequiresChildType,
+                    OptionalError.BanishesChildTypeInfo,
+                    OptionalError.RequiresChildTypeInfo,
                     => child_validator.onError.?(
                         err,
                         prototype,
@@ -97,8 +101,9 @@ pub fn init(params: Params) Prototype {
 
 test OptionalError {
     _ = OptionalError.InvalidArgument catch void;
-    _ = OptionalError.BanishesChildType catch void;
-    _ = OptionalError.RequiresChildType catch void;
+    _ = OptionalError.RequiresTypeInfo catch void;
+    _ = OptionalError.BanishesChildTypeInfo catch void;
+    _ = OptionalError.RequiresChildTypeInfo catch void;
 }
 
 test Params {
@@ -134,7 +139,7 @@ test "coerces OptionalError.BanishesChildType" {
         },
     });
 
-    try std.testing.expectEqual(OptionalError.BanishesChildType, optional.eval(?bool));
+    try std.testing.expectEqual(OptionalError.BanishesChildTypeInfo, optional.eval(?bool));
 }
 
 test "coerces OptionalError.RequiresChildType" {
@@ -144,5 +149,5 @@ test "coerces OptionalError.RequiresChildType" {
         },
     });
 
-    try std.testing.expectEqual(OptionalError.RequiresChildType, optional.eval(?bool));
+    try std.testing.expectEqual(OptionalError.RequiresChildTypeInfo, optional.eval(?bool));
 }

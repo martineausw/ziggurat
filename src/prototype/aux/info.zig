@@ -11,9 +11,9 @@ const @"type" = @import("../type.zig");
 const InfoError = error{
     InvalidArgument,
     /// Violates type info blacklist assertion.
-    BanishesType,
+    BanishesTypeInfo,
     /// Violates type info whitelist assertion.
-    RequiresType,
+    RequiresTypeInfo,
 };
 
 /// Error set returned by `eval`.
@@ -83,8 +83,8 @@ pub fn init(params: Params) Prototype {
                     @typeInfo(actual),
                 ) catch |err|
                     return switch (err) {
-                        filter.Error.Banishes => InfoError.BanishesType,
-                        filter.Error.Requires => InfoError.RequiresType,
+                        filter.Error.Banishes => InfoError.BanishesTypeInfo,
+                        filter.Error.Requires => InfoError.RequiresTypeInfo,
                         else => unreachable,
                     };
 
@@ -101,8 +101,8 @@ pub fn init(params: Params) Prototype {
                     InfoError.InvalidArgument,
                     => type_validator.onError.?(err, prototype, actual),
 
-                    InfoError.BanishesType,
-                    InfoError.RequiresType,
+                    InfoError.BanishesTypeInfo,
+                    InfoError.RequiresTypeInfo,
                     => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: expect: {any}, actual: {s}",
                         .{
@@ -122,8 +122,8 @@ pub fn init(params: Params) Prototype {
 
 test InfoError {
     _ = InfoError.InvalidArgument catch void;
-    _ = InfoError.BanishesType catch void;
-    _ = InfoError.RequiresType catch void;
+    _ = InfoError.BanishesTypeInfo catch void;
+    _ = InfoError.RequiresTypeInfo catch void;
 }
 
 test Params {
@@ -297,37 +297,37 @@ test "evaluates types against whitelist unsuccessfully" {
     const number: Prototype = init(params);
 
     try std.testing.expectEqual(
-        Error.RequiresType,
+        Error.RequiresTypeInfo,
         comptime number.eval(usize),
     );
 
     try std.testing.expectEqual(
-        Error.RequiresType,
+        Error.RequiresTypeInfo,
         comptime number.eval(u8),
     );
 
     try std.testing.expectEqual(
-        Error.RequiresType,
+        Error.RequiresTypeInfo,
         comptime number.eval(i128),
     );
 
     try std.testing.expectEqual(
-        Error.RequiresType,
+        Error.RequiresTypeInfo,
         comptime number.eval(f16),
     );
 
     try std.testing.expectEqual(
-        Error.RequiresType,
+        Error.RequiresTypeInfo,
         comptime number.eval(f128),
     );
 
     try std.testing.expectEqual(
-        Error.RequiresType,
+        Error.RequiresTypeInfo,
         comptime number.eval(comptime_int),
     );
 
     try std.testing.expectEqual(
-        Error.RequiresType,
+        Error.RequiresTypeInfo,
         comptime number.eval(comptime_float),
     );
 }
@@ -343,35 +343,35 @@ test "evaluates types against blacklist unsuccessfully" {
     const number: Prototype = init(params);
 
     try std.testing.expectEqual(
-        Error.BanishesType,
+        Error.BanishesTypeInfo,
         comptime number.eval(usize),
     );
 
     try std.testing.expectEqual(
-        Error.BanishesType,
+        Error.BanishesTypeInfo,
         comptime number.eval(u8),
     );
 
     try std.testing.expectEqual(
-        Error.BanishesType,
+        Error.BanishesTypeInfo,
         comptime number.eval(i128),
     );
 
     try std.testing.expectEqual(
-        Error.BanishesType,
+        Error.BanishesTypeInfo,
         comptime number.eval(f16),
     );
     try std.testing.expectEqual(
-        Error.BanishesType,
+        Error.BanishesTypeInfo,
         comptime number.eval(f128),
     );
 
     try std.testing.expectEqual(
-        Error.BanishesType,
+        Error.BanishesTypeInfo,
         comptime number.eval(comptime_int),
     );
     try std.testing.expectEqual(
-        Error.BanishesType,
+        Error.BanishesTypeInfo,
         comptime number.eval(comptime_float),
     );
 }

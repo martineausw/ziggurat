@@ -14,8 +14,9 @@ const info = @import("aux/info.zig");
 /// Error set for vector.
 const VectorError = error{
     InvalidArgument,
-    BanishesChildType,
-    RequiresChildType,
+    RequiresTypeInfo,
+    BanishesChildTypeInfo,
+    RequiresChildTypeInfo,
     AssertsMinLen,
     AssertsMaxLen,
 };
@@ -55,8 +56,9 @@ pub fn init(params: Params) Prototype {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
-                        info.Error.RequiresType,
                         => VectorError.InvalidArgument,
+                        info.Error.RequiresTypeInfo,
+                        => VectorError.RequiresTypeInfo,
                         else => unreachable,
                     };
 
@@ -67,10 +69,10 @@ pub fn init(params: Params) Prototype {
 
                 _ = child_validator.eval(actual_info.child) catch |err| {
                     return switch (err) {
-                        info.Error.BanishesType,
-                        => VectorError.BanishesChildType,
-                        info.Error.RequiresType,
-                        => VectorError.RequiresChildType,
+                        info.Error.BanishesTypeInfo,
+                        => VectorError.BanishesChildTypeInfo,
+                        info.Error.RequiresTypeInfo,
+                        => VectorError.RequiresChildTypeInfo,
                         else => unreachable,
                     };
                 };
@@ -95,6 +97,7 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     VectorError.InvalidArgument,
+                    VectorError.RequiresTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
                     VectorError.BanishesChildType,
@@ -122,9 +125,10 @@ pub fn init(params: Params) Prototype {
 
 test VectorError {
     _ = VectorError.InvalidArgument catch void;
+    _ = VectorError.RequiresTypeInfo catch void;
 
-    _ = VectorError.BanishesChildType catch void;
-    _ = VectorError.RequiresChildType catch void;
+    _ = VectorError.BanishesChildTypeInfo catch void;
+    _ = VectorError.RequiresChildTypeInfo catch void;
 
     _ = VectorError.AssertsMinLen catch void;
     _ = VectorError.AssertsMaxLen catch void;
@@ -177,7 +181,7 @@ test "coerces VectorError.BanishesChildType" {
     });
 
     try std.testing.expectEqual(
-        VectorError.BanishesChildType,
+        VectorError.BanishesChildTypeInfo,
         comptime vector.eval(@Vector(3, f128)),
     );
 }
@@ -194,7 +198,7 @@ test "coerces VectorError.RequiresChildType" {
     });
 
     try std.testing.expectEqual(
-        VectorError.RequiresChildType,
+        VectorError.RequiresChildTypeInfo,
         comptime vector.eval(@Vector(3, f128)),
     );
 }

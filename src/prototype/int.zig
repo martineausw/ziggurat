@@ -15,6 +15,7 @@ const filter = @import("aux/filter.zig");
 /// Error set for int
 const IntError = error{
     InvalidArgument,
+    RequiresTypeInfo,
     AssertsMinBits,
     AssertsMaxBits,
     /// Violates `std.builtin.Type.Int.signedness` assertion.
@@ -70,8 +71,9 @@ pub fn init(params: Params) Prototype {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
                         info.Error.InvalidArgument,
-                        info.Error.RequiresType,
                         => IntError.InvalidArgument,
+                        info.Error.RequiresTypeInfo,
+                        => IntError.RequiresTypeInfo,
                         else => unreachable,
                     };
 
@@ -102,7 +104,9 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    IntError.InvalidArgument => info_validator.onError.?(
+                    IntError.InvalidArgument,
+                    IntError.RequiresTypeInfo,
+                    => info_validator.onError.?(
                         err,
                         prototype,
                         actual,
