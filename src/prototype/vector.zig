@@ -18,29 +18,29 @@ const VectorError = error{
     /// See also:
     /// - [`test.prototype.int`](#test.prototype.int)
     AssertsTypeValue,
-    /// *actual* requires array type info.
+    /// *actual* type value requires vector type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     AssertsWhitelistTypeInfo,
-    /// *actual* array child type info has active tag that belongs to blacklist.
+    /// *actual* vector child type info has active tag that belongs to blacklist.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     AssertsBlacklistChildTypeInfo,
-    /// *actual* array child type info has active tag that does not belong to whitelist.
+    /// *actual* vector child type info has active tag that does not belong to whitelist.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     AssertsWhitelistChildTypeInfo,
-    /// *actual* array length is less than minimum.
+    /// *actual* vector length is less than minimum.
     ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMinLen,
-    /// *actual* array length is greater than maximum.
+    /// *actual* vector length is greater than maximum.
     ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMaxLen,

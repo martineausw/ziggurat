@@ -18,19 +18,19 @@ const OptionalError = error{
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     AssertsTypeValue,
-    /// *actual* requires array type info.
+    /// *actual* type value requires optional type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     AssertsWhitelistTypeInfo,
-    /// *actual* array child type info has active tag that belongs to blacklist.
+    /// *actual* optional child type info has active tag that belongs to blacklist.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     AssertsBlacklistChildTypeInfo,
-    /// *actual* array child type info has active tag that does not belong to whitelist.
+    /// *actual* optional child type info has active tag that does not belong to whitelist.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)

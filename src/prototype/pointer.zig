@@ -22,7 +22,7 @@ const PointerError = error{
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     AssertsTypeValue,
-    /// *actual* type value requires array type info.
+    /// *actual* type value requires pointer type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
@@ -97,7 +97,7 @@ const SizeParams = struct {
 /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
 const Size = filter.Filter(SizeParams);
 
-/// Parameters for `prototype.pointer` evaluation.
+/// Assertion parameters for *pointer* prototype.
 ///
 /// See also: [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer).
 pub const Params = struct {
@@ -117,19 +117,19 @@ pub const Params = struct {
     /// Asserts pointer const qualifier presence.
     ///
     /// See also:
-    /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
+    /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Array)
     /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     is_const: ?bool = null,
     /// Asserts pointer volatile qualifier presence.
     ///
     /// See also:
-    /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
+    /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Array)
     /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     is_volatile: ?bool = null,
-    /// Asserts sentinel existence.
+    /// Asserts pointer sentinel existence.
     ///
     /// See also:
-    /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
+    /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Array)
     /// - [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     sentinel: ?bool = null,
 };

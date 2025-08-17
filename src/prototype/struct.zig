@@ -14,7 +14,7 @@ const field = @import("aux/field.zig");
 const decl = @import("aux/decl.zig");
 const toggle = @import("aux/toggle.zig");
 
-/// Error set for array.
+/// Error set for struct.
 const StructError = error{
     /// *actual* is not a type value.
     ///
@@ -22,7 +22,7 @@ const StructError = error{
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     AssertsTypeValue,
-    /// *actual* type value requires array type info.
+    /// *actual* type value requires struct type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
@@ -125,7 +125,7 @@ pub fn init(params: Params) Prototype {
     const layout_validator = Layout.init(params.layout);
     const is_tuple_validator = toggle.init(params.is_tuple);
     return .{
-        .name = "Array",
+        .name = "Struct",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime info_validator.eval(actual) catch |err|

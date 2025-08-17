@@ -13,7 +13,7 @@ const BoolError = error{
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     AssertsTypeValue,
-    /// *actual* requires array type info.
+    /// *actual* type value requires bool type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)

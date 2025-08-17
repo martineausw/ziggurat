@@ -85,7 +85,7 @@ pub const Params = struct {
     /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     len: interval.Params = .{},
 
-    /// Asserts sentinel existence.
+    /// Asserts array sentinel existence.
     ///
     /// See also:
     /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)

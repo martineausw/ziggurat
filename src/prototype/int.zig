@@ -20,7 +20,7 @@ const IntError = error{
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     AssertsTypeValue,
-    /// *actual* requires float type info.
+    /// *actual* type value requires int type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
@@ -77,7 +77,7 @@ pub const Params = struct {
     /// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
     /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     bits: interval.Params = .{},
-    /// Asserts signedness.
+    /// Asserts int signedness.
     ///
     /// See also:
     /// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
