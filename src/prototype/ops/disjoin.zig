@@ -1,4 +1,7 @@
-//! `disjoin` definition.
+//! Prototype operation *conjoin*.
+//! 
+//! Asserts an *actual* value to pass at least one evaluation of provided 
+//! prototypes.
 const std = @import("std");
 const testing = std.testing;
 
@@ -11,7 +14,7 @@ pub const info_validator = info.init(.{
     .vector = true,
 });
 
-/// Boolean OR of `prototype`.
+/// Boolean OR of prototypes' evaluation results.
 pub fn disjoin(prototypes: anytype) Prototype {
     return .{
         .name = "disjoin",

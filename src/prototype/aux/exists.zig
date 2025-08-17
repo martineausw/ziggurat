@@ -1,4 +1,6 @@
-//! Evaluates an *optional* value against either *null* or *not null*.
+//! Auxillary prototype *exists*.
+//!
+//! Asserts an *actual* optional value to either be null or not null.
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");

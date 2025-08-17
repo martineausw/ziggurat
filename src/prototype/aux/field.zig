@@ -1,4 +1,7 @@
-//! Evaluates a *type* value with type info containing *fields*.
+//! Auxillary prototype *field*.
+//!
+//! Asserts an *actual* struct or union type value to have a field of type
+//! and optionally respect a type info whitelist and/or blacklist.
 //!
 //! See also:
 //! - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)

@@ -1,4 +1,6 @@
-//! Evaluates an *integer* or a *float* value against an *inclusive interval*.
+//! Auxillary prototype interval.
+//!
+//! Asserts an *actual* integer or float to be within a given inclusive interval.
 const std = @import("std");
 const testing = std.testing;
 

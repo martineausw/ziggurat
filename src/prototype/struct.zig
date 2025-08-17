@@ -1,4 +1,7 @@
-//! Evaluatesa a *struct* type value.
+//! Prototype *pointer*.
+//! 
+//! Asserts *actual* is a pointer type value with possible layout, 
+//! field, declaration, and tuple assertions.
 //!
 //! See also: [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
 const std = @import("std");

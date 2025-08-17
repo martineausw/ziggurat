@@ -1,13 +1,13 @@
-///! `sign` definition.
+///! *sign* function.
 const Prototype = @import("prototype/Prototype.zig");
 
-/// Wraps the final prototype and invoked at return value position of a function signature.
+/// Intended to be called at return type of a function signature.
 ///
-/// Prototype must evaluate to true to continue.
+/// Calls prototype's *eval* in comptime which must evaluate to *true* to continue.
 ///
-/// Invokes `prototype.onFail` when `prototype.eval` returns `false`.
+/// Calls prototype's *onFail* in comptime when its *eval* returns *false*.
 ///
-/// Invokes `prototype.onError` when `prototype.eval` returns error.
+/// Calls prototype's *onError* in comptime when its *eval* returns an error.
 pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type: type) type {
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {

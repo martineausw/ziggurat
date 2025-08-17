@@ -1,4 +1,7 @@
-//! Evaluates an *integer* type value.
+//! Prototype *int*.
+//! 
+//! Asserts *actual* is an integer type value with possible bits
+//! and signedness assertions.
 //!
 //! See also: [`std.builtin.Type.Int`](#std.builtin.Type.Int)
 const std = @import("std");

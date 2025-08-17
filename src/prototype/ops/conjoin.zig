@@ -1,4 +1,7 @@
-//! `conjoin` definition
+//! Prototype operation *conjoin*.
+//! 
+//! Asserts an *actual* value to pass all evaluations of provided 
+//! prototypes.
 const std = @import("std");
 const testing = std.testing;
 
@@ -11,7 +14,7 @@ const info_validator = info.init(.{
     .pointer = true,
 });
 
-/// Boolean AND of given prototypes
+/// Boolean AND of prototypes' evaluation results.
 pub fn conjoin(prototypes: anytype) Prototype {
     return .{
         .name = "Conjoin",

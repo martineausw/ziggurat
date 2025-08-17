@@ -1,5 +1,8 @@
-//! Evaluates a *vector* type value.
-//!
+//! Prototype *vector*.
+//! 
+//! Asserts *actual* is an vector type value with possible child and
+//! length assertions.
+//! 
 //! See also: [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
 const std = @import("std");
 const testing = std.testing;

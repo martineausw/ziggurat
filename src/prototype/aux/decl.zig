@@ -1,4 +1,7 @@
-//! Evaluates a *type* value with type info containing *declarations*.
+//! Auxillary prototype *decl*.
+//!
+//! Asserts an *actual* struct, union, or enum type value to have a
+//! declaration.
 //!
 //! See also:
 //! - [`std.builtin.Type.Enum`](#std.builtin.Type.Enum)

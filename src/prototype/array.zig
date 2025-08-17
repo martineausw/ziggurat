@@ -1,4 +1,7 @@
-//! Evaluates an *array* type value.
+//! Prototype *array*.
+//! 
+//! Asserts *actual* is an array type value with possible child,
+//! length, and sentinel assertions.
 //!
 //! See also: [`std.builtin.Type.Array`](#std.builtin.Type.Array)
 const std = @import("std");

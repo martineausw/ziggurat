@@ -1,4 +1,7 @@
-//! Evaluates a *float* type value.
+//! Prototype *float*.
+//! 
+//! Asserts *actual* is a float type value with a possible bits
+//! assertion.
 //!
 //! See also: [/// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)](#std.builtin.Type.Float)
 const std = @import("std");

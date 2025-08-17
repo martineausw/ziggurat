@@ -1,4 +1,6 @@
-//! Evaluates a *boolean* value against *preferred* value.
+//! Auxillary prototype *toggle*.
+//!
+//! Asserts an *actual* boolean value to be either true or false.
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");

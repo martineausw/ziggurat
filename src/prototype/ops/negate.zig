@@ -1,10 +1,13 @@
-//! `negate` definition.
+//! Prototype operation *conjoin*.
+//! 
+//! Asserts an *actual* value to fail evaluation of provided 
+//! prototype without an error.
 const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("../Prototype.zig");
 
-/// Boolean NOT of given `prototype`
+/// Boolean NOT of prototypes evaluation result.
 pub fn negate(prototype: Prototype) Prototype {
     return .{
         .name = std.fmt.comptimePrint("(NOT {s})", .{prototype.name}),

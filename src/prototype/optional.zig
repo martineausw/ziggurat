@@ -1,5 +1,8 @@
-//! Evaluates an *optional* type value.
-//!
+//! Prototype *optional*.
+//! 
+//! Asserts *actual* is an optional type value with a possible 
+//! child assertion.
+//! 
 //! See also: `std.builtin.Type.Optional`
 const std = @import("std");
 const testing = std.testing;
@@ -71,7 +74,7 @@ pub fn init(params: Params) Prototype {
                         => OptionalError.AssertsTypeValue,
                         info.Error.AssertsWhitelistTypeInfo,
                         => OptionalError.AssertsWhitelistTypeInfo,
-                        else => @panic("unhandled error"),
+                        else => unreachable,
                     };
 
                 _ = child_validator.eval(@typeInfo(actual).optional.child) catch |err|
@@ -80,7 +83,7 @@ pub fn init(params: Params) Prototype {
                         => OptionalError.AssertsBlacklistChildTypeInfo,
                         info.Error.AssertsWhitelistTypeInfo,
                         => OptionalError.AssertsWhitelistChildTypeInfo,
-                        else => @panic("unhandled error"),
+                        else => unreachable,
                     };
 
                 return true;
@@ -105,7 +108,7 @@ pub fn init(params: Params) Prototype {
                         @typeInfo(actual).optional.child,
                     ),
 
-                    else => @panic("unhandled error"),
+                    else => unreachable,
                 }
             }
         }.onError,

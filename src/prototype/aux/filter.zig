@@ -1,5 +1,7 @@
-//! Evaluates the *active tag* of a *union* value or an *enum* value against a
-//! *blacklist* and/or a *whitelist* of tags.
+//! Auxillary prototype *filter*.
+//!
+//! Asserts an *actual* active tag of a union value or enum value to
+//! optionally respect a blacklist and/or whitelist of tags.
 //!
 //! See also:
 //! - [`std.builtin.Type.Union`](#std.builtin.Type.Union)

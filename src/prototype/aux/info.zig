@@ -1,5 +1,7 @@
-//! Evaluates the *active tag* of a type value's type info against a
-//! *blacklist* and/or *whitelist*.
+//! Auxillary prototype *info*.
+//!
+//! Asserts an *actual* type info active tag of a type value to respect
+//! a given blacklist and/or whitelist.
 //!
 //! See also: [`std.builtin.Type`](#std.builtin.Type)
 const std = @import("std");

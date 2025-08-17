@@ -1,5 +1,8 @@
-//! Evaluates a *pointer* type value.
-//!
+//! Prototype *pointer*.
+//! 
+//! Asserts *actual* is a pointer type value with possible child, size, 
+//! const, volatile, and sentinel assertions.
+//! 
 //! See also: [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
 const std = @import("std");
 const testing = std.testing;

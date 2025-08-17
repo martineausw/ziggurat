@@ -1,4 +1,6 @@
-//! Evaluates a *bool* type value.
+//! Prototype *bool*.
+//! 
+//! Asserts *actual* is an bool type value.
 const std = @import("std");
 
 const Prototype = @import("Prototype.zig");

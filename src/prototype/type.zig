@@ -1,4 +1,6 @@
-//! Evaluates a *type* type value.
+//! Prototype *type*.
+//! 
+//! Asserts *actual* is a type value.
 const std = @import("std");
 
 const Prototype = @import("Prototype.zig");

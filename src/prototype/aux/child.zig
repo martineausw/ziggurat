@@ -1,4 +1,7 @@
-//! Evaluates a *type* value with type info containing a *child*.
+//! Auxillary prototype *child*.
+//! 
+//! Asserts an *actual* array, pointer, optional, or vector child type 
+//! value to  pass evaluation of given prototype.
 //! 
 //! See also: 
 //! - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
