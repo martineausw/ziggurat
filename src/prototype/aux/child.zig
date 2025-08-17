@@ -38,7 +38,7 @@ pub const Error = ChildError;
 /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
 /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
 /// - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
-/// `std.builtin.Type.Optional`
+/// - [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
 pub const info_validator = info.init(.{
     .array = true,
     .pointer = true,

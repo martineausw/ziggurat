@@ -1,4 +1,4 @@
-//! Auxillary prototypes for convenience.
+//! Auxillary prototypes for intermediate evaluation.
 const std = @import("std");
 
 pub const child = @import("aux/child.zig");
@@ -8,7 +8,7 @@ pub const field = @import("aux/field.zig");
 pub const filter = @import("aux/filter.zig");
 pub const info = @import("aux/info.zig");
 pub const interval = @import("aux/interval.zig");
-pub const toggle = @import("aux/interval.zig");
+pub const toggle = @import("aux/toggle.zig");
 
 test child {
     _ = child;

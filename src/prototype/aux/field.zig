@@ -48,7 +48,7 @@ pub const Error = FieldError;
 /// See also:
 /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 /// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
-/// `std.builtin.Type.Union`
+/// - [`std.builtin.Type.Union`](#std.builtin.Type.Union)
 pub const info_validator = info.init(.{
     .@"struct" = true,
     .@"union" = true,
@@ -70,7 +70,7 @@ pub const Params = struct {
     ///
     /// See also:
     /// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
-    /// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)e
+    /// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)
     type: info.Params,
 };
 
