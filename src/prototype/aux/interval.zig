@@ -7,11 +7,13 @@ const info = @import("info.zig");
 
 /// Error set for interval.
 const IntervalError = error{
+    /// `actual` is not a type value.
     ExpectsTypeValue,
+    /// `actual` requires int, float, comptime_int, or comptime_float type info.
     RequiresTypeInfo,
-    /// Violates inclusive minimum value assertion.
+    /// `actual` value is less than minimum.
     AssertsMin,
-    /// Violates inclusive maximum value assertion.
+    /// `actual` value is greater than maximum.
     AssertsMax,
 };
 

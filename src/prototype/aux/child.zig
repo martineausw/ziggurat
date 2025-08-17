@@ -3,8 +3,12 @@ const std = @import("std");
 const Prototype = @import("../Prototype.zig");
 const info = @import("../aux/info.zig");
 
+/// Error set for child.
 const ChildError = error{
+    /// `actual` is not a type value.
     ExpectsTypeValue,
+    /// `actual` requires array, pointer, vector, or optional type info.
+    RequiresTypeInfo
 };
 
 pub const Error = ChildError;
@@ -26,8 +30,9 @@ pub fn init(params: Params) Prototype {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
                         info.Error.ExpectsTypeValue,
-                        info.Error.RequiresTypeInfo,
                         => ChildError.ExpectsTypeValue,
+                        info.Error.RequiresTypeInfo,
+                        => ChildError.RequiresTypeInfo,
                         else => unreachable,
                     };
 

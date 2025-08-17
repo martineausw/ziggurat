@@ -9,10 +9,11 @@ const @"type" = @import("../type.zig");
 
 /// Error set for info.
 const InfoError = error{
+    /// `actual` is not a type value.
     ExpectsTypeValue,
-    /// Violates type info blacklist assertion.
+    /// `actual` type info has active tag that belongs to blacklist.
     BanishesTypeInfo,
-    /// Violates type info whitelist assertion.
+    /// Violates type info has active tag that does not belong to whitelist.
     RequiresTypeInfo,
 };
 

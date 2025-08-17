@@ -3,10 +3,15 @@ const std = @import("std");
 const Prototype = @import("../Prototype.zig");
 const info = @import("info.zig");
 
+/// Error set for exists.
 const ExistsError = error{
+    /// `actual` is not type value.
     ExpectsTypeValue,
+    /// `actual` requires `optional` type info.
     RequiresTypeInfo,
+    /// `actual` is null.
     AssertsNotNull,
+    /// `actual` is not null.
     AssertsNull,
 };
 

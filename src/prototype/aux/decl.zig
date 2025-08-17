@@ -6,8 +6,11 @@ const info = @import("info.zig");
 
 /// Error set for declaration.
 const DeclError = error{
+    /// `actual` is not a type value.
     ExpectsTypeValue,
+    /// `actual` requires struct, enum, or union type info.
     RequiresTypeInfo,
+    /// `actual` is missing declaration.
     AssertsDecl,
 };
 

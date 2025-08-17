@@ -5,10 +5,11 @@ const @"type" = @import("../type.zig");
 
 /// Error set for filter.
 const FilterError = error{
+    /// `actual` is a union or enum type.
     ExpectsTypeValue,
-    /// Violates tag blacklist assertion.
+    /// `actual` has an active tag that belongs to blacklist.
     Banishes,
-    /// Violates tag whitelist assertion.
+    /// `actual` has an active tag that does not belong to whitelist.
     Requires,
 };
 

@@ -6,14 +6,15 @@ const info = @import("info.zig");
 
 /// Error set for field.
 const FieldError = error{
+    /// `actual` is not a type value.
     ExpectsTypeValue,
+    /// `actual` requires struct or union type info.
     RequiresTypeInfo,
-    /// Violates `std.builtin.Type.StructField.name` or
-    /// `std.builtin.Type.UnionField.name` assertion.
+    /// `actual` is missing field.
     AssertsField,
-    /// Violates `std.builtin.Type.StructField.type` or
-    /// `std.builtin.Type.UnionField.type` assertion.
+    /// `actual` has field with type info that belongs to blacklist.
     BanishesFieldTypeInfo,
+    /// `actual` has field with type info that does not belong to whitelist.
     RequiresFieldTypeInfo,
 };
 
