@@ -148,7 +148,7 @@ Boolean operations for prototype evaluation results
 -   disjoin - to assert at least one prototype evaluates to true.
 -   negate - to assert a prototype evaluates to false without an error.
 
-### `sign` function
+### Sign function
 
 `sign` calls `eval` on a given prototype and will call `onError` or `onFail` for error or false return values, respectively. Complex prototypes are intended to be composed using operators and auxiliary prototypes.
 
