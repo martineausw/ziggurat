@@ -3,7 +3,7 @@
 //! Asserts *actual* is a float type value with a parametric bits
 //! assertion.
 //!
-//! See also: [/// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)](#std.builtin.Type.Float)
+//! See also: - [`std.builtin.Type.Float`](#std.builtin.Type.Float)
 const std = @import("std");
 const testing = std.testing;
 
@@ -47,12 +47,12 @@ pub const info_validator = info.init(.{
 
 /// Assertion parameters for *float* prototype.
 ///
-/// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)](#std.builtin.Type.Float)
+/// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)
 pub const Params = struct {
     /// Asserts float bits interval.
     ///
     /// See also:
-    /// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)](#std.builtin.Type.Float)
+    /// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)
     /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     bits: interval.Params = .{},
 };
