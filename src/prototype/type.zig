@@ -7,7 +7,7 @@ const Prototype = @import("Prototype.zig");
 
 /// Error set for *type* prototype.
 const TypeError = error{
-    /// *actual* is not a type.
+    /// *actual* is not a type value.
     AssertsTypeValue,
 };
 

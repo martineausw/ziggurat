@@ -12,7 +12,7 @@ const @"type" = @import("../type.zig");
 
 /// Error set for filter.
 const FilterError = error{
-    /// *actual* is a union or enum type.
+    /// *actual* is not a union or enum type.
     ///
     /// See also: [`ziggurat.prototype.type`](#root.prototype.type)
     AssertsTypeValue,
