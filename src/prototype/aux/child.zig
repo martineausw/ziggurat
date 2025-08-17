@@ -77,7 +77,7 @@ test init {
     _ = child;
 }
 
-test "passes child successfully" {
+test "passes child assertions" {
     const int = @import("../int.zig");
     const child = init(int.init(
         .{ .bits = .{ .min = 32, .max = 32 } },

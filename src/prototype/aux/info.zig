@@ -188,7 +188,7 @@ test init {
     _ = info;
 }
 
-test "evaluates types against whitelist successfully" {
+test "passes whitelist assertions" {
     const params: Params = .{
         .int = true,
         .float = true,
@@ -209,7 +209,7 @@ test "evaluates types against whitelist successfully" {
     try std.testing.expectEqual(true, number.eval(comptime_float));
 }
 
-test "evaluates types against blacklist successfully" {
+test "passes blacklist assertions" {
     const params: Params = .{
         .type = false,
         .void = false,
@@ -270,7 +270,7 @@ test "evaluates types against blacklist successfully" {
     );
 }
 
-test "evaluates types against whitelist unsuccessfully" {
+test "fails whitelist assertions" {
     const params: Params = .{
         .type = true,
         .void = true,
@@ -332,7 +332,7 @@ test "evaluates types against whitelist unsuccessfully" {
     );
 }
 
-test "evaluates types against blacklist unsuccessfully" {
+test "fails blacklist assertions" {
     const params: Params = .{
         .int = false,
         .float = false,
@@ -376,7 +376,7 @@ test "evaluates types against blacklist unsuccessfully" {
     );
 }
 
-test "evaluates invalid values" {
+test "fails argument assertions" {
     const params: Params = .{
         .int = false,
         .float = false,

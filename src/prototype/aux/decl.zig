@@ -111,7 +111,7 @@ test init {
     _ = decl;
 }
 
-test "evaluates struct with given decl" {
+test "passes declaration assertion on struct" {
     const T: type = struct {
         const decl = void;
     };
@@ -128,8 +128,8 @@ test "evaluates struct with given decl" {
     );
 }
 
-test "evaluates union with given decl" {
-    const T: type = struct {
+test "passes declaration assertion on union" {
+    const T: type = union {
         const decl = void;
     };
 
@@ -145,8 +145,8 @@ test "evaluates union with given decl" {
     );
 }
 
-test "evaluates enum with given decl" {
-    const T: type = struct {
+test "passes declaration assertion on enum" {
+    const T: type = enum {
         const decl = void;
     };
 
@@ -162,7 +162,7 @@ test "evaluates enum with given decl" {
     );
 }
 
-test "coerces DeclError.AssertsDecl from struct" {
+test "fails declaration assertions on struct" {
     const T: type = struct {};
 
     const params: Params = .{
@@ -179,7 +179,7 @@ test "coerces DeclError.AssertsDecl from struct" {
     // has_decl.onError.?(Error.AssertsDecl, has_decl, T);
 }
 
-test "coerces DeclError.AssertsDecl from union" {
+test "fails declaration assertion on union" {
     const T: type = union {};
 
     const params: Params = .{
@@ -196,7 +196,7 @@ test "coerces DeclError.AssertsDecl from union" {
     // comptime has_decl.onError.?(Error.AssertsDecl, has_decl, T);
 }
 
-test "coerces DeclError.AssertsDecl from enum" {
+test "fails declaration assertion on enum" {
     const T: type = enum {};
 
     const params: Params = .{
@@ -213,7 +213,7 @@ test "coerces DeclError.AssertsDecl from enum" {
     // comptime has_decl.onError.?(Error.AssertsDecl, has_decl, T);
 }
 
-test "coerces DeclError.RequiresTypeInfo" {
+test "fails argument type info assertion" {
     const params: Params = .{
         .name = "decl",
     };
@@ -228,7 +228,7 @@ test "coerces DeclError.RequiresTypeInfo" {
     // comptime has_decl.onError.?(Error.RequiresTypeInfo, has_decl, bool);
 }
 
-test "coerces DeclError.InvalidArgument" {
+test "fails argument value assertion" {
     const params: Params = .{
         .name = "decl",
     };

@@ -80,7 +80,7 @@ test init {
     _ = exists;
 }
 
-test "evaluates exists successfully" {
+test "passes exists assertions" {
     const no_assertion = init(null);
     const asserts_not_null = init(true);
     const asserts_null = init(false);
@@ -106,7 +106,7 @@ test "evaluates exists successfully" {
     );
 }
 
-test "coerces ExistsError.AssertsNotNull" {
+test "fails not null optional assertion" {
     const asserts_not_null = init(true);
 
     try std.testing.expectEqual(
@@ -115,7 +115,7 @@ test "coerces ExistsError.AssertsNotNull" {
     );
 }
 
-test "coerces FilterError.Banishes" {
+test "fails null optional assertion" {
     const asserts_null = init(false);
 
     try std.testing.expectEqual(

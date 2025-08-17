@@ -134,7 +134,7 @@ test init {
     _ = interval;
 }
 
-test "evaluates runtime integers within interval" {
+test "passes interval assertions on runtime int values" {
     const usize_interval = init(.{
         .min = 0,
         .max = 2,
@@ -154,7 +154,7 @@ test "evaluates runtime integers within interval" {
     try std.testing.expectEqual(true, i128_interval.eval(@as(i128, 1)));
 }
 
-test "evaluates runtime floats within interval" {
+test "passes interval assertions on runtime float values" {
     const f16_interval = init(.{
         .min = -1.0,
         .max = 1.0,
@@ -174,7 +174,7 @@ test "evaluates runtime floats within interval" {
     try std.testing.expectEqual(true, i128_interval.eval(@as(f128, 1)));
 }
 
-test "evaluates comptime_int within interval" {
+test "passes interval assertions on comptime_int values" {
     const interval = init(.{
         .min = -1,
         .max = 1,
@@ -196,7 +196,7 @@ test "evaluates comptime_int within interval" {
     );
 }
 
-test "evaluates comptime_float within interval" {
+test "passes interval assertions on comptime_float values" {
     const interval = init(.{
         .min = -1,
         .max = 1,
@@ -218,7 +218,7 @@ test "evaluates comptime_float within interval" {
     );
 }
 
-test "coerces IntervalError.AssertsMin" {
+test "fails inclusive minimum assertion" {
     const interval = init(.{
         .min = -1,
         .max = 1,
@@ -230,7 +230,7 @@ test "coerces IntervalError.AssertsMin" {
     );
 }
 
-test "coerces IntervalError.AssertsMax" {
+test "fails inclusive maximum assertion" {
     const interval = init(.{
         .min = -1,
         .max = 1,

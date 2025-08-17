@@ -111,7 +111,7 @@ test Filter {
     _ = t_validator;
 }
 
-test "evaluates whitelist on tagged union" {
+test "passes whitelist filter assertions on tagged union" {
     const U = union(enum) {
         a: bool,
         b: usize,
@@ -141,7 +141,7 @@ test "evaluates whitelist on tagged union" {
     );
 }
 
-test "evaluates blacklist on tagged union" {
+test "passes blacklist filter assertions on tagged union" {
     const U = union(enum) {
         a: bool,
         b: usize,
@@ -171,7 +171,7 @@ test "evaluates blacklist on tagged union" {
     );
 }
 
-test "coerces FilterError.Requires" {
+test "fails whitelist assertion on tagged union" {
     const U = union(enum) {
         a: bool,
         b: usize,
@@ -196,7 +196,7 @@ test "coerces FilterError.Requires" {
     );
 }
 
-test "coerces FilterError.Banishes" {
+test "fails blacklist assertion on tagged union" {
     const U = union(enum) {
         a: bool,
         b: usize,

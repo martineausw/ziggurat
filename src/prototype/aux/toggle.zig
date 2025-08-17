@@ -89,7 +89,7 @@ test init {
     _ = toggle;
 }
 
-test "evaluates toggle successfully" {
+test "passes toggle assertions" {
     const is_null = init(null);
     const is_true = init(true);
     const is_false = init(false);
@@ -100,7 +100,7 @@ test "evaluates toggle successfully" {
     try std.testing.expectEqual(true, is_false.eval(false));
 }
 
-test "coerces ToggleError.AssertsFalse" {
+test "fails toggle false assertion" {
     const is_false = init(false);
 
     try std.testing.expectEqual(
@@ -109,7 +109,7 @@ test "coerces ToggleError.AssertsFalse" {
     );
 }
 
-test "coerces ToggleError.AssertsTrue" {
+test "fails toggle true assertion" {
     const is_true = init(true);
 
     try std.testing.expectEqual(

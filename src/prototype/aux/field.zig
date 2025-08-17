@@ -149,7 +149,7 @@ test init {
     _ = field;
 }
 
-test "evaluates struct with given field successfully" {
+test "passes field assertions on struct" {
     const T = struct {
         field: bool,
     };
@@ -169,7 +169,7 @@ test "evaluates struct with given field successfully" {
     );
 }
 
-test "evaluates union with given field successfully" {
+test "passes field assertions on union" {
     const T = union {
         field: bool,
     };
@@ -189,7 +189,7 @@ test "evaluates union with given field successfully" {
     );
 }
 
-test "coerces FieldError.AssertsField" {
+test "fails field assertion on struct" {
     const T = struct {};
 
     const params: Params = .{
@@ -207,7 +207,7 @@ test "coerces FieldError.AssertsField" {
     );
 }
 
-test "coerces FieldError.RequiresFieldType" {
+test "fails field type info whitelist assertion on struct" {
     const T = struct {
         field: ?bool,
     };
@@ -227,7 +227,7 @@ test "coerces FieldError.RequiresFieldType" {
     );
 }
 
-test "coerces FieldError.BanishesFieldType" {
+test "fails field type info blacklist assertion on struct" {
     const T = struct {
         field: bool,
     };
