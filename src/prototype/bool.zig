@@ -7,7 +7,7 @@ const Prototype = @import("Prototype.zig");
 const info = @import("aux/info.zig");
 
 const BoolError = error{
-    /// *actual* is a type value.
+    /// *actual* is not a type value.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)

@@ -14,7 +14,7 @@ const exists = @import("aux/exists.zig");
 
 /// Error set for array.
 const ArrayError = error{
-    /// *actual* is a type value.
+    /// *actual* is not a type value.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)

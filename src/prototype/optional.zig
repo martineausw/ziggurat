@@ -10,9 +10,9 @@ const testing = std.testing;
 const Prototype = @import("Prototype.zig");
 const info = @import("aux/info.zig");
 
-/// Error set for optional.
+/// Error set for *optional* prototype.
 const OptionalError = error{
-    /// *actual* is a type value.
+    /// *actual* is not a type value.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)

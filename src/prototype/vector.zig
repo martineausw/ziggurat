@@ -13,7 +13,7 @@ const info = @import("aux/info.zig");
 
 /// Error set for *vector* prototype.
 const VectorError = error{
-    /// *actual* is a type value.
+    /// *actual* is not a type value.
     ///
     /// See also:
     /// - [`test.prototype.int`](#test.prototype.int)

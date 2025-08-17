@@ -8,7 +8,7 @@ const info = @import("info.zig");
 
 /// Error set for *exists* prototype.
 const ExistsError = error{
-    /// *actual* is not type value.
+    /// *actual* is not a type value.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)

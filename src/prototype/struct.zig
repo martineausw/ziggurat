@@ -16,7 +16,7 @@ const toggle = @import("aux/toggle.zig");
 
 /// Error set for array.
 const StructError = error{
-    /// *actual* value is a type.
+    /// *actual* is not a type value.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
