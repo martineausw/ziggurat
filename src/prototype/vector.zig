@@ -1,6 +1,6 @@
 //! Prototype *vector*.
 //! 
-//! Asserts *actual* is an vector type value with parametric child and
+//! Asserts *actual* is a vector type value with parametric child and
 //! length assertions.
 //! 
 //! See also: [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
@@ -62,14 +62,14 @@ pub const Params = struct {
     /// Asserts vector child type info.
     ///
     /// See also:
-    /// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
+    /// - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     child: info.Params = .{},
     /// Asserts vector length interval.
     ///
     /// See also:
-    /// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
+    /// - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
     /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     len: interval.Params = .{},
 };

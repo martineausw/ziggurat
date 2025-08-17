@@ -1,6 +1,6 @@
-//! Prototype *pointer*.
+//! Prototype *struct*.
 //! 
-//! Asserts *actual* is a pointer type value with parametric layout, 
+//! Asserts *actual* is a struct type value with parametric layout, 
 //! field, declaration, and tuple assertions.
 //!
 //! See also: [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
@@ -14,7 +14,7 @@ const field = @import("aux/field.zig");
 const decl = @import("aux/decl.zig");
 const toggle = @import("aux/toggle.zig");
 
-/// Error set for struct.
+/// Error set for *struct* prototype.
 const StructError = error{
     /// *actual* is not a type value.
     ///
@@ -38,7 +38,7 @@ const StructError = error{
     AssertsWhitelistLayout,
     /// *actual* struct is missing field.
     ///
-    /// See also: `ziggurat.prototype.aux.field`
+    /// See also: [`ziggurat.prototype.aux.field`](#root.prototype.aux.field)
     AssertsStructField,
     /// *actual* struct field type info has active tag that does not belong to whitelist.
     ///
@@ -50,7 +50,7 @@ const StructError = error{
     AssertsBlacklistStructFieldTypeInfo,
     /// *actual* struct is missing declaration.
     ///
-    /// See also: `ziggurat.prototype.aux.decl`
+    /// See also: [`ziggurat.prototype.aux.decl`](#root.prototype.aux.decl)
     AssertsDecl,
     /// *actual* struct is not a tuple.
     ///

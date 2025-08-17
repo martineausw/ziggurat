@@ -3,7 +3,7 @@
 //! Asserts *actual* is an optional type value with a parametric 
 //! child assertion.
 //! 
-//! See also: `std.builtin.Type.Optional`
+//! See also: [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
 const std = @import("std");
 const testing = std.testing;
 
@@ -49,14 +49,13 @@ pub const info_validator = info.init(.{
 
 /// Assertion parameters for *optional* prototype.
 ///
-/// See also: `std.builtin.Type.Optional`
+/// See also: [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
 pub const Params = struct {
     /// Asserts optional child type info.
     ///
     /// See also:
-    /// `std.builtin.Type.Optional`
+    /// - [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// `ziggurat.prototype.aux.info.Params`
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     child: info.Params = .{},
 };

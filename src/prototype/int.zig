@@ -69,7 +69,7 @@ const Signedness = filter.Filter(SignednessParams);
 
 /// Assertion parameters for *int* prototype.
 ///
-/// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
+/// See also: [`std.builtin.Type.Int`](#std.builtin.Type.Int)
 pub const Params = struct {
     /// Asserts int bits interval.
     ///
