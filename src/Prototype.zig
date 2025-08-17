@@ -1,3 +1,4 @@
+//! Included prototypes to evaluate common type values mostly during comptime.
 const std = @import("std");
 const testing = std.testing;
 

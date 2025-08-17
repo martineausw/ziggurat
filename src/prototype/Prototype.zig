@@ -1,5 +1,4 @@
-//! Validates an argument intended to be used by `sign` at function return
-//! value or tests.
+//! Evaluates values to guide control flow and type reasoning.
 
 const Error = error{UnimplementedError};
 
