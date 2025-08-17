@@ -230,7 +230,7 @@ test init {
     _ = @"struct";
 }
 
-test "evaluates struct successfully" {
+test "passes struct assertions" {
     const @"struct" = init(.{
         .layout = .{
             .@"extern" = null,
@@ -245,7 +245,7 @@ test "evaluates struct successfully" {
     try std.testing.expectEqual(true, @"struct".eval(struct {}));
 }
 
-test "coerces StructError.BanishesLayout" {
+test "fails struct layout blacklist assertion" {
     const @"struct" = init(.{
         .layout = .{
             .@"extern" = null,
@@ -260,7 +260,7 @@ test "coerces StructError.BanishesLayout" {
     try std.testing.expectEqual(StructError.BanishesLayout, comptime @"struct".eval(packed struct {}));
 }
 
-test "coerces StructError.RequiresLayout" {
+test "fails struct layout whitelist assertion" {
     const @"struct" = init(.{
         .layout = .{
             .@"extern" = true,
@@ -275,7 +275,7 @@ test "coerces StructError.RequiresLayout" {
     try std.testing.expectEqual(StructError.RequiresLayout, comptime @"struct".eval(packed struct {}));
 }
 
-test "coerces StructError.AssertsStructFieldName" {
+test "fails struct field assertion" {
     const @"struct" = init(.{
         .layout = .{
             .@"extern" = null,
@@ -294,7 +294,7 @@ test "coerces StructError.AssertsStructFieldName" {
         @"struct".eval(struct { foo: bool }),
     );
 }
-test "coerces StructError.RequiresStructFieldType" {
+test "fails struct field type info whitelist assertion" {
     const @"struct" = init(.{
         .layout = .{
             .@"extern" = null,
@@ -316,7 +316,7 @@ test "coerces StructError.RequiresStructFieldType" {
         @"struct".eval(struct { field: bool }),
     );
 }
-test "coerces StructError.BanishesStructFieldType" {
+test "fails struct field type info blacklist assertion" {
     const @"struct" = init(.{
         .layout = .{
             .@"extern" = null,
@@ -338,7 +338,7 @@ test "coerces StructError.BanishesStructFieldType" {
         @"struct".eval(struct { field: bool }),
     );
 }
-test "coerces StructError.AssertsDeclName" {
+test "fails struct declaration assertion" {
     const @"struct" = init(.{
         .layout = .{
             .@"extern" = null,
@@ -354,7 +354,7 @@ test "coerces StructError.AssertsDeclName" {
         const decl = 0;
     }));
 }
-test "coerces StructError.AssertsTrueIsTuple" {
+test "fails struct is tuple assertion" {
     const @"struct" = init(.{
         .layout = .{
             .@"extern" = null,
@@ -369,7 +369,7 @@ test "coerces StructError.AssertsTrueIsTuple" {
     try std.testing.expectEqual(StructError.AssertsTrueIsTuple, @"struct".eval(struct {}));
 }
 
-test "coerces StructError.AssertsFalseIsTuple" {
+test "fails struct is not tuple assertion" {
     const @"struct" = init(.{
         .layout = .{
             .@"extern" = null,

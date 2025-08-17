@@ -199,7 +199,7 @@ test init {
     _ = array;
 }
 
-test "evaluates array successfully" {
+test "passes array assertions" {
     const array = init(
         .{
             .child = .{},
@@ -217,7 +217,7 @@ test "evaluates array successfully" {
     );
 }
 
-test "coerces ArrayError.InvalidArgument" {
+test "fails array type argument assertion" {
     const array = init(
         .{
             .child = .{},
@@ -235,7 +235,7 @@ test "coerces ArrayError.InvalidArgument" {
     );
 }
 
-test "coerces ArrayError.RequiresChildType" {
+test "fails array child type info whitelist assertions" {
     const array = init(
         .{
             .child = .{
@@ -255,7 +255,7 @@ test "coerces ArrayError.RequiresChildType" {
     );
 }
 
-test "coerces ArrayError.BanishesChildType" {
+test "fails array child type info blacklist assertions" {
     const array = init(
         .{
             .child = .{
@@ -275,7 +275,7 @@ test "coerces ArrayError.BanishesChildType" {
     );
 }
 
-test "coerces ArrayError.AssertsMinLen and ArrayError.AssertsMaxLen" {
+test "fails array length interval assertions" {
     const array = init(
         .{
             .child = .{},
@@ -298,7 +298,7 @@ test "coerces ArrayError.AssertsMinLen and ArrayError.AssertsMaxLen" {
     );
 }
 
-test "coerces ArrayError.AssertsNotNullSentinel" {
+test "fails array sentinel is not null assertion" {
     const array = init(
         .{
             .child = .{},
@@ -316,7 +316,7 @@ test "coerces ArrayError.AssertsNotNullSentinel" {
     );
 }
 
-test "coerces ArrayError.AssertsNullSentinel" {
+test "fails array sentinel is null assertion" {
     const array = init(
         .{
             .child = .{},

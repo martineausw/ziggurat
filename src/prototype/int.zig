@@ -173,7 +173,7 @@ test init {
     _ = int;
 }
 
-test "evaluates int successfully" {
+test "passes int assertions" {
     const int = init(.{
         .bits = .{
             .min = null,
@@ -186,7 +186,7 @@ test "evaluates int successfully" {
     try std.testing.expectEqual(true, int.eval(usize));
 }
 
-test "coerces IntError.InvalidArgument" {
+test "fails int argument assertion" {
     const int = init(.{
         .bits = .{
             .min = null,
@@ -201,7 +201,7 @@ test "coerces IntError.InvalidArgument" {
     );
 }
 
-test "coerces IntError.AssertsMinBits and IntError.AssertsMaxBits" {
+test "fails int bits interval assertions" {
     const int = init(.{
         .bits = .{
             .min = 32,
@@ -214,7 +214,7 @@ test "coerces IntError.AssertsMinBits and IntError.AssertsMaxBits" {
     try std.testing.expectEqual(IntError.AssertsMaxBits, comptime int.eval(i128));
 }
 
-test "coerces IntError.BanishesSignedness" {
+test "fails int signedness blacklist assertion" {
     const int = init(.{ .bits = .{
         .min = null,
         .max = null,
@@ -225,7 +225,7 @@ test "coerces IntError.BanishesSignedness" {
     try std.testing.expectEqual(IntError.BanishesSignedness, comptime int.eval(i128));
 }
 
-test "coerces IntError.RequiresSignedness" {
+test "fails int signedness whitelist assertion" {
     const int = init(.{
         .bits = .{
             .min = null,

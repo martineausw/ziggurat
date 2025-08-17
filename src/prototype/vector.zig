@@ -157,7 +157,7 @@ test init {
     _ = vector;
 }
 
-test "evaluates vector successfully" {
+test "passes vector assertions" {
     const vector = init(.{
         .child = .{},
         .len = .{
@@ -169,7 +169,7 @@ test "evaluates vector successfully" {
     try std.testing.expectEqual(true, vector.eval(@Vector(3, f128)));
 }
 
-test "coerces VectorError.BanishesChildType" {
+test "fails vector child type info blacklist assertions" {
     const vector = init(.{
         .child = .{
             .float = false,
@@ -186,7 +186,7 @@ test "coerces VectorError.BanishesChildType" {
     );
 }
 
-test "coerces VectorError.RequiresChildType" {
+test "fails vector child type info whitelist assertions" {
     const vector = init(.{
         .child = .{
             .int = true,
@@ -203,7 +203,7 @@ test "coerces VectorError.RequiresChildType" {
     );
 }
 
-test "coerces VectorError.AssertsMinLen and VectoreError.AssertsMaxLen" {
+test "fails vector length interval assertions" {
     const vector = init(.{
         .child = .{},
         .len = .{

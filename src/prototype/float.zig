@@ -121,7 +121,7 @@ test init {
     _ = float;
 }
 
-test "evaluates float successfully" {
+test "passes float assertions" {
     const float = init(.{
         .bits = .{
             .min = null,
@@ -132,7 +132,7 @@ test "evaluates float successfully" {
     try std.testing.expectEqual(true, float.eval(f128));
 }
 
-test "coerces FloatError.InvalidArgument" {
+test "fails float argument assertion" {
     const float = init(.{
         .bits = .{
             .min = null,
@@ -146,7 +146,7 @@ test "coerces FloatError.InvalidArgument" {
     );
 }
 
-test "coerces FloatError.AssertsMinBits and FloatError.AssertsMaxBits" {
+test "fails float bits interval assertions" {
     const float = init(.{
         .bits = .{
             .min = 32,

@@ -52,7 +52,7 @@ test init {
     _ = @"type";
 }
 
-test "evaluates types successfully" {
+test "passes argument value assertions" {
     const @"type": Prototype = init;
 
     try std.testing.expectEqual(true, @"type".eval(usize));
@@ -80,7 +80,7 @@ test "evaluates types successfully" {
     try std.testing.expectEqual(true, @"type".eval(@Vector(3, f128)));
 }
 
-test "evaluates types unsuccessfully" {
+test "fails argument value assertions" {
     const @"type": Prototype = init;
 
     try std.testing.expectEqual(

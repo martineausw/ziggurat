@@ -274,7 +274,7 @@ test init {
     _ = pointer;
 }
 
-test "evaluates pointer successfully" {
+test "passes pointer assertions" {
     const pointer = init(.{
         .child = .{},
         .size = .{
@@ -301,7 +301,7 @@ test "evaluates pointer successfully" {
     try std.testing.expectEqual(true, pointer.eval([*]const volatile f128));
 }
 
-test "coerces PointerError.BanishesChildType" {
+test "fails pointer child type info blacklist assertion" {
     const pointer = init(.{
         .child = .{
             .float = false,
@@ -323,7 +323,7 @@ test "coerces PointerError.BanishesChildType" {
     );
 }
 
-test "coerces PointerError.RequiresChildType" {
+test "fails pointer child type info whitelist assertion" {
     const pointer = init(.{
         .child = .{
             .int = true,
@@ -344,7 +344,7 @@ test "coerces PointerError.RequiresChildType" {
     );
 }
 
-test "coerces PointerError.BanishesSize" {
+test "fails pointer size blacklist assertion" {
     const pointer = init(.{
         .child = .{},
         .size = .{
@@ -364,7 +364,7 @@ test "coerces PointerError.BanishesSize" {
     );
 }
 
-test "coerces PointerError.RequiresSize" {
+test "fails pointer size whitelist assertion" {
     const pointer = init(.{
         .child = .{},
         .size = .{
@@ -383,7 +383,7 @@ test "coerces PointerError.RequiresSize" {
     );
 }
 
-test "coerces PointerError.AssertsTrueIsConst" {
+test "fails pointer is const assertion" {
     const pointer = init(.{
         .child = .{},
         .size = .{
@@ -402,7 +402,7 @@ test "coerces PointerError.AssertsTrueIsConst" {
     );
 }
 
-test "coerces PointerError.AssertsFalseIsConst" {
+test "fails pointer is not const assertion" {
     const pointer = init(.{
         .child = .{},
         .size = .{
@@ -421,7 +421,7 @@ test "coerces PointerError.AssertsFalseIsConst" {
     );
 }
 
-test "coerces PointerError.AssertsTrueIsVolatile" {
+test "fails pointer is volatile assertion" {
     const pointer = init(.{
         .child = .{},
         .size = .{
@@ -441,7 +441,7 @@ test "coerces PointerError.AssertsTrueIsVolatile" {
     );
 }
 
-test "coerces PointerError.AssertsFalseIsVolatile" {
+test "fails pointer is not volatile assertion" {
     const pointer = init(.{
         .child = .{},
         .size = .{
@@ -461,7 +461,7 @@ test "coerces PointerError.AssertsFalseIsVolatile" {
     );
 }
 
-test "coerces PointerError.AssertsNotNullSentinel" {
+test "fails pointer sentinel is null assertion" {
     const pointer = init(.{
         .child = .{},
         .size = .{
@@ -480,7 +480,7 @@ test "coerces PointerError.AssertsNotNullSentinel" {
     );
 }
 
-test "coerces PointerError.AssertsNullSentinel" {
+test "fails pointer sentinel is not null assertion" {
     const pointer = init(.{
         .child = .{},
         .size = .{

@@ -124,7 +124,7 @@ test init {
     _ = optional;
 }
 
-test "evaluates optional successfully" {
+test "passes optional assertions" {
     const optional = init(.{
         .child = .{},
     });
@@ -132,7 +132,7 @@ test "evaluates optional successfully" {
     try std.testing.expectEqual(true, optional.eval(?bool));
 }
 
-test "coerces OptionalError.BanishesChildType" {
+test "fails optional child type info blacklist assertions" {
     const optional = init(.{
         .child = .{
             .bool = false,
@@ -142,7 +142,7 @@ test "coerces OptionalError.BanishesChildType" {
     try std.testing.expectEqual(OptionalError.BanishesChildTypeInfo, optional.eval(?bool));
 }
 
-test "coerces OptionalError.RequiresChildType" {
+test "fails optional child type info whitelist assertions" {
     const optional = init(.{
         .child = .{
             .int = true,

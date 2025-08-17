@@ -63,13 +63,13 @@ test init {
     _ = @"bool";
 }
 
-test "evaluates bool successfully" {
+test "passes bool assertions" {
     const @"bool" = init;
 
     try std.testing.expectEqual(true, @"bool".eval(bool));
 }
 
-test "coerces BoolError.InvalidArgument" {
+test "fails bool type argument assertion" {
     const @"bool" = init;
 
     try std.testing.expectEqual(BoolError.InvalidArgument, comptime @"bool".eval(true));
