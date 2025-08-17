@@ -14,7 +14,7 @@ const filter = @import("aux/filter.zig");
 
 /// Error set for int
 const IntError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
     RequiresTypeInfo,
     AssertsMinBits,
     AssertsMaxBits,
@@ -70,8 +70,8 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.InvalidArgument,
-                        => IntError.InvalidArgument,
+                        info.Error.ExpectsTypeValue,
+                        => IntError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => IntError.RequiresTypeInfo,
                         else => unreachable,
@@ -104,7 +104,7 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    IntError.InvalidArgument,
+                    IntError.ExpectsTypeValue,
                     IntError.RequiresTypeInfo,
                     => info_validator.onError.?(
                         err,
@@ -136,7 +136,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test IntError {
-    _ = IntError.InvalidArgument catch void;
+    _ = IntError.ExpectsTypeValue catch void;
     _ = IntError.AssertsMinBits catch void;
     _ = IntError.AssertsMaxBits catch void;
     _ = IntError.BanishesSignedness catch void;
@@ -186,7 +186,7 @@ test "passes int assertions" {
     try std.testing.expectEqual(true, int.eval(usize));
 }
 
-test "fails int argument assertion" {
+test "fails type value assertion" {
     const int = init(.{
         .bits = .{
             .min = null,
@@ -196,7 +196,7 @@ test "fails int argument assertion" {
     });
 
     try std.testing.expectEqual(
-        IntError.InvalidArgument,
+        IntError.ExpectsTypeValue,
         comptime int.eval(@as(i128, 0)),
     );
 }

@@ -13,7 +13,7 @@ const info = @import("aux/info.zig");
 
 /// Error set for vector.
 const VectorError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
     RequiresTypeInfo,
     BanishesChildTypeInfo,
     RequiresChildTypeInfo,
@@ -55,8 +55,8 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.InvalidArgument,
-                        => VectorError.InvalidArgument,
+                        info.Error.ExpectsTypeValue,
+                        => VectorError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => VectorError.RequiresTypeInfo,
                         else => unreachable,
@@ -96,7 +96,7 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    VectorError.InvalidArgument,
+                    VectorError.ExpectsTypeValue,
                     VectorError.RequiresTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
@@ -124,7 +124,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test VectorError {
-    _ = VectorError.InvalidArgument catch void;
+    _ = VectorError.ExpectsTypeValue catch void;
     _ = VectorError.RequiresTypeInfo catch void;
 
     _ = VectorError.BanishesChildTypeInfo catch void;

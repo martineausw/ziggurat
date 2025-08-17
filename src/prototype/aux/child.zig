@@ -4,7 +4,7 @@ const Prototype = @import("../Prototype.zig");
 const info = @import("../aux/info.zig");
 
 const ChildError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
 };
 
 pub const Error = ChildError;
@@ -25,9 +25,9 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.InvalidArgument,
+                        info.Error.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
-                        => ChildError.InvalidArgument,
+                        => ChildError.ExpectsTypeValue,
                         else => unreachable,
                     };
 
@@ -43,7 +43,7 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    ChildError.InvalidArgument,
+                    ChildError.ExpectsTypeValue,
                     => info_validator.onError.?(err, prototype, actual),
 
                     else => @compileError(
@@ -60,7 +60,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test ChildError {
-    _ = ChildError.InvalidArgument catch void;
+    _ = ChildError.ExpectsTypeValue catch void;
 }
 
 test Params {

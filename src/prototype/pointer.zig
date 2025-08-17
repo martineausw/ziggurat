@@ -18,7 +18,7 @@ const exists = @import("aux/exists.zig");
 
 /// Error set for `prototype.pointer`.
 const PointerError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
     RequiresTypeInfo,
     /// Violates `std.builtin.Type.pointer.child` blacklist assertion.
     BanishesChildTypeInfo,
@@ -105,8 +105,8 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.InvalidArgument,
-                        => PointerError.InvalidArgument,
+                        info.Error.ExpectsTypeValue,
+                        => PointerError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => PointerError.RequiresTypeInfo,
                         else => unreachable,
@@ -175,7 +175,7 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    PointerError.InvalidArgument,
+                    PointerError.ExpectsTypeValue,
                     PointerError.RequiresTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
@@ -226,7 +226,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test PointerError {
-    _ = PointerError.InvalidArgument catch void;
+    _ = PointerError.ExpectsTypeValue catch void;
     _ = PointerError.RequiresTypeInfo catch void;
 
     _ = PointerError.BanishesChildTypeInfo catch void;

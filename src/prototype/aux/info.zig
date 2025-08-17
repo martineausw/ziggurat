@@ -9,7 +9,7 @@ const @"type" = @import("../type.zig");
 
 /// Error set for info.
 const InfoError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
     /// Violates type info blacklist assertion.
     BanishesTypeInfo,
     /// Violates type info whitelist assertion.
@@ -75,7 +75,7 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = type_validator.eval(actual) catch |err|
                     return switch (err) {
-                        @"type".Error.InvalidArgument => InfoError.InvalidArgument,
+                        @"type".Error.ExpectsTypeValue => InfoError.ExpectsTypeValue,
                         else => unreachable,
                     };
 
@@ -98,7 +98,7 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    InfoError.InvalidArgument,
+                    InfoError.ExpectsTypeValue,
                     => type_validator.onError.?(err, prototype, actual),
 
                     InfoError.BanishesTypeInfo,
@@ -121,7 +121,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test InfoError {
-    _ = InfoError.InvalidArgument catch void;
+    _ = InfoError.ExpectsTypeValue catch void;
     _ = InfoError.BanishesTypeInfo catch void;
     _ = InfoError.RequiresTypeInfo catch void;
 }
@@ -387,37 +387,37 @@ test "fails argument assertions" {
     const number: Prototype = init(params);
 
     try std.testing.expectEqual(
-        Error.InvalidArgument,
+        Error.ExpectsTypeValue,
         comptime number.eval(@as(usize, 0)),
     );
 
     try std.testing.expectEqual(
-        Error.InvalidArgument,
+        Error.ExpectsTypeValue,
         comptime number.eval(@as(u8, 'a')),
     );
 
     try std.testing.expectEqual(
-        Error.InvalidArgument,
+        Error.ExpectsTypeValue,
         comptime number.eval(@as(i128, 0)),
     );
 
     try std.testing.expectEqual(
-        Error.InvalidArgument,
+        Error.ExpectsTypeValue,
         comptime number.eval(@as(f16, 0.0)),
     );
 
     try std.testing.expectEqual(
-        Error.InvalidArgument,
+        Error.ExpectsTypeValue,
         comptime number.eval(@as(f128, 0.0)),
     );
 
     try std.testing.expectEqual(
-        Error.InvalidArgument,
+        Error.ExpectsTypeValue,
         comptime number.eval(@as(comptime_int, 0)),
     );
 
     try std.testing.expectEqual(
-        Error.InvalidArgument,
+        Error.ExpectsTypeValue,
         comptime number.eval(@as(comptime_float, 0.0)),
     );
 }

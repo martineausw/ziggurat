@@ -15,7 +15,7 @@ const exists = @import("aux/exists.zig");
 
 /// Error set for array.
 const ArrayError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
     RequiresTypeInfo,
     /// Violates `std.builtin.Type.array.child` blacklist assertion.
     BanishesChildTypeInfo,
@@ -77,8 +77,8 @@ pub fn init(params: Params) Prototype {
                     actual,
                 ) catch |err|
                     return switch (err) {
-                        info.Error.InvalidArgument,
-                        => ArrayError.InvalidArgument,
+                        info.Error.ExpectsTypeValue,
+                        => ArrayError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => ArrayError.RequiresTypeInfo,
                         else => unreachable,
@@ -127,7 +127,7 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    ArrayError.InvalidArgument,
+                    ArrayError.ExpectsTypeValue,
                     ArrayError.RequiresTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
@@ -163,7 +163,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test ArrayError {
-    _ = ArrayError.InvalidArgument catch void;
+    _ = ArrayError.ExpectsTypeValue catch void;
     _ = ArrayError.RequiresTypeInfo catch void;
     _ = ArrayError.BanishesChildTypeInfo catch void;
     _ = ArrayError.RequiresChildTypeInfo catch void;
@@ -217,7 +217,7 @@ test "passes array assertions" {
     );
 }
 
-test "fails array type argument assertion" {
+test "fails type value assertion" {
     const array = init(
         .{
             .child = .{},
@@ -230,7 +230,7 @@ test "fails array type argument assertion" {
     );
 
     try std.testing.expectEqual(
-        ArrayError.InvalidArgument,
+        ArrayError.ExpectsTypeValue,
         comptime array.eval([3]usize{ 0, 1, 2 }),
     );
 }

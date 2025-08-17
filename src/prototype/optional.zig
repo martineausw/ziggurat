@@ -11,7 +11,7 @@ const info = @import("aux/info.zig");
 
 /// Error set for optional.
 const OptionalError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
     RequiresTypeInfo,
     /// Violates `std.builtin.Type.Optional.child` blacklist assertion.
     BanishesChildTypeInfo,
@@ -49,8 +49,8 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.InvalidArgument,
-                        => OptionalError.InvalidArgument,
+                        info.Error.ExpectsTypeValue,
+                        => OptionalError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => OptionalError.RequiresTypeInfo,
                         else => unreachable,
@@ -76,7 +76,7 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    OptionalError.InvalidArgument,
+                    OptionalError.ExpectsTypeValue,
                     OptionalError.RequiresTypeInfo,
                     => info_validator.onError.?(
                         err,
@@ -100,7 +100,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test OptionalError {
-    _ = OptionalError.InvalidArgument catch void;
+    _ = OptionalError.ExpectsTypeValue catch void;
     _ = OptionalError.RequiresTypeInfo catch void;
     _ = OptionalError.BanishesChildTypeInfo catch void;
     _ = OptionalError.RequiresChildTypeInfo catch void;

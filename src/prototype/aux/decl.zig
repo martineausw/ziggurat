@@ -6,7 +6,7 @@ const info = @import("info.zig");
 
 /// Error set for declaration.
 const DeclError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
     RequiresTypeInfo,
     AssertsDecl,
 };
@@ -36,8 +36,8 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) DeclError!bool {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.InvalidArgument,
-                        => DeclError.InvalidArgument,
+                        info.Error.ExpectsTypeValue,
+                        => DeclError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => DeclError.RequiresTypeInfo,
                         else => unreachable,
@@ -57,7 +57,7 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    DeclError.InvalidArgument,
+                    DeclError.ExpectsTypeValue,
                     DeclError.RequiresTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
@@ -79,7 +79,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test DeclError {
-    _ = DeclError.InvalidArgument catch void;
+    _ = DeclError.ExpectsTypeValue catch void;
     _ = DeclError.AssertsDecl catch void;
 }
 
@@ -236,7 +236,7 @@ test "fails argument value assertion" {
     const has_decl: Prototype = init(params);
 
     try std.testing.expectEqual(
-        Error.InvalidArgument,
+        Error.ExpectsTypeValue,
         comptime has_decl.eval(false),
     );
 

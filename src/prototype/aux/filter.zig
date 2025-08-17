@@ -5,7 +5,7 @@ const @"type" = @import("../type.zig");
 
 /// Error set for filter.
 const FilterError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
     /// Violates tag blacklist assertion.
     Banishes,
     /// Violates tag whitelist assertion.
@@ -33,7 +33,7 @@ pub fn Filter(comptime Params: type) type {
                     fn eval(actual: anytype) !bool {
                         _ = switch (@typeInfo(@TypeOf(actual))) {
                             inline .@"union", .@"enum" => {},
-                            else => return FilterError.InvalidArgument,
+                            else => return FilterError.ExpectsTypeValue,
                         };
 
                         // Checks active tag against blacklist
@@ -58,7 +58,7 @@ pub fn Filter(comptime Params: type) type {
                         actual: anytype,
                     ) void {
                         switch (err) {
-                            FilterError.InvalidArgument,
+                            FilterError.ExpectsTypeValue,
                             FilterError.RequiresTypeInfo,
                             => comptime type_validator.onError.?(
                                 err,
@@ -83,7 +83,7 @@ pub fn Filter(comptime Params: type) type {
 }
 
 test FilterError {
-    _ = FilterError.InvalidArgument catch void;
+    _ = FilterError.ExpectsTypeValue catch void;
     _ = FilterError.Banishes catch void;
     _ = FilterError.Requires catch void;
 }

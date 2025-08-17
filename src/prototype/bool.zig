@@ -7,7 +7,7 @@ const Prototype = @import("Prototype.zig");
 const info = @import("aux/info.zig");
 
 const BoolError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
 };
 
 /// Error set returned by `eval`.
@@ -26,8 +26,8 @@ pub const init: Prototype = .{
                 actual,
             ) catch |err|
                 return switch (err) {
-                    info.Error.InvalidArgument,
-                    => BoolError.InvalidArgument,
+                    info.Error.ExpectsTypeValue,
+                    => BoolError.ExpectsTypeValue,
                     info.Error.RequiresTypeInfo,
                     => BoolError.RequiresTypeInfo,
                     else => unreachable,
@@ -43,7 +43,7 @@ pub const init: Prototype = .{
             actual: anytype,
         ) void {
             switch (err) {
-                BoolError.InvalidArgument,
+                BoolError.ExpectsTypeValue,
                 BoolError.RequiresTypeInfo,
                 => info_validator.onError.?(err, prototype, actual),
 
@@ -54,7 +54,7 @@ pub const init: Prototype = .{
 };
 
 test BoolError {
-    _ = BoolError.InvalidArgument catch void;
+    _ = BoolError.ExpectsTypeValue catch void;
 }
 
 test init {
@@ -69,8 +69,8 @@ test "passes bool assertions" {
     try std.testing.expectEqual(true, @"bool".eval(bool));
 }
 
-test "fails bool type argument assertion" {
+test "fails type value assertion" {
     const @"bool" = init;
 
-    try std.testing.expectEqual(BoolError.InvalidArgument, comptime @"bool".eval(true));
+    try std.testing.expectEqual(BoolError.ExpectsTypeValue, comptime @"bool".eval(true));
 }

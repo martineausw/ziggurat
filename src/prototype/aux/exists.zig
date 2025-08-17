@@ -4,7 +4,7 @@ const Prototype = @import("../Prototype.zig");
 const info = @import("info.zig");
 
 const ExistsError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
     RequiresTypeInfo,
     AssertsNotNull,
     AssertsNull,
@@ -25,8 +25,8 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(@TypeOf(actual)) catch |err|
                     return switch (err) {
-                        info.Error.InvalidArgument,
-                        => ExistsError.InvalidArgument,
+                        info.Error.ExpectsTypeValue,
+                        => ExistsError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => ExistsError.RequiresTypeInfo,
                         else => unreachable,
@@ -50,7 +50,7 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    ExistsError.InvalidArgument,
+                    ExistsError.ExpectsTypeValue,
                     => info_validator.onError.?(err, prototype, actual),
 
                     else => @compileError(

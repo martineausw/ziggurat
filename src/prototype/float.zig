@@ -12,7 +12,7 @@ const interval = @import("aux/interval.zig");
 const info = @import("aux/info.zig");
 
 const FloatError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
     RequiresTypeInfo,
     AssertsMinBits,
     AssertsMaxBits,
@@ -47,8 +47,8 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.InvalidArgument,
-                        => FloatError.InvalidArgument,
+                        info.Error.ExpectsTypeValue,
+                        => FloatError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => FloatError.RequiresTypeInfo,
                         else => unreachable,
@@ -73,7 +73,7 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    FloatError.InvalidArgument,
+                    FloatError.ExpectsTypeValue,
                     => info_validator.onError.?(err, prototype, actual),
 
                     FloatError.AssertsMinBits,
@@ -92,7 +92,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test FloatError {
-    _ = FloatError.InvalidArgument catch void;
+    _ = FloatError.ExpectsTypeValue catch void;
     _ = FloatError.RequiresTypeInfo catch void;
 
     _ = FloatError.AssertsMinBits catch void;
@@ -132,7 +132,7 @@ test "passes float assertions" {
     try std.testing.expectEqual(true, float.eval(f128));
 }
 
-test "fails float argument assertion" {
+test "fails type value assertion" {
     const float = init(.{
         .bits = .{
             .min = null,
@@ -141,7 +141,7 @@ test "fails float argument assertion" {
     });
 
     try std.testing.expectEqual(
-        FloatError.InvalidArgument,
+        FloatError.ExpectsTypeValue,
         comptime float.eval(@as(f128, 0.0)),
     );
 }

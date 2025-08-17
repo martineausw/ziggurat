@@ -6,7 +6,7 @@ const info = @import("info.zig");
 
 /// Error set for field.
 const FieldError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
     RequiresTypeInfo,
     /// Violates `std.builtin.Type.StructField.name` or
     /// `std.builtin.Type.UnionField.name` assertion.
@@ -46,8 +46,8 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.InvalidArgument,
-                        => FieldError.InvalidArgument,
+                        info.Error.ExpectsTypeValue,
+                        => FieldError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => FieldError.RequiresTypeInfo,
                         else => unreachable,
@@ -77,7 +77,7 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    FieldError.InvalidArgument,
+                    FieldError.ExpectsTypeValue,
                     FieldError.RequiresTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
@@ -110,7 +110,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test FieldError {
-    _ = FieldError.InvalidArgument catch void;
+    _ = FieldError.ExpectsTypeValue catch void;
     _ = FieldError.AssertsField catch void;
     _ = FieldError.BanishesFieldTypeInfo catch void;
 }

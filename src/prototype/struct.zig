@@ -17,7 +17,7 @@ const toggle = @import("aux/toggle.zig");
 
 /// Error set for array.
 const StructError = error{
-    InvalidArgument,
+    ExpectsTypeValue,
     RequiresTypeInfo,
     BanishesLayout,
     RequiresLayout,
@@ -70,8 +70,8 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.InvalidArgument,
-                        => StructError.InvalidArgument,
+                        info.Error.ExpectsTypeValue,
+                        => StructError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => StructError.RequiresTypeInfo,
                         else => unreachable,
@@ -125,7 +125,7 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    StructError.InvalidArgument,
+                    StructError.ExpectsTypeValue,
                     => info_validator.onError.?(err, prototype, actual),
 
                     StructError.BanishesLayout,
@@ -185,7 +185,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test StructError {
-    _ = StructError.InvalidArgument catch void;
+    _ = StructError.ExpectsTypeValue catch void;
 
     _ = StructError.BanishesLayout catch void;
     _ = StructError.RequiresLayout catch void;
