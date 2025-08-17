@@ -1,6 +1,6 @@
 //! Prototype *optional*.
 //! 
-//! Asserts *actual* is an optional type value with a possible 
+//! Asserts *actual* is an optional type value with a parametric 
 //! child assertion.
 //! 
 //! See also: `std.builtin.Type.Optional`

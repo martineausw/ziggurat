@@ -1,6 +1,6 @@
 //! Prototype *pointer*.
 //! 
-//! Asserts *actual* is a pointer type value with possible layout, 
+//! Asserts *actual* is a pointer type value with parametric layout, 
 //! field, declaration, and tuple assertions.
 //!
 //! See also: [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)

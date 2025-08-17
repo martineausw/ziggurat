@@ -1,6 +1,6 @@
 //! Prototype *pointer*.
 //! 
-//! Asserts *actual* is a pointer type value with possible child, size, 
+//! Asserts *actual* is a pointer type value with parametric child, size, 
 //! const, volatile, and sentinel assertions.
 //! 
 //! See also: [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)

@@ -1,6 +1,6 @@
 //! Prototype *array*.
 //! 
-//! Asserts *actual* is an array type value with possible child,
+//! Asserts *actual* is an array type value with parametric child,
 //! length, and sentinel assertions.
 //!
 //! See also: [`std.builtin.Type.Array`](#std.builtin.Type.Array)

@@ -1,6 +1,6 @@
 //! Prototype *float*.
 //! 
-//! Asserts *actual* is a float type value with a possible bits
+//! Asserts *actual* is a float type value with a parametric bits
 //! assertion.
 //!
 //! See also: [/// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)](#std.builtin.Type.Float)

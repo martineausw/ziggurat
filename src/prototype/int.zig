@@ -1,6 +1,6 @@
 //! Prototype *int*.
 //! 
-//! Asserts *actual* is an integer type value with possible bits
+//! Asserts *actual* is an integer type value with parametric bits
 //! and signedness assertions.
 //!
 //! See also: [`std.builtin.Type.Int`](#std.builtin.Type.Int)

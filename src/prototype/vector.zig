@@ -1,6 +1,6 @@
 //! Prototype *vector*.
 //! 
-//! Asserts *actual* is an vector type value with possible child and
+//! Asserts *actual* is an vector type value with parametric child and
 //! length assertions.
 //! 
 //! See also: [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
