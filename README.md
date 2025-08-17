@@ -15,7 +15,7 @@ The goal of ziggurat is to enable developers to comprehensibly define arbitraril
 ### Remote
 
 ```bash
-zig fetch --save git+https://github.com/martineausw/ziggurat.git
+zig fetch --save git+https://github.com/martineausw/ziggurat.git#0.0.0
 ```
 
 ### Local
@@ -23,7 +23,7 @@ zig fetch --save git+https://github.com/martineausw/ziggurat.git
 ```bash
 cd /path/to/clone/
 
-git clone https://github.com/martineausw/ziggurat.git
+git clone https://github.com/martineausw/ziggurat.git#0.0.0
 
 cd /path/to/zig/project
 
