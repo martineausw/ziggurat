@@ -1,19 +1,25 @@
-//! Auxillary prototype for filtering active tags.
+//! Evaluates the *active tag* of a *union* value or an *enum* value against a 
+//! *blacklist* and/or a *whitelist* of tags.
+//! 
+//! See also: 
+//! - [`std.builtin.Type.Union`](#std.builtin.Type.Union)
+//! - [`std.builtin.Type.Enum`](#std.builtin.Type.Enum)
 const std = @import("std");
 const Prototype = @import("../Prototype.zig");
 const @"type" = @import("../type.zig");
 
 /// Error set for filter.
 const FilterError = error{
-    /// `actual` is a union or enum type.
+    /// *actual* is a union or enum type.
+    /// 
+    /// See also: [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
-    /// `actual` has an active tag that belongs to blacklist.
+    /// *actual* has an active tag that belongs to blacklist.
     Banishes,
-    /// `actual` has an active tag that does not belong to whitelist.
+    /// *actual* has an active tag that does not belong to whitelist.
     Requires,
 };
 
-/// Error set for filter.
 pub const Error = FilterError;
 
 pub const type_validator = @"type".init;

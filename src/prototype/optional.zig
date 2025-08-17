@@ -1,8 +1,6 @@
-//! Prototype for `type` value with optional type info.
-//!
-//! `eval` asserts optional type within parameters:
-//!
-//! - `child`, type info filter assertion.
+//! Evaluates an *optional* type value.
+//! 
+//! See also: `std.builtin.Type.Optional`
 const std = @import("std");
 const testing = std.testing;
 
@@ -11,35 +9,55 @@ const info = @import("aux/info.zig");
 
 /// Error set for optional.
 const OptionalError = error{
+    /// *actual* is a type value.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
+    /// *actual* requires array type info.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
-    /// Violates `std.builtin.Type.Optional.child` blacklist assertion.
+    /// *actual* array child type info has active tag that belongs to blacklist.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesChildTypeInfo,
-    /// Violates `std.builtin.Type.Optional.child` whitelist assertion.
+    /// *actual* array child type info has active tag that does not belong to whitelist.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresChildTypeInfo,
 };
 
-/// Error set returned by `eval`
 pub const Error = OptionalError;
 
-/// Validates `actual` type info to optional to continue.
+/// Type value assertion for *optional* prototype evaluation argument.
+/// 
+/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .optional = true,
 });
 
-/// Parameters for prototype evaluation.
-///
-/// Derived from `std.builtin.Type.Optional`.
+/// Assertion parameters for *optional* prototype.
+/// 
+/// See also: `std.builtin.Type.Optional`
 pub const Params = struct {
-    /// Evaluates against `std.builtin.Type.optional.child`
+    /// Asserts optional child type info.
+    /// 
+    /// See also: 
+    /// `std.builtin.Type.Optional`
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// `ziggurat.prototype.aux.info.Params`
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)   
     child: info.Params = .{},
 };
 
-/// Expects optional type value.
-///
-/// `actual` assertions:
-///
-/// `actual` is an optional type value.
 pub fn init(params: Params) Prototype {
     const child_validator = info.init(params.child);
 

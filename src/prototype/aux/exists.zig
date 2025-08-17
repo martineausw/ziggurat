@@ -1,22 +1,32 @@
+//! Evaluates an *optional* value against either *null* or *not null*.
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
 const info = @import("info.zig");
 
-/// Error set for exists.
+/// Error set for *exists* prototype.
 const ExistsError = error{
-    /// `actual` is not type value.
+    /// *actual* is not type value.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
-    /// `actual` requires `optional` type info.
+    /// *actual* requires `optional` type info.
+    ///
+    /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     RequiresTypeInfo,
-    /// `actual` is null.
+    /// *actual* is null.
     AssertsNotNull,
-    /// `actual` is not null.
+    /// *actual* is not null.
     AssertsNull,
 };
 
 pub const Error = ExistsError;
 
+/// Type info assertions for *exists* prototype evaluation argument.
+/// 
+/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .optional = true,
 });

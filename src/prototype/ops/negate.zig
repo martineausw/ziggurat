@@ -1,4 +1,4 @@
-///! `negate` definition.
+//! `negate` definition.
 const std = @import("std");
 const testing = std.testing;
 

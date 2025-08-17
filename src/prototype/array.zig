@@ -1,10 +1,6 @@
-//! Prototype for `type` value with array type info.
-//!
-//! `eval` asserts array type within parameters:
-//!
-//! - `child`, type info filter assertion.
-//! - `len`, type info interval assertion.
-//! - `sentinel`, type info value assertion.
+//! Evaluates an *array* type value.
+//! 
+//! See also: [`std.builtin.Type.Array`](#std.builtin.Type.Array)
 const std = @import("std");
 const testing = std.testing;
 
@@ -15,55 +11,86 @@ const exists = @import("aux/exists.zig");
 
 /// Error set for array.
 const ArrayError = error{
+    /// *actual* is a type value.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
+    /// *actual* requires array type info.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
-    /// Violates `std.builtin.Type.array.child` blacklist assertion.
+    /// *actual* array child type info has active tag that belongs to blacklist.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesChildTypeInfo,
+    /// *actual* array child type info has active tag that does not belong to whitelist.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresChildTypeInfo,
-    /// Violates `std.builtin.Type.array.len` assertion.
+    /// *actual* array length is less than minimum. 
+    /// 
+    /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMinLen,
+    /// *actual* array length is greater than maximum. 
+    /// 
+    /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMaxLen,
-    /// Violates `std.builtin.Type.array.sentinel` assertion.
+    /// *actual* sentinel is null.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     AssertsNotNullSentinel,
+    /// *actual* sentinel is not null.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     AssertsNullSentinel,
 };
 
 /// Error set returned by `eval`.
 pub const Error = ArrayError;
 
-/// Validates `actual` to `std.builtin.Type.array`.
+/// Type value assertion for *array* prototype evaluation argument.
+/// 
+/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .array = true,
 });
 
-/// Parameters for prototype evaluation.
+/// Assertion parameters for *array* prototype.
 ///
-/// Derived from `std.builtin.Type.Array`.
+/// See also: [`std.builtin.Type.Array`](#std.builtin.Type.Array).
 pub const Params = struct {
-    /// Evaluates against `std.builtin.Type.array.child`.
+    /// Asserts array child type info.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)    
     child: info.Params = .{},
 
-    /// Evaluates against `std.builtin.Type.array.len`
+    /// Asserts array length interval.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
+    /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     len: interval.Params = .{},
 
-    /// Evaluates against `std.builtin.Type.array.sentinel()`.
+    /// Asserts sentinel existence.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
+    /// - [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     sentinel: exists.Params = null,
 };
 
-/// Expects array type value.
-///
-/// `actual` assertions:
-///
-/// type info is `std.builtin.Type.array`.
-///
-/// `std.builtin.Type.pointer.child` is within given `params.child`
-/// assertions.
-///
-/// `std.builtin.Type.pointer.len` is within given `params.len`
-/// assertions.
-///
-/// `actual` type info `sentinel()` is not-null when given params is true
-/// or null when given params is false, otherwise returns error.
+
 pub fn init(params: Params) Prototype {
     const child_validator = info.init(params.child);
     const len_validator = interval.init(params.len);

@@ -1,4 +1,4 @@
-//! Auxillary prototype to specify an inclusive interval for number values.
+//! Evaluates an *integer* or a *float* value against an *inclusive interval*.
 const std = @import("std");
 const testing = std.testing;
 
@@ -7,19 +7,33 @@ const info = @import("info.zig");
 
 /// Error set for interval.
 const IntervalError = error{
-    /// `actual` is not a type value.
+    /// *actual* is not a type value.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
-    /// `actual` requires int, float, comptime_int, or comptime_float type info.
+    /// *actual* requires int, float, comptime_int, or comptime_float type info.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
-    /// `actual` value is less than minimum.
+    /// *actual* value is less than minimum.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMin,
-    /// `actual` value is greater than maximum.
+    /// *actual* value is greater than maximum.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMax,
 };
 
-/// Error set returned by `eval`
 pub const Error = IntervalError;
 
+/// Type value assertion for *interval* prototype evaluation argument.
+/// 
+/// See also: [`ziggurat.prototype.type`](#root.prototype.type)
 pub const info_validator = info.init(.{
     .int = true,
     .float = true,
@@ -27,30 +41,16 @@ pub const info_validator = info.init(.{
     .comptime_float = true,
 });
 
-/// Parameters used for prototype evaluation.
+/// Assertion parameters for *interval* prototype.
 pub const Params = struct {
-    /// Evaluates against `actual` value
-    ///
-    /// - `null`, no assertion.
-    /// - not `null`, asserts less-than-or-equal-to.
+    /// Asserts value is greater than or equal to minimum.
     min: ?f128 = null,
-    /// Evaluates against `actual` value
-    ///
-    /// - `null`, no assertion.
-    /// - not `null`, asserts greater-than-or-equal-to.
+    /// Asserts value is less than or equal to maximum.
     max: ?f128 = null,
+    /// Asserts equality of bounds is within tolerance margin.
     tolerance: ?f128 = null,
 };
 
-/// Expects integer value.
-///
-/// Given type `T` is integer type, otherwise returns error.
-///
-/// `actual` is greater-than-or-equal-to given `params.min`, otherwise
-/// returns error.
-///
-/// `actual` is less-than-or-equal-to given `params.max`, otherwise returns
-/// error.
 pub fn init(params: Params) Prototype {
     return .{
         .name = "Interval",

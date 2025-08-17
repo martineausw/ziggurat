@@ -1,34 +1,48 @@
-//! Auxillary prototype for asserting a declaration within a given type.
+//! Evaluates a *type* value with type info containing *declarations*.
+//! 
+//! See also: 
+//! - [`std.builtin.Type.Enum`](#std.builtin.Type.Enum)
+//! - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
+//! - [`std.builtin.Type.Union`](#std.builtin.Type.Union)
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
 const info = @import("info.zig");
 
-/// Error set for declaration.
+/// Error set for *decl* prototype.
 const DeclError = error{
-    /// `actual` is not a type value.
+    /// *actual* is not a type value.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
-    /// `actual` requires struct, enum, or union type info.
+    /// *actual* requires struct, enum, or union type info.
     RequiresTypeInfo,
-    /// `actual` is missing declaration.
+    /// *actual* is missing declaration.
     AssertsDecl,
 };
 
-/// Errors returned by `eval`.
 pub const Error = DeclError;
 
-/// Validates type info of `actual` to continue.
+/// Type info assertions for *decl* prototype evaluation argument.
+/// 
+/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .@"struct" = true,
     .@"enum" = true,
     .@"union" = true,
 });
 
-/// Parameters used for prototype evaluation.
+/// Assertion parameters for *decl* prototype.
 ///
-/// Derived from `std.builtin.Type.Declaration`.
+/// See also: 
+/// - [`std.builtin.Type.Declaration`](#std.builtin.Type.Declaration).
+/// - [`std.builtin.Type.Enum`](#std.builtin.Type.Enum)
+/// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
+/// - [`std.builtin.Type.Union`](#std.builtin.Type.Union)
 pub const Params = struct {
-    /// Evaluates against `std.builtin.Type.Declaration.name`.
+    /// Asserts declaration name.
     name: [:0]const u8,
 };
 

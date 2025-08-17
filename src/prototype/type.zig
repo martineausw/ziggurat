@@ -1,22 +1,16 @@
-//! Prototype for `type` value with `type` type info.
-//!
-//! `eval` asserts `type` type value.
+//! Evaluates a *type* type value.
 const std = @import("std");
 
 const Prototype = @import("Prototype.zig");
 
-/// Error set for type.
+/// Error set for *type* prototype.
 const TypeError = error{
-    /// Violates `actual` is `type` value assertion.
+    /// *actual* value is not a type.
     ExpectsTypeValue,
 };
 
-/// Errors returned by `eval`
 pub const Error = TypeError;
 
-/// Expects type value.
-///
-/// `actual` is type value, otherwise returns error.
 pub const init: Prototype = .{
     .name = "Type",
 

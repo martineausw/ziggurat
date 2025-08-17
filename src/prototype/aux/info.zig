@@ -1,4 +1,7 @@
-//! Auxillary prototype for filtering type values based on active info tag.
+//! Evaluates the *active tag* of a type value's type info against a 
+//! *blacklist* and/or *whitelist*.
+//! 
+//! See also: [`std.builtin.Type`](#std.builtin.Type)
 const std = @import("std");
 const testing = std.testing;
 
@@ -7,29 +10,40 @@ const filter = @import("filter.zig");
 
 const @"type" = @import("../type.zig");
 
-/// Error set for info.
+/// Error set for *info* prototype.
 const InfoError = error{
     /// `actual` is not a type value.
+    /// 
+    /// See also: [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
     /// `actual` type info has active tag that belongs to blacklist.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesTypeInfo,
-    /// Violates type info has active tag that does not belong to whitelist.
+    /// `actual` type info has active tag that does not belong to whitelist.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
+
 };
 
-/// Error set returned by `eval`.
 pub const Error = InfoError;
 
+/// Type value assertion for *info* prototype evaluation argument.
+/// 
+/// See also: [`ziggurat.prototype.type`](#root.prototype.type).
 const type_validator = @"type".init;
 
-/// Parameters used for prototype evaluation.
-///
-/// Associated with `std.builtin.Type`.
-///
+/// Assertion parameters for *info* filter prototype.
+/// 
 /// For any field:
-/// - `null`, no assertion.
-/// - `true`, asserts active tag belongs to subset of `true` members.
-/// - `false`, asserts active tag does not belong to subset of `false` members.
+/// - *null*, no assertion.
+/// - *true* asserts active tag belongs to subset of `true` members.
+/// - *false* asserts active tag does not belong to subset of `false` members.
+/// 
+/// See also: 
+/// - [`std.builtin.Type`](#std.builtin.Type).
+/// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter).
 pub const Params = struct {
     type: ?bool = null,
     void: ?bool = null,
@@ -59,15 +73,6 @@ pub const Params = struct {
 
 const Filter = filter.Filter(Params);
 
-/// Expects type value.
-///
-/// `actual` is a type value, otherwise returns error from `IsType`.
-///
-/// `actual` active tag of `Type` belongs to the set of param fields set to
-/// true, otherwise returns error.
-///
-/// `actual` active tag of `Type` does not belong to the set param fields
-/// set to false, otherwise returns error.
 pub fn init(params: Params) Prototype {
     const filter_validator = Filter.init(params);
     return .{

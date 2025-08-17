@@ -1,10 +1,6 @@
-//! Prototype for `type` value with struct type info.
-//!
-//! `eval` asserts array type within parameters:
-//!
-//! - `child`, type info filter assertion.
-//! - `len`, type info interval assertion.
-//! - `sentinel`, type info value assertion.
+//! Evaluatesa a *struct* type value.
+//! 
+//! See also: [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
 const std = @import("std");
 const testing = std.testing;
 
@@ -17,50 +13,111 @@ const toggle = @import("aux/toggle.zig");
 
 /// Error set for array.
 const StructError = error{
+    /// *actual* value is a type.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
+    /// *actual* type value requires array type info.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
+    /// *actual* struct layout has active tag that belongs to blacklist.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesLayout,
+    /// *actual* struct layout has active tag that does not belong to whitelist.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresLayout,
+    /// *actual* struct is missing field.
+    /// 
+    /// See also: `ziggurat.prototype.aux.field`
     AssertsStructField,
+    /// *actual* struct field type info has active tag that does not belong to whitelist.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresStructFieldTypeInfo,
+    /// *actual* struct field type info has active tag that belongs to blacklist.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesStructFieldTypeInfo,
+    /// *actual* struct is missing declaration.
+    /// 
+    /// See also: `ziggurat.prototype.aux.decl`
     AssertsDecl,
+    /// *actual* struct is not a tuple.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     AssertsTrueIsTuple,
+    /// *actual* struct is a tuple.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     AssertsFalseIsTuple,
 };
 
-/// Error set returned by `eval`
 pub const Error = StructError;
 
+/// Type value assertion for *struct* prototype evaluation argument.
+/// 
+/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .@"struct" = true,
 });
 
+/// Assertion parameters for *Layout* filter prototype.
+/// 
+/// See also: 
+/// `std.builtin.Type.Layout`
+/// `LayoutParams`
+/// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
 const LayoutParams = struct {
     auto: ?bool = null,
     @"extern": ?bool = null,
     @"packed": ?bool = null,
 };
 
+/// *Layout* filter prototype.
+/// 
+/// See also: 
+/// `LayoutParams`
+/// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
 const Layout = filter.Filter(LayoutParams);
-/// Parameters for prototype evaluation.
-///
-/// Associated with `std.builtin.Type.Struct`.
+
+/// Assertion parameters for *struct* prototype.
+/// 
+/// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
 pub const Params = struct {
+    /// Asserts struct layout.
+    /// 
+    /// See also: 
+    /// `std.builtin.Type.Layout`
+    /// `Layout`
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     layout: LayoutParams = .{},
+    /// Asserts struct fields.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
+    /// - [`ziggurat.prototype.aux.field`](#root.prototype.aux.field)
     fields: []const field.Params = &.{},
+    /// Asserts struct declarations.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Declaration`](#std.builtin.Type.Declaration)
+    /// - [`ziggurat.prototype.aux.decl`](#root.prototype.aux.decl)
     decls: []const decl.Params = &.{},
+    /// Asserts struct tuple type.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
+    /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     is_tuple: ?bool = null,
 };
 
-/// Expects array type value.
-///
-/// `actual` is an array type value.
-///
-/// `actual` type info `len` is within given `params`.
-///
-/// `actual` type info `sentinel()` is not-null when given params is true
-/// or null when given params is false, otherwise returns error.
 pub fn init(params: Params) Prototype {
     const layout_validator = Layout.init(params.layout);
     const is_tuple_validator = toggle.init(params.is_tuple);
@@ -186,16 +243,13 @@ pub fn init(params: Params) Prototype {
 
 test StructError {
     _ = StructError.ExpectsTypeValue catch void;
-
+    _ = StructError.RequiresTypeInfo catch void;
     _ = StructError.BanishesLayout catch void;
     _ = StructError.RequiresLayout catch void;
-
     _ = StructError.AssertsStructField catch void;
     _ = StructError.RequiresStructFieldTypeInfo catch void;
     _ = StructError.BanishesStructFieldTypeInfo catch void;
-
     _ = StructError.AssertsDecl catch void;
-
     _ = StructError.AssertsTrueIsTuple catch void;
     _ = StructError.AssertsFalseIsTuple catch void;
 }

@@ -1,11 +1,6 @@
-//! Prototype for `type` value with pointer type info.
-//!
-//! `eval` asserts pointer type within parameters:
-//!
-//! - `child`, type info filter assertion.
-//! - `is_const`, type info value assertion.
-//! - `is_volatile`, type info value assertion.
-//! - `sentinel`, type info value assertion.
+//! Evaluates a *pointer* type value.
+//! 
+//! See also: [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
 const std = @import("std");
 const testing = std.testing;
 
@@ -18,36 +13,74 @@ const exists = @import("aux/exists.zig");
 
 /// Error set for `prototype.pointer`.
 const PointerError = error{
+    /// *actual* is a type value.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
+    /// *actual* type value requires array type info.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
-    /// Violates `std.builtin.Type.pointer.child` blacklist assertion.
+    /// *actual* pointer child type info has active tag that belongs to blacklist.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesChildTypeInfo,
+    /// *actual* pointer child type info has active tag that does not belong to whitelist.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresChildTypeInfo,
-    /// Violates `std.builtin.Type.pointer.size` blacklist assertion.
+    /// *actual* pointer size has active tag that belongs to blacklist.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesSize,
+    /// *actual* pointer size has active tag that does not belong to whitelist.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresSize,
-    /// Violates `std.builtin.Type.pointer.is_const` assertion.
+    /// *actual* pointer is not const.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     AssertsTrueIsConst,
+    /// *actual* pointer is const.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     AssertsFalseIsConst,
-    /// Violates `std.builtin.Type.pointer.is_volatile` assertion.
+    /// *actual* pointer is not volatile.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     AssertsTrueIsVolatile,
+    /// *actual* pointer is volatile.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     AssertsFalseIsVolatile,
-    /// Violates `std.builtin.Type.pointer.sentinel()` assertion.
+    /// *actual* pointer sentinel is null.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     AssertsNotNullSentinel,
+    /// *actual* pointer sentinel is not null.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     AssertsNullSentinel,
 };
 
-/// Error set returned by `eval`.
 pub const Error = PointerError;
 
-/// Validates `actual` type info to `std.builtin.Type.pointer`.
+/// Type value assertion for *optional* prototype evaluation argument.
+/// 
+/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .pointer = true,
 });
 
-/// Parameters for `prototype.pointer.size` evaluation.
-///
-/// Derived from `std.builtin.Pointer.Size`.
+/// Assertion parameters for *size* prototype.
 const SizeParams = struct {
     one: ?bool = null,
     many: ?bool = null,
@@ -55,44 +88,50 @@ const SizeParams = struct {
     c: ?bool = null,
 };
 
+/// *Size* prototype.
+/// 
+/// See also: 
+/// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
 const Size = filter.Filter(SizeParams);
 
 /// Parameters for `prototype.pointer` evaluation.
 ///
-/// Derived from `std.builtin.Type.Pointer`.
+/// See also: [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer).
 pub const Params = struct {
-    /// Evaluates against `std.builtin.Type.pointer.child`.
+    /// Asserts pointer child type info.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)    
     child: info.Params = .{},
-    /// Evaluates against `std.builtin.Type.pointer.size`.
+    /// Asserts pointer size.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)  
     size: SizeParams = .{},
-    /// Evaluates against `std.builtin.Type.pointer.is_const`.
+    /// Asserts pointer const qualifier presence.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
+    /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)   
     is_const: ?bool = null,
-    /// Evaluates against `std.builtin.Type.pointer.is_volatile`.
+    /// Asserts pointer volatile qualifier presence.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
+    /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)   
     is_volatile: ?bool = null,
-    /// Evaluates against `std.builtin.Type.pointer.sentinel()`.
+    /// Asserts sentinel existence.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
+    /// - [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)   
     sentinel: ?bool = null,
 };
 
-/// Expects pointer type value.
-///
-/// `actual` assertions:
-///
-/// type info is `std.builtin.Type.pointer`.
-///
-/// `std.builtin.Type.pointer.size` is within `aux.filter` assertions with
-/// given `params.filter`.
-///
-/// `std.builtin.Type.pointer.child` is within `aux.info` assertions with
-/// given `params.child`.
-///
-/// `std.builtin.Type.pointer.is_const` is within `aux.toggle` assertions
-/// with given `params.is_const`.
-///
-/// `std.builtin.Type.pointer.is_volatile` is within `aux.toggle`
-/// assertions with given `params.is_volatile`.
-///
-/// `std.builtin.Type.pointer.sentinel()` is within `aux.exists`
-/// assertions with given `params.sentinel`.
+
 pub fn init(params: Params) Prototype {
     const child_validator = info.init(params.child);
     const size_validator = Size.init(params.size);

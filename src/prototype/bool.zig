@@ -1,19 +1,29 @@
-//! Prototype for `type` value with bool type info.
-//!
-//! `eval` asserts `bool` type value.
+//! Evaluates a *bool* type value.
 const std = @import("std");
 
 const Prototype = @import("Prototype.zig");
 const info = @import("aux/info.zig");
 
 const BoolError = error{
+    /// *actual* is a type value.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
+    /// *actual* requires array type info.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
+    RequiresTypeInfo,
 };
 
-/// Error set returned by `eval`.
 pub const Error = BoolError;
 
-/// Validates type info of `actual` to continue.
+/// Type value assertion for *bool* prototype evaluation argument.
+/// 
+/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .bool = true,
 });

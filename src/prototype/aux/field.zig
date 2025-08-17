@@ -1,27 +1,51 @@
-//! Auxillary prototype for field member of given type.
+//! Evaluates a *type* value with type info containing *fields*.
+//! 
+//! See also: 
+//! - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
+//! - [`std.builtin.Type.Union`](#std.builtin.Type.Union)
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
 const info = @import("info.zig");
 
-/// Error set for field.
+/// Error set for *field* prototype.
 const FieldError = error{
     /// `actual` is not a type value.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
     /// `actual` requires struct or union type info.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
     /// `actual` is missing field.
     AssertsField,
     /// `actual` has field with type info that belongs to blacklist.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesFieldTypeInfo,
     /// `actual` has field with type info that does not belong to whitelist.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresFieldTypeInfo,
 };
 
-/// Errors returned by `eval`
 pub const Error = FieldError;
 
-/// Validates type info of `actual` to continue.
+/// Type info assertions for *field* prototype evaluation argument.
+/// 
+/// See also: 
+/// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+/// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
+/// `std.builtin.Type.Union`
 pub const info_validator = info.init(.{
     .@"struct" = true,
     .@"union" = true,
@@ -29,14 +53,21 @@ pub const info_validator = info.init(.{
 
 /// Parameters used for prototype evaluation.
 ///
-/// Derived from `std.builtin.Type.StructField` and
-/// `std.builtin.Type.UnionField`.
+/// See also: 
+/// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
+/// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)
 pub const Params = struct {
-    /// Evaluates against `std.builtin.Type.StructField.name` or
-    /// `std.builtin.Type.UnionField.name`.
+    /// Asserts struct field.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
+    /// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)
     name: [:0]const u8,
-    /// Evaluates against `std.builtin.Type.StructField.type` or
-    /// `std.builtin.Type.UnionField.type`.
+    /// Asserts struct field type.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
+    /// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)e
     type: info.Params,
 };
 

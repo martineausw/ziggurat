@@ -1,9 +1,6 @@
-//! Prototype for `type` value with vector type info.
-//!
-//! `eval` asserts vector type within parameters:
-//!
-//! - `child`, type info filter assertion.
-//! - `len`, type info interval assertion.
+//! Evaluates a *vector* type value.
+//! 
+//! See also: [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
 const std = @import("std");
 const testing = std.testing;
 
@@ -11,40 +8,69 @@ const Prototype = @import("Prototype.zig");
 const interval = @import("aux/interval.zig");
 const info = @import("aux/info.zig");
 
-/// Error set for vector.
+/// Error set for *vector* prototype.
 const VectorError = error{
+    /// *actual* is a type value.
+    /// 
+    /// See also: 
+    /// - [`test.prototype.int`](#test.prototype.int)
     ExpectsTypeValue,
+    /// *actual* requires array type info.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
+    /// *actual* array child type info has active tag that belongs to blacklist.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesChildTypeInfo,
+    /// *actual* array child type info has active tag that does not belong to whitelist.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresChildTypeInfo,
+    /// *actual* array length is less than minimum. 
+    /// 
+    /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMinLen,
+    /// *actual* array length is greater than maximum. 
+    /// 
+    /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMaxLen,
 };
 
-/// Error set returned by `eval`.
 pub const Error = VectorError;
 
-/// Validates type info of `actual` to continue.
+/// Type value assertion for *vector* prototype evaluation argument.
+/// 
+/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .vector = true,
 });
 
-/// Parameters for prototype evaluation.
-///
-/// Associated with `std.builtin.Type.Vector`.
+/// Assertion parameters for *vector* prototype.
+/// 
+/// - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
 pub const Params = struct {
-    /// Evaluates against `.child`
+    /// Asserts vector child type info.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     child: info.Params = .{},
-
-    /// Evaluates against `.len`.
+    /// Asserts vector length interval.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
+    /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     len: interval.Params = .{},
 };
 
-/// Expects vector type value.
-///
-/// `actual` is a vector type value.
-///
-/// `actual` type info `len` is within given `params`.
 pub fn init(params: Params) Prototype {
     const child_validator = info.init(params.child);
     const len_validator = interval.init(params.len);

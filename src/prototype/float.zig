@@ -1,8 +1,6 @@
-//! Prototype for `type` value with float type info.
-//!
-//! `eval` asserts float type within parameters:
-//!
-//! - `bits`, type info interval assertion
+//! Evaluates a *float* type value.
+//! 
+//! See also: [/// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)](#std.builtin.Type.Float)
 const std = @import("std");
 const testing = std.testing;
 
@@ -11,33 +9,51 @@ const Prototype = @import("Prototype.zig");
 const interval = @import("aux/interval.zig");
 const info = @import("aux/info.zig");
 
+/// Error set for *float* prototype.
 const FloatError = error{
+    /// *actual* is not a type value.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
+    /// *actual* requires float type info.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
+    /// *actual* float bits value is less than minimum.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMinBits,
+    /// *actual* float bits value is greater than maximum.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMaxBits,
 };
 
-/// Errors returned by `eval`
 pub const Error = FloatError;
 
-/// Validates type info of `actual` to continue.
+/// Type value assertion for *float* prototype evaluation argument.
+/// 
+/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .float = true,
 });
 
-/// Associated with `std.builtin.Type.Float.bits`
+/// Assertion parameters for *float* prototype.
+/// 
+/// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)](#std.builtin.Type.Float)
 pub const Params = struct {
-    /// Evaluates against `std.builtin.Type.Float.bits`
+    /// Asserts float bits interval.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)](#std.builtin.Type.Float)
+    /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     bits: interval.Params = .{},
 };
 
-/// Expects runtime float type value.
-///
-/// `actual` is runtime float type value, otherwise returns error.
-///
-/// `actual` type info `bits` is within given `params`, otherwise returns
-/// error.
 pub fn init(params: Params) Prototype {
     const bits_validator = interval.init(params.bits);
 

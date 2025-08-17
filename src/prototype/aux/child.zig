@@ -1,18 +1,41 @@
+//! Evaluates a *type* value with type info containing a *child*.
+//! 
+//! See also: 
+//! - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
+//! - [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
+//! - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
+//! - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
 const info = @import("../aux/info.zig");
 
-/// Error set for child.
+/// Error set for *child* prototype.
 const ChildError = error{
-    /// `actual` is not a type value.
+    /// *actual* is not a type value.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
-    /// `actual` requires array, pointer, vector, or optional type info.
+    /// *actual* requires array, pointer, vector, or optional type info.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo
 };
 
 pub const Error = ChildError;
 
+/// Type info assertions for *child* prototype evaluation argument.
+/// 
+/// See also: 
+/// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+/// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
+/// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
+/// - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
+/// `std.builtin.Type.Optional`
 pub const info_validator = info.init(.{
     .array = true,
     .pointer = true,
@@ -20,6 +43,11 @@ pub const info_validator = info.init(.{
     .optional = true,
 });
 
+/// Assertion parameter for *child*.
+/// 
+/// Asserts child prototype evaluation.
+/// 
+/// See also: `ziggurat.Prototype`
 pub const Params = Prototype;
 
 pub fn init(params: Params) Prototype {

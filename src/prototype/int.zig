@@ -1,9 +1,6 @@
-//! Prototype for `type` value runtime integer type info.
-//!
-//! `eval` asserts int type within parameters:
-//!
-//! - `bits`, type info interval assertion
-//! - `signedness`, type info field assertion
+//! Evaluates an *integer* type value.
+//! 
+//! See also: [`std.builtin.Type.Int`](#std.builtin.Type.Int)
 const std = @import("std");
 const testing = std.testing;
 
@@ -12,54 +9,79 @@ const interval = @import("aux/interval.zig");
 const info = @import("aux/info.zig");
 const filter = @import("aux/filter.zig");
 
-/// Error set for int
+/// Error set for *int* prototype.
 const IntError = error{
+    /// *actual* is not a type value.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
+    /// *actual* requires float type info.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
+    /// *actual* int bits value is less than minimum.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMinBits,
+    /// *actual* int bits value is greater than maximum.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMaxBits,
-    /// Violates `std.builtin.Type.Int.signedness` assertion.
+    /// *actual* int signedness has active tag that belongs to blacklist.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesSignedness,
+    /// *actual* int signedness has active tag that does not belong to whitelist.
+    /// 
+    /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresSignedness,
 };
 
-/// Error set returned by `eval`
 pub const Error = IntError;
 
-/// Validates type info of `actual` to continue.
+/// Type value assertion for *int* prototype evaluation argument.
+/// 
+/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .int = true,
 });
 
+/// Assertion parameters for *signedness* filter prototype.
+/// 
+/// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
 const SignednessParams = struct {
     signed: ?bool = null,
     unsigned: ?bool = null,
 };
 
+/// *Signedness* prototype.
+/// 
+/// See also: 
+/// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
 const Signedness = filter.Filter(SignednessParams);
 
-/// Parameters for prototype evaluation
-///
-/// Associated with `std.builtin.Type.Int`
+/// Assertion parameters for *int* prototype.
+/// 
+/// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
 pub const Params = struct {
-    /// Evaluates against `.bits`
+    /// Asserts int bits interval.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
+    /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     bits: interval.Params = .{},
-    /// Evaluates against `.signedness`
-    ///
-    /// - `null`, no assertion
-    /// - `signed`, asserts `signed`
-    /// - `unsigned`, asserts `unsigned`
+    /// Asserts signedness.
+    /// 
+    /// See also: 
+    /// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     signedness: SignednessParams = .{},
 };
 
-/// Expects runtime int type value.
-///
-/// `actual` is runtime integer type value, otherwise returns error.
-///
-/// `actual` type info `bits` is within given `params`, otherwise returns error.
-///
-/// `actual` type info `signedness` is equal to given `params`, otherwise
-/// returns error.
 pub fn init(params: Params) Prototype {
     const bits_validator = interval.init(params.bits);
     const signedness_validator = Signedness.init(params.signedness);

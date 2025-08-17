@@ -1,24 +1,33 @@
+//! Evaluates a *boolean* value against *preferred* value.
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
 const info = @import("../aux/info.zig");
 
-/// Error set for toggle.
+/// Error set for *toggle* prototype.
 const ToggleError = error{
-    /// `actual` requires bool type info.
+    /// *actual* requires bool type info.
+    /// 
+    /// See also: 
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
-    /// `actual` is false.
+    /// *actual* is false.
     AssertsTrue,
-    /// `actual` is true.
+    /// *actual* is true.
     AssertsFalse,
 };
 
 pub const Error = ToggleError;
 
+/// Type value assertion for *toggle* prototype evaluation argument.
+/// 
+/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .bool = true,
 });
 
+/// Assertion parameter for *toggle* prototype.
 pub const Params = ?bool;
 
 pub fn init(params: Params) Prototype {
