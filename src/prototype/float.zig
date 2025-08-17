@@ -16,13 +16,13 @@ const FloatError = error{
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// *actual* requires float type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
     /// *actual* float bits value is less than minimum.
     ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
@@ -63,10 +63,10 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.ExpectsTypeValue,
-                        => FloatError.ExpectsTypeValue,
-                        info.Error.RequiresTypeInfo,
-                        => FloatError.RequiresTypeInfo,
+                        info.Error.AssertsTypeValue,
+                        => FloatError.AssertsTypeValue,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => FloatError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -89,7 +89,7 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    FloatError.ExpectsTypeValue,
+                    FloatError.AssertsTypeValue,
                     => info_validator.onError.?(err, prototype, actual),
 
                     FloatError.AssertsMinBits,
@@ -108,8 +108,8 @@ pub fn init(params: Params) Prototype {
 }
 
 test FloatError {
-    _ = FloatError.ExpectsTypeValue catch void;
-    _ = FloatError.RequiresTypeInfo catch void;
+    _ = FloatError.AssertsTypeValue catch void;
+    _ = FloatError.AssertsWhitelistTypeInfo catch void;
 
     _ = FloatError.AssertsMinBits catch void;
     _ = FloatError.AssertsMaxBits catch void;
@@ -157,7 +157,7 @@ test "fails type value assertion" {
     });
 
     try std.testing.expectEqual(
-        FloatError.ExpectsTypeValue,
+        FloatError.AssertsTypeValue,
         comptime float.eval(@as(f128, 0.0)),
     );
 }

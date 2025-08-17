@@ -18,21 +18,21 @@ const StructError = error{
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// *actual* type value requires array type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
     /// *actual* struct layout has active tag that belongs to blacklist.
     ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    BanishesLayout,
+    AssertsBlacklistLayout,
     /// *actual* struct layout has active tag that does not belong to whitelist.
     ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresLayout,
+    AssertsWhitelistLayout,
     /// *actual* struct is missing field.
     ///
     /// See also: `ziggurat.prototype.aux.field`
@@ -40,11 +40,11 @@ const StructError = error{
     /// *actual* struct field type info has active tag that does not belong to whitelist.
     ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresStructFieldTypeInfo,
+    AssertsWhitelistStructFieldTypeInfo,
     /// *actual* struct field type info has active tag that belongs to blacklist.
     ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    BanishesStructFieldTypeInfo,
+    AssertsBlacklistStructFieldTypeInfo,
     /// *actual* struct is missing declaration.
     ///
     /// See also: `ziggurat.prototype.aux.decl`
@@ -127,19 +127,19 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.ExpectsTypeValue,
-                        => StructError.ExpectsTypeValue,
-                        info.Error.RequiresTypeInfo,
-                        => StructError.RequiresTypeInfo,
+                        info.Error.AssertsTypeValue,
+                        => StructError.AssertsTypeValue,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => StructError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
                 _ = comptime layout_validator.eval(@typeInfo(actual).@"struct".layout) catch |err|
                     return switch (err) {
-                        filter.Error.Banishes,
-                        => StructError.BanishesLayout,
-                        filter.Error.Requires,
-                        => StructError.RequiresLayout,
+                        filter.Error.AssertsBlacklist,
+                        => StructError.AssertsBlacklistLayout,
+                        filter.Error.AssertsWhitelist,
+                        => StructError.AssertsWhitelistLayout,
                         else => @panic("unhandled error"),
                     };
 
@@ -149,10 +149,10 @@ pub fn init(params: Params) Prototype {
                         return switch (err) {
                             field.Error.AssertsField,
                             => StructError.AssertsStructField,
-                            field.Error.BanishesFieldTypeInfo,
-                            => StructError.BanishesStructFieldTypeInfo,
-                            field.Error.RequiresFieldTypeInfo,
-                            => StructError.RequiresStructFieldTypeInfo,
+                            field.Error.AssertsBlacklistFieldTypeInfo,
+                            => StructError.AssertsBlacklistStructFieldTypeInfo,
+                            field.Error.AssertsWhitelistFieldTypeInfo,
+                            => StructError.AssertsWhitelistStructFieldTypeInfo,
                             else => @panic("unhandled error"),
                         };
                 }
@@ -182,11 +182,11 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    StructError.ExpectsTypeValue,
+                    StructError.AssertsTypeValue,
                     => info_validator.onError.?(err, prototype, actual),
 
-                    StructError.BanishesLayout,
-                    StructError.RequiresLayout,
+                    StructError.AssertsBlacklistLayout,
+                    StructError.AssertsWhitelistLayout,
                     => layout_validator.onError.?(
                         err,
                         prototype,
@@ -194,8 +194,8 @@ pub fn init(params: Params) Prototype {
                     ),
 
                     StructError.AssertsStructField,
-                    StructError.BanishesStructFieldTypeInfo,
-                    StructError.RequiresStructFieldTypeInfo,
+                    StructError.AssertsBlacklistStructFieldTypeInfo,
+                    StructError.AssertsWhitelistStructFieldTypeInfo,
                     => {
                         inline for (params.fields) |param_field| {
                             const field_validator = field.init(param_field);
@@ -242,13 +242,13 @@ pub fn init(params: Params) Prototype {
 }
 
 test StructError {
-    _ = StructError.ExpectsTypeValue catch void;
-    _ = StructError.RequiresTypeInfo catch void;
-    _ = StructError.BanishesLayout catch void;
-    _ = StructError.RequiresLayout catch void;
+    _ = StructError.AssertsTypeValue catch void;
+    _ = StructError.AssertsWhitelistTypeInfo catch void;
+    _ = StructError.AssertsBlacklistLayout catch void;
+    _ = StructError.AssertsWhitelistLayout catch void;
     _ = StructError.AssertsStructField catch void;
-    _ = StructError.RequiresStructFieldTypeInfo catch void;
-    _ = StructError.BanishesStructFieldTypeInfo catch void;
+    _ = StructError.AssertsWhitelistStructFieldTypeInfo catch void;
+    _ = StructError.AssertsBlacklistStructFieldTypeInfo catch void;
     _ = StructError.AssertsDecl catch void;
     _ = StructError.AssertsTrueIsTuple catch void;
     _ = StructError.AssertsFalseIsTuple catch void;
@@ -311,7 +311,7 @@ test "fails struct layout blacklist assertion" {
         .is_tuple = null,
     });
 
-    try std.testing.expectEqual(StructError.BanishesLayout, comptime @"struct".eval(packed struct {}));
+    try std.testing.expectEqual(StructError.AssertsBlacklistLayout, comptime @"struct".eval(packed struct {}));
 }
 
 test "fails struct layout whitelist assertion" {
@@ -326,7 +326,7 @@ test "fails struct layout whitelist assertion" {
         .is_tuple = null,
     });
 
-    try std.testing.expectEqual(StructError.RequiresLayout, comptime @"struct".eval(packed struct {}));
+    try std.testing.expectEqual(StructError.AssertsWhitelistLayout, comptime @"struct".eval(packed struct {}));
 }
 
 test "fails struct field assertion" {
@@ -366,7 +366,7 @@ test "fails struct field type info whitelist assertion" {
     });
 
     try std.testing.expectEqual(
-        StructError.RequiresStructFieldTypeInfo,
+        StructError.AssertsWhitelistStructFieldTypeInfo,
         @"struct".eval(struct { field: bool }),
     );
 }
@@ -388,7 +388,7 @@ test "fails struct field type info blacklist assertion" {
     });
 
     try std.testing.expectEqual(
-        StructError.BanishesStructFieldTypeInfo,
+        StructError.AssertsBlacklistStructFieldTypeInfo,
         @"struct".eval(struct { field: bool }),
     );
 }

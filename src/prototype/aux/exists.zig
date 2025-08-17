@@ -11,11 +11,11 @@ const ExistsError = error{
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// *actual* requires `optional` type info.
     ///
     /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
     /// *actual* is null.
     AssertsNotNull,
     /// *actual* is not null.
@@ -40,10 +40,10 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(@TypeOf(actual)) catch |err|
                     return switch (err) {
-                        info.Error.ExpectsTypeValue,
-                        => ExistsError.ExpectsTypeValue,
-                        info.Error.RequiresTypeInfo,
-                        => ExistsError.RequiresTypeInfo,
+                        info.Error.AssertsTypeValue,
+                        => ExistsError.AssertsTypeValue,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => ExistsError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -65,7 +65,7 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    ExistsError.ExpectsTypeValue,
+                    ExistsError.AssertsTypeValue,
                     => info_validator.onError.?(err, prototype, actual),
 
                     else => @compileError(

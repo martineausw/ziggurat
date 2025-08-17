@@ -16,13 +16,13 @@ const IntError = error{
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// *actual* requires float type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
     /// *actual* int bits value is less than minimum.
     ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
@@ -34,11 +34,11 @@ const IntError = error{
     /// *actual* int signedness has active tag that belongs to blacklist.
     ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    BanishesSignedness,
+    AssertsBlacklistSignedness,
     /// *actual* int signedness has active tag that does not belong to whitelist.
     ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresSignedness,
+    AssertsWhitelistSignedness,
 };
 
 pub const Error = IntError;
@@ -92,10 +92,10 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.ExpectsTypeValue,
-                        => IntError.ExpectsTypeValue,
-                        info.Error.RequiresTypeInfo,
-                        => IntError.RequiresTypeInfo,
+                        info.Error.AssertsTypeValue,
+                        => IntError.AssertsTypeValue,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => IntError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -110,8 +110,8 @@ pub fn init(params: Params) Prototype {
                     @typeInfo(actual).int.signedness,
                 ) catch |err|
                     return switch (err) {
-                        filter.Error.Banishes => IntError.BanishesSignedness,
-                        filter.Error.Requires => IntError.RequiresSignedness,
+                        filter.Error.AssertsBlacklist => IntError.AssertsBlacklistSignedness,
+                        filter.Error.AssertsWhitelist => IntError.AssertsWhitelistSignedness,
                         else => @panic("unhandled error"),
                     };
 
@@ -121,8 +121,8 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    IntError.ExpectsTypeValue,
-                    IntError.RequiresTypeInfo,
+                    IntError.AssertsTypeValue,
+                    IntError.AssertsWhitelistTypeInfo,
                     => info_validator.onError.?(
                         err,
                         prototype,
@@ -137,8 +137,8 @@ pub fn init(params: Params) Prototype {
                         @typeInfo(actual).int.bits,
                     ),
 
-                    IntError.BanishesSignedness,
-                    IntError.RequiresSignedness,
+                    IntError.AssertsBlacklistSignedness,
+                    IntError.AssertsWhitelistSignedness,
                     => signedness_validator.onError.?(
                         err,
                         prototype,
@@ -153,11 +153,11 @@ pub fn init(params: Params) Prototype {
 }
 
 test IntError {
-    _ = IntError.ExpectsTypeValue catch void;
+    _ = IntError.AssertsTypeValue catch void;
     _ = IntError.AssertsMinBits catch void;
     _ = IntError.AssertsMaxBits catch void;
-    _ = IntError.BanishesSignedness catch void;
-    _ = IntError.RequiresSignedness catch void;
+    _ = IntError.AssertsBlacklistSignedness catch void;
+    _ = IntError.AssertsWhitelistSignedness catch void;
 }
 
 test Params {
@@ -213,7 +213,7 @@ test "fails type value assertion" {
     });
 
     try std.testing.expectEqual(
-        IntError.ExpectsTypeValue,
+        IntError.AssertsTypeValue,
         comptime int.eval(@as(i128, 0)),
     );
 }
@@ -239,7 +239,7 @@ test "fails int signedness blacklist assertion" {
         .signed = false,
     } });
 
-    try std.testing.expectEqual(IntError.BanishesSignedness, comptime int.eval(i128));
+    try std.testing.expectEqual(IntError.AssertsBlacklistSignedness, comptime int.eval(i128));
 }
 
 test "fails int signedness whitelist assertion" {
@@ -253,5 +253,5 @@ test "fails int signedness whitelist assertion" {
         },
     });
 
-    try std.testing.expectEqual(IntError.RequiresSignedness, comptime int.eval(i128));
+    try std.testing.expectEqual(IntError.AssertsWhitelistSignedness, comptime int.eval(i128));
 }

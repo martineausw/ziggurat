@@ -15,15 +15,15 @@ const InfoError = error{
     /// `actual` is not a type value.
     ///
     /// See also: [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// `actual` type info has active tag that belongs to blacklist.
     ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    BanishesTypeInfo,
+    AssertsBlacklistTypeInfo,
     /// `actual` type info has active tag that does not belong to whitelist.
     ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
 };
 
 pub const Error = InfoError;
@@ -80,7 +80,7 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = type_validator.eval(actual) catch |err|
                     return switch (err) {
-                        @"type".Error.ExpectsTypeValue => InfoError.ExpectsTypeValue,
+                        @"type".Error.AssertsTypeValue => InfoError.AssertsTypeValue,
                         else => @panic("unhandled error"),
                     };
 
@@ -88,8 +88,8 @@ pub fn init(params: Params) Prototype {
                     @typeInfo(actual),
                 ) catch |err|
                     return switch (err) {
-                        filter.Error.Banishes => InfoError.BanishesTypeInfo,
-                        filter.Error.Requires => InfoError.RequiresTypeInfo,
+                        filter.Error.AssertsBlacklist => InfoError.AssertsBlacklistTypeInfo,
+                        filter.Error.AssertsWhitelist => InfoError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -103,11 +103,11 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    InfoError.ExpectsTypeValue,
+                    InfoError.AssertsTypeValue,
                     => type_validator.onError.?(err, prototype, actual),
 
-                    InfoError.BanishesTypeInfo,
-                    InfoError.RequiresTypeInfo,
+                    InfoError.AssertsBlacklistTypeInfo,
+                    InfoError.AssertsWhitelistTypeInfo,
                     => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: expect: {any}, actual: {s}",
                         .{
@@ -126,9 +126,9 @@ pub fn init(params: Params) Prototype {
 }
 
 test InfoError {
-    _ = InfoError.ExpectsTypeValue catch void;
-    _ = InfoError.BanishesTypeInfo catch void;
-    _ = InfoError.RequiresTypeInfo catch void;
+    _ = InfoError.AssertsTypeValue catch void;
+    _ = InfoError.AssertsBlacklistTypeInfo catch void;
+    _ = InfoError.AssertsWhitelistTypeInfo catch void;
 }
 
 test Params {
@@ -302,37 +302,37 @@ test "fails whitelist assertions" {
     const number: Prototype = init(params);
 
     try std.testing.expectEqual(
-        Error.RequiresTypeInfo,
+        Error.AssertsWhitelistTypeInfo,
         comptime number.eval(usize),
     );
 
     try std.testing.expectEqual(
-        Error.RequiresTypeInfo,
+        Error.AssertsWhitelistTypeInfo,
         comptime number.eval(u8),
     );
 
     try std.testing.expectEqual(
-        Error.RequiresTypeInfo,
+        Error.AssertsWhitelistTypeInfo,
         comptime number.eval(i128),
     );
 
     try std.testing.expectEqual(
-        Error.RequiresTypeInfo,
+        Error.AssertsWhitelistTypeInfo,
         comptime number.eval(f16),
     );
 
     try std.testing.expectEqual(
-        Error.RequiresTypeInfo,
+        Error.AssertsWhitelistTypeInfo,
         comptime number.eval(f128),
     );
 
     try std.testing.expectEqual(
-        Error.RequiresTypeInfo,
+        Error.AssertsWhitelistTypeInfo,
         comptime number.eval(comptime_int),
     );
 
     try std.testing.expectEqual(
-        Error.RequiresTypeInfo,
+        Error.AssertsWhitelistTypeInfo,
         comptime number.eval(comptime_float),
     );
 }
@@ -348,35 +348,35 @@ test "fails blacklist assertions" {
     const number: Prototype = init(params);
 
     try std.testing.expectEqual(
-        Error.BanishesTypeInfo,
+        Error.AssertsBlacklistTypeInfo,
         comptime number.eval(usize),
     );
 
     try std.testing.expectEqual(
-        Error.BanishesTypeInfo,
+        Error.AssertsBlacklistTypeInfo,
         comptime number.eval(u8),
     );
 
     try std.testing.expectEqual(
-        Error.BanishesTypeInfo,
+        Error.AssertsBlacklistTypeInfo,
         comptime number.eval(i128),
     );
 
     try std.testing.expectEqual(
-        Error.BanishesTypeInfo,
+        Error.AssertsBlacklistTypeInfo,
         comptime number.eval(f16),
     );
     try std.testing.expectEqual(
-        Error.BanishesTypeInfo,
+        Error.AssertsBlacklistTypeInfo,
         comptime number.eval(f128),
     );
 
     try std.testing.expectEqual(
-        Error.BanishesTypeInfo,
+        Error.AssertsBlacklistTypeInfo,
         comptime number.eval(comptime_int),
     );
     try std.testing.expectEqual(
-        Error.BanishesTypeInfo,
+        Error.AssertsBlacklistTypeInfo,
         comptime number.eval(comptime_float),
     );
 }
@@ -392,37 +392,37 @@ test "fails argument assertions" {
     const number: Prototype = init(params);
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         comptime number.eval(@as(usize, 0)),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         comptime number.eval(@as(u8, 'a')),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         comptime number.eval(@as(i128, 0)),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         comptime number.eval(@as(f16, 0.0)),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         comptime number.eval(@as(f128, 0.0)),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         comptime number.eval(@as(comptime_int, 0)),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         comptime number.eval(@as(comptime_float, 0.0)),
     );
 }

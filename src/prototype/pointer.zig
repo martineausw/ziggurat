@@ -18,33 +18,33 @@ const PointerError = error{
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// *actual* type value requires array type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
     /// *actual* pointer child type info has active tag that belongs to blacklist.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    BanishesChildTypeInfo,
+    AssertsBlacklistChildTypeInfo,
     /// *actual* pointer child type info has active tag that does not belong to whitelist.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresChildTypeInfo,
+    AssertsWhitelistChildTypeInfo,
     /// *actual* pointer size has active tag that belongs to blacklist.
     ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    BanishesSize,
+    AssertsBlacklistSize,
     /// *actual* pointer size has active tag that does not belong to whitelist.
     ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresSize,
+    AssertsWhitelistSize,
     /// *actual* pointer is not const.
     ///
     /// See also: [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
@@ -143,19 +143,19 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.ExpectsTypeValue,
-                        => PointerError.ExpectsTypeValue,
-                        info.Error.RequiresTypeInfo,
-                        => PointerError.RequiresTypeInfo,
+                        info.Error.AssertsTypeValue,
+                        => PointerError.AssertsTypeValue,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => PointerError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
                 _ = child_validator.eval(@typeInfo(actual).pointer.child) catch |err|
                     return switch (err) {
-                        info.Error.BanishesTypeInfo,
-                        => PointerError.BanishesChildTypeInfo,
-                        info.Error.RequiresTypeInfo,
-                        => PointerError.RequiresChildTypeInfo,
+                        info.Error.AssertsBlacklistTypeInfo,
+                        => PointerError.AssertsBlacklistChildTypeInfo,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => PointerError.AssertsWhitelistChildTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -163,10 +163,10 @@ pub fn init(params: Params) Prototype {
                     @typeInfo(actual).pointer.size,
                 ) catch |err|
                     return switch (err) {
-                        filter.Error.Banishes,
-                        => PointerError.BanishesSize,
-                        filter.Error.Requires,
-                        => PointerError.RequiresSize,
+                        filter.Error.AssertsBlacklist,
+                        => PointerError.AssertsBlacklistSize,
+                        filter.Error.AssertsWhitelist,
+                        => PointerError.AssertsWhitelistSize,
                         else => @panic("unhandled error"),
                     };
 
@@ -213,20 +213,20 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    PointerError.ExpectsTypeValue,
-                    PointerError.RequiresTypeInfo,
+                    PointerError.AssertsTypeValue,
+                    PointerError.AssertsWhitelistTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
-                    PointerError.BanishesChildTypeInfo,
-                    PointerError.RequiresChildTypeInfo,
+                    PointerError.AssertsBlacklistChildTypeInfo,
+                    PointerError.AssertsWhitelistChildTypeInfo,
                     => child_validator.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).pointer.child,
                     ),
 
-                    PointerError.BanishesSize,
-                    PointerError.RequiresSize,
+                    PointerError.AssertsBlacklistSize,
+                    PointerError.AssertsWhitelistSize,
                     => size_validator.onError.?(
                         err,
                         prototype,
@@ -264,14 +264,14 @@ pub fn init(params: Params) Prototype {
 }
 
 test PointerError {
-    _ = PointerError.ExpectsTypeValue catch void;
-    _ = PointerError.RequiresTypeInfo catch void;
+    _ = PointerError.AssertsTypeValue catch void;
+    _ = PointerError.AssertsWhitelistTypeInfo catch void;
 
-    _ = PointerError.BanishesChildTypeInfo catch void;
-    _ = PointerError.RequiresChildTypeInfo catch void;
+    _ = PointerError.AssertsBlacklistChildTypeInfo catch void;
+    _ = PointerError.AssertsWhitelistChildTypeInfo catch void;
 
-    _ = PointerError.BanishesSize catch void;
-    _ = PointerError.RequiresSize catch void;
+    _ = PointerError.AssertsBlacklistSize catch void;
+    _ = PointerError.AssertsWhitelistSize catch void;
 
     _ = PointerError.AssertsTrueIsConst catch void;
     _ = PointerError.AssertsFalseIsConst catch void;
@@ -356,7 +356,7 @@ test "fails pointer child type info blacklist assertion" {
     });
 
     try std.testing.expectEqual(
-        PointerError.BanishesChildTypeInfo,
+        PointerError.AssertsBlacklistChildTypeInfo,
         comptime pointer.eval(*f128),
     );
 }
@@ -377,7 +377,7 @@ test "fails pointer child type info whitelist assertion" {
         .sentinel = null,
     });
     try std.testing.expectEqual(
-        PointerError.RequiresChildTypeInfo,
+        PointerError.AssertsWhitelistChildTypeInfo,
         comptime pointer.eval(*f128),
     );
 }
@@ -397,7 +397,7 @@ test "fails pointer size blacklist assertion" {
     });
 
     try std.testing.expectEqual(
-        PointerError.BanishesSize,
+        PointerError.AssertsBlacklistSize,
         comptime pointer.eval(*f128),
     );
 }
@@ -416,7 +416,7 @@ test "fails pointer size whitelist assertion" {
         .sentinel = null,
     });
     try std.testing.expectEqual(
-        PointerError.RequiresSize,
+        PointerError.AssertsWhitelistSize,
         comptime pointer.eval(*f128),
     );
 }

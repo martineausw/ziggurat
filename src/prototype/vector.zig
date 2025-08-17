@@ -14,25 +14,25 @@ const VectorError = error{
     ///
     /// See also:
     /// - [`test.prototype.int`](#test.prototype.int)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// *actual* requires array type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
     /// *actual* array child type info has active tag that belongs to blacklist.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    BanishesChildTypeInfo,
+    AssertsBlacklistChildTypeInfo,
     /// *actual* array child type info has active tag that does not belong to whitelist.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresChildTypeInfo,
+    AssertsWhitelistChildTypeInfo,
     /// *actual* array length is less than minimum.
     ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
@@ -81,19 +81,19 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.ExpectsTypeValue,
-                        => VectorError.ExpectsTypeValue,
-                        info.Error.RequiresTypeInfo,
-                        => VectorError.RequiresTypeInfo,
+                        info.Error.AssertsTypeValue,
+                        => VectorError.AssertsTypeValue,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => VectorError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
                 _ = child_validator.eval(@typeInfo(actual).vector.child) catch |err| {
                     return switch (err) {
-                        info.Error.BanishesTypeInfo,
-                        => VectorError.BanishesChildTypeInfo,
-                        info.Error.RequiresTypeInfo,
-                        => VectorError.RequiresChildTypeInfo,
+                        info.Error.AssertsBlacklistTypeInfo,
+                        => VectorError.AssertsBlacklistChildTypeInfo,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => VectorError.AssertsWhitelistChildTypeInfo,
                         else => @panic("unhandled error"),
                     };
                 };
@@ -117,12 +117,12 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    VectorError.ExpectsTypeValue,
-                    VectorError.RequiresTypeInfo,
+                    VectorError.AssertsTypeValue,
+                    VectorError.AssertsWhitelistTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
-                    VectorError.BanishesChildType,
-                    VectorError.RequiresChildType,
+                    VectorError.AssertsBlacklistChildType,
+                    VectorError.AssertsWhitelistChildType,
                     => child_validator.onError.?(
                         err,
                         prototype,
@@ -145,11 +145,11 @@ pub fn init(params: Params) Prototype {
 }
 
 test VectorError {
-    _ = VectorError.ExpectsTypeValue catch void;
-    _ = VectorError.RequiresTypeInfo catch void;
+    _ = VectorError.AssertsTypeValue catch void;
+    _ = VectorError.AssertsWhitelistTypeInfo catch void;
 
-    _ = VectorError.BanishesChildTypeInfo catch void;
-    _ = VectorError.RequiresChildTypeInfo catch void;
+    _ = VectorError.AssertsBlacklistChildTypeInfo catch void;
+    _ = VectorError.AssertsWhitelistChildTypeInfo catch void;
 
     _ = VectorError.AssertsMinLen catch void;
     _ = VectorError.AssertsMaxLen catch void;
@@ -202,7 +202,7 @@ test "fails vector child type info blacklist assertions" {
     });
 
     try std.testing.expectEqual(
-        VectorError.BanishesChildTypeInfo,
+        VectorError.AssertsBlacklistChildTypeInfo,
         comptime vector.eval(@Vector(3, f128)),
     );
 }
@@ -219,7 +219,7 @@ test "fails vector child type info whitelist assertions" {
     });
 
     try std.testing.expectEqual(
-        VectorError.RequiresChildTypeInfo,
+        VectorError.AssertsWhitelistChildTypeInfo,
         comptime vector.eval(@Vector(3, f128)),
     );
 }

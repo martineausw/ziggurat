@@ -6,7 +6,7 @@ const Prototype = @import("Prototype.zig");
 /// Error set for *type* prototype.
 const TypeError = error{
     /// *actual* value is not a type.
-    ExpectsTypeValue,
+    AssertsTypeValue,
 };
 
 pub const Error = TypeError;
@@ -16,7 +16,7 @@ pub const init: Prototype = .{
 
     .eval = struct {
         fn eval(actual: anytype) Error!bool {
-            if (@TypeOf(actual) != type) return TypeError.ExpectsTypeValue;
+            if (@TypeOf(actual) != type) return TypeError.AssertsTypeValue;
             return true;
         }
     }.eval,
@@ -37,7 +37,7 @@ pub const init: Prototype = .{
 };
 
 test TypeError {
-    _ = TypeError.ExpectsTypeValue catch void;
+    _ = TypeError.AssertsTypeValue catch void;
 }
 
 test init {
@@ -78,91 +78,91 @@ test "fails type value assertions" {
     const @"type": Prototype = init;
 
     try std.testing.expectEqual(
-        TypeError.ExpectsTypeValue,
+        TypeError.AssertsTypeValue,
         @"type".eval(@as(usize, 0)),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval(@as(u8, 'a')),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval(@as(i128, 0)),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval(@as(i8, 0)),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval(@as(f128, 0.0)),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval(@as(f16, 0.0)),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval(false),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval(@as(comptime_float, 0.0)),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval(@as(comptime_int, 0)),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval(struct {}{}),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval((union { a: bool }){ .a = false }),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval((enum { a }).a),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval((error{Coerced}).Coerced),
     );
 
-    try std.testing.expectEqual(Error.ExpectsTypeValue, @"type".eval(struct {
+    try std.testing.expectEqual(Error.AssertsTypeValue, @"type".eval(struct {
         fn foo() void {}
     }.foo));
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval(@as([]const u8, "hello")),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval(@as(?bool, null)),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval([3]i128{ 0, 1, 2 }),
     );
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         @"type".eval(@Vector(3, f128){ 0.0, 0.0, 0.0 }),
     );
 }

@@ -14,25 +14,25 @@ const OptionalError = error{
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// *actual* requires array type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
     /// *actual* array child type info has active tag that belongs to blacklist.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    BanishesChildTypeInfo,
+    AssertsBlacklistChildTypeInfo,
     /// *actual* array child type info has active tag that does not belong to whitelist.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresChildTypeInfo,
+    AssertsWhitelistChildTypeInfo,
 };
 
 pub const Error = OptionalError;
@@ -67,19 +67,19 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.ExpectsTypeValue,
-                        => OptionalError.ExpectsTypeValue,
-                        info.Error.RequiresTypeInfo,
-                        => OptionalError.RequiresTypeInfo,
+                        info.Error.AssertsTypeValue,
+                        => OptionalError.AssertsTypeValue,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => OptionalError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
                 _ = child_validator.eval(@typeInfo(actual).optional.child) catch |err|
                     return switch (err) {
-                        info.Error.BanishesTypeInfo,
-                        => OptionalError.BanishesChildTypeInfo,
-                        info.Error.RequiresTypeInfo,
-                        => OptionalError.RequiresChildTypeInfo,
+                        info.Error.AssertsBlacklistTypeInfo,
+                        => OptionalError.AssertsBlacklistChildTypeInfo,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => OptionalError.AssertsWhitelistChildTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -89,16 +89,16 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    OptionalError.ExpectsTypeValue,
-                    OptionalError.RequiresTypeInfo,
+                    OptionalError.AssertsTypeValue,
+                    OptionalError.AssertsWhitelistTypeInfo,
                     => info_validator.onError.?(
                         err,
                         prototype,
                         actual,
                     ),
 
-                    OptionalError.BanishesChildTypeInfo,
-                    OptionalError.RequiresChildTypeInfo,
+                    OptionalError.AssertsBlacklistChildTypeInfo,
+                    OptionalError.AssertsWhitelistChildTypeInfo,
                     => child_validator.onError.?(
                         err,
                         prototype,
@@ -113,10 +113,10 @@ pub fn init(params: Params) Prototype {
 }
 
 test OptionalError {
-    _ = OptionalError.ExpectsTypeValue catch void;
-    _ = OptionalError.RequiresTypeInfo catch void;
-    _ = OptionalError.BanishesChildTypeInfo catch void;
-    _ = OptionalError.RequiresChildTypeInfo catch void;
+    _ = OptionalError.AssertsTypeValue catch void;
+    _ = OptionalError.AssertsWhitelistTypeInfo catch void;
+    _ = OptionalError.AssertsBlacklistChildTypeInfo catch void;
+    _ = OptionalError.AssertsWhitelistChildTypeInfo catch void;
 }
 
 test Params {
@@ -152,7 +152,7 @@ test "fails optional child type info blacklist assertions" {
         },
     });
 
-    try std.testing.expectEqual(OptionalError.BanishesChildTypeInfo, optional.eval(?bool));
+    try std.testing.expectEqual(OptionalError.AssertsBlacklistChildTypeInfo, optional.eval(?bool));
 }
 
 test "fails optional child type info whitelist assertions" {
@@ -162,5 +162,5 @@ test "fails optional child type info whitelist assertions" {
         },
     });
 
-    try std.testing.expectEqual(OptionalError.RequiresChildTypeInfo, optional.eval(?bool));
+    try std.testing.expectEqual(OptionalError.AssertsWhitelistChildTypeInfo, optional.eval(?bool));
 }

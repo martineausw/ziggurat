@@ -15,13 +15,13 @@ const FieldError = error{
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// `actual` requires struct or union type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
     /// `actual` is missing field.
     AssertsField,
     /// `actual` has field with type info that belongs to blacklist.
@@ -29,13 +29,13 @@ const FieldError = error{
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    BanishesFieldTypeInfo,
+    AssertsBlacklistFieldTypeInfo,
     /// `actual` has field with type info that does not belong to whitelist.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresFieldTypeInfo,
+    AssertsWhitelistFieldTypeInfo,
 };
 
 pub const Error = FieldError;
@@ -78,10 +78,10 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.ExpectsTypeValue,
-                        => FieldError.ExpectsTypeValue,
-                        info.Error.RequiresTypeInfo,
-                        => FieldError.RequiresTypeInfo,
+                        info.Error.AssertsTypeValue,
+                        => FieldError.AssertsTypeValue,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => FieldError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -94,8 +94,8 @@ pub fn init(params: Params) Prototype {
                     params.name,
                 )) catch |err|
                     return switch (err) {
-                        info.Error.BanishesTypeInfo => FieldError.BanishesFieldTypeInfo,
-                        info.Error.RequiresTypeInfo => FieldError.RequiresFieldTypeInfo,
+                        info.Error.AssertsBlacklistTypeInfo => FieldError.AssertsBlacklistFieldTypeInfo,
+                        info.Error.AssertsWhitelistTypeInfo => FieldError.AssertsWhitelistFieldTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -109,8 +109,8 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    FieldError.ExpectsTypeValue,
-                    FieldError.RequiresTypeInfo,
+                    FieldError.AssertsTypeValue,
+                    FieldError.AssertsWhitelistTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
                     FieldError.AssertsField,
@@ -123,8 +123,8 @@ pub fn init(params: Params) Prototype {
                         },
                     )),
 
-                    FieldError.BanishesFieldTypeInfo,
-                    FieldError.RequiresFieldTypeInfo,
+                    FieldError.AssertsBlacklistFieldTypeInfo,
+                    FieldError.AssertsWhitelistFieldTypeInfo,
                     => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: {s}",
                         .{
@@ -142,9 +142,9 @@ pub fn init(params: Params) Prototype {
 }
 
 test FieldError {
-    _ = FieldError.ExpectsTypeValue catch void;
+    _ = FieldError.AssertsTypeValue catch void;
     _ = FieldError.AssertsField catch void;
-    _ = FieldError.BanishesFieldTypeInfo catch void;
+    _ = FieldError.AssertsBlacklistFieldTypeInfo catch void;
 }
 
 test Params {
@@ -254,7 +254,7 @@ test "fails field type info whitelist assertion on struct" {
     const has_field: Prototype = init(params);
 
     try std.testing.expectEqual(
-        FieldError.RequiresFieldTypeInfo,
+        FieldError.AssertsWhitelistFieldTypeInfo,
         comptime has_field.eval(T),
     );
 }
@@ -274,7 +274,7 @@ test "fails field type info blacklist assertion on struct" {
     const has_field: Prototype = init(params);
 
     try std.testing.expectEqual(
-        FieldError.BanishesFieldTypeInfo,
+        FieldError.AssertsBlacklistFieldTypeInfo,
         comptime has_field.eval(T),
     );
 }

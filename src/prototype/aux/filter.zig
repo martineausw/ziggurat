@@ -13,11 +13,11 @@ const FilterError = error{
     /// *actual* is a union or enum type.
     ///
     /// See also: [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// *actual* has an active tag that belongs to blacklist.
-    Banishes,
+    AssertsBlacklist,
     /// *actual* has an active tag that does not belong to whitelist.
-    Requires,
+    AssertsWhitelist,
 };
 
 pub const Error = FilterError;
@@ -51,19 +51,19 @@ pub fn Filter(comptime Params: type) type {
                     fn eval(actual: anytype) !bool {
                         _ = switch (@typeInfo(@TypeOf(actual))) {
                             inline .@"union", .@"enum" => {},
-                            else => return FilterError.ExpectsTypeValue,
+                            else => return FilterError.AssertsTypeValue,
                         };
 
                         // Checks active tag against blacklist
                         if (@field(params, @tagName(actual))) |param| {
-                            if (!param) return FilterError.Banishes;
+                            if (!param) return FilterError.AssertsBlacklist;
                             return true;
                         }
 
                         // Checks remaining fields for active whitelist
                         inline for (std.meta.fields(Params)) |field| {
                             if (@field(params, field.name)) |value| {
-                                if (value) return FilterError.Requires;
+                                if (value) return FilterError.AssertsWhitelist;
                             }
                         }
                         return true;
@@ -76,8 +76,8 @@ pub fn Filter(comptime Params: type) type {
                         actual: anytype,
                     ) void {
                         switch (err) {
-                            FilterError.ExpectsTypeValue,
-                            FilterError.RequiresTypeInfo,
+                            FilterError.AssertsTypeValue,
+                            FilterError.AssertsWhitelistTypeInfo,
                             => comptime type_validator.onError.?(
                                 err,
                                 prototype,
@@ -101,9 +101,9 @@ pub fn Filter(comptime Params: type) type {
 }
 
 test FilterError {
-    _ = FilterError.ExpectsTypeValue catch void;
-    _ = FilterError.Banishes catch void;
-    _ = FilterError.Requires catch void;
+    _ = FilterError.AssertsTypeValue catch void;
+    _ = FilterError.AssertsBlacklist catch void;
+    _ = FilterError.AssertsWhitelist catch void;
 }
 
 test Filter {
@@ -209,7 +209,7 @@ test "fails whitelist assertion on tagged union" {
     });
 
     try std.testing.expectEqual(
-        FilterError.Requires,
+        FilterError.AssertsWhitelist,
         comptime filter.eval(U{ .c = 0.0 }),
     );
 }
@@ -234,7 +234,7 @@ test "fails blacklist assertion on tagged union" {
     });
 
     try std.testing.expectEqual(
-        FilterError.Banishes,
+        FilterError.AssertsBlacklist,
         comptime filter.eval(U{ .c = 0.0 }),
     );
 }

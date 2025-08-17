@@ -12,13 +12,13 @@ const IntervalError = error{
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// *actual* requires int, float, comptime_int, or comptime_float type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
     /// *actual* value is less than minimum.
     ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
@@ -58,10 +58,10 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(@TypeOf(actual)) catch |err|
                     return switch (err) {
-                        info.Error.ExpectsTypeValue,
-                        => IntervalError.ExpectsTypeValue,
-                        info.Error.RequiresTypeInfo,
-                        => IntervalError.RequiresTypeInfo,
+                        info.Error.AssertsTypeValue,
+                        => IntervalError.AssertsTypeValue,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => IntervalError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -93,8 +93,8 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    IntervalError.ExpectsTypeValue,
-                    IntervalError.RequiresTypeInfo,
+                    IntervalError.AssertsTypeValue,
+                    IntervalError.AssertsWhitelistTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
                     else => @compileError(std.fmt.comptimePrint(
@@ -112,8 +112,8 @@ pub fn init(params: Params) Prototype {
 }
 
 test IntervalError {
-    _ = IntervalError.ExpectsTypeValue catch void;
-    _ = IntervalError.RequiresTypeInfo catch void;
+    _ = IntervalError.AssertsTypeValue catch void;
+    _ = IntervalError.AssertsWhitelistTypeInfo catch void;
     _ = IntervalError.AssertsMin catch void;
     _ = IntervalError.AssertsMax catch void;
 }

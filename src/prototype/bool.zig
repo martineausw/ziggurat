@@ -10,13 +10,13 @@ const BoolError = error{
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// *actual* requires array type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
 };
 
 pub const Error = BoolError;
@@ -36,10 +36,10 @@ pub const init: Prototype = .{
                 actual,
             ) catch |err|
                 return switch (err) {
-                    info.Error.ExpectsTypeValue,
-                    => BoolError.ExpectsTypeValue,
-                    info.Error.RequiresTypeInfo,
-                    => BoolError.RequiresTypeInfo,
+                    info.Error.AssertsTypeValue,
+                    => BoolError.AssertsTypeValue,
+                    info.Error.AssertsWhitelistTypeInfo,
+                    => BoolError.AssertsWhitelistTypeInfo,
                     else => @panic("unhandled error"),
                 };
 
@@ -53,8 +53,8 @@ pub const init: Prototype = .{
             actual: anytype,
         ) void {
             switch (err) {
-                BoolError.ExpectsTypeValue,
-                BoolError.RequiresTypeInfo,
+                BoolError.AssertsTypeValue,
+                BoolError.AssertsWhitelistTypeInfo,
                 => info_validator.onError.?(err, prototype, actual),
 
                 else => @panic("unhandled error"),
@@ -64,7 +64,7 @@ pub const init: Prototype = .{
 };
 
 test BoolError {
-    _ = BoolError.ExpectsTypeValue catch void;
+    _ = BoolError.AssertsTypeValue catch void;
 }
 
 test init {
@@ -82,5 +82,5 @@ test "passes bool assertions" {
 test "fails type value assertion" {
     const @"bool" = init;
 
-    try std.testing.expectEqual(BoolError.ExpectsTypeValue, comptime @"bool".eval(true));
+    try std.testing.expectEqual(BoolError.AssertsTypeValue, comptime @"bool".eval(true));
 }

@@ -16,25 +16,25 @@ const ArrayError = error{
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// *actual* requires array type info.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
     /// *actual* array child type info has active tag that belongs to blacklist.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    BanishesChildTypeInfo,
+    AssertsBlacklistChildTypeInfo,
     /// *actual* array child type info has active tag that does not belong to whitelist.
     ///
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresChildTypeInfo,
+    AssertsWhitelistChildTypeInfo,
     /// *actual* array length is less than minimum.
     ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
@@ -103,10 +103,10 @@ pub fn init(params: Params) Prototype {
                     actual,
                 ) catch |err|
                     return switch (err) {
-                        info.Error.ExpectsTypeValue,
-                        => ArrayError.ExpectsTypeValue,
-                        info.Error.RequiresTypeInfo,
-                        => ArrayError.RequiresTypeInfo,
+                        info.Error.AssertsTypeValue,
+                        => ArrayError.AssertsTypeValue,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => ArrayError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -114,10 +114,10 @@ pub fn init(params: Params) Prototype {
                     @typeInfo(actual).array.child,
                 ) catch |err|
                     return switch (err) {
-                        info.Error.BanishesTypeInfo,
-                        => ArrayError.BanishesChildTypeInfo,
-                        info.Error.RequiresTypeInfo,
-                        => ArrayError.RequiresChildTypeInfo,
+                        info.Error.AssertsBlacklistTypeInfo,
+                        => ArrayError.AssertsBlacklistChildTypeInfo,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => ArrayError.AssertsWhitelistChildTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -153,12 +153,12 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    ArrayError.ExpectsTypeValue,
-                    ArrayError.RequiresTypeInfo,
+                    ArrayError.AssertsTypeValue,
+                    ArrayError.AssertsWhitelistTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
-                    ArrayError.BanishesChildTypeInfo,
-                    ArrayError.RequiresChildTypeInfo,
+                    ArrayError.AssertsBlacklistChildTypeInfo,
+                    ArrayError.AssertsWhitelistChildTypeInfo,
                     => info_validator.onError.?(
                         err,
                         prototype,
@@ -189,10 +189,10 @@ pub fn init(params: Params) Prototype {
 }
 
 test ArrayError {
-    _ = ArrayError.ExpectsTypeValue catch void;
-    _ = ArrayError.RequiresTypeInfo catch void;
-    _ = ArrayError.BanishesChildTypeInfo catch void;
-    _ = ArrayError.RequiresChildTypeInfo catch void;
+    _ = ArrayError.AssertsTypeValue catch void;
+    _ = ArrayError.AssertsWhitelistTypeInfo catch void;
+    _ = ArrayError.AssertsBlacklistChildTypeInfo catch void;
+    _ = ArrayError.AssertsWhitelistChildTypeInfo catch void;
     _ = ArrayError.AssertsMinLen catch void;
     _ = ArrayError.AssertsMaxLen catch void;
     _ = ArrayError.AssertsNotNullSentinel catch void;
@@ -256,7 +256,7 @@ test "fails type value assertion" {
     );
 
     try std.testing.expectEqual(
-        ArrayError.ExpectsTypeValue,
+        ArrayError.AssertsTypeValue,
         comptime array.eval([3]usize{ 0, 1, 2 }),
     );
 }
@@ -276,7 +276,7 @@ test "fails array child type info whitelist assertions" {
     );
 
     try std.testing.expectEqual(
-        ArrayError.RequiresChildTypeInfo,
+        ArrayError.AssertsWhitelistChildTypeInfo,
         comptime array.eval([3]f128),
     );
 }
@@ -296,7 +296,7 @@ test "fails array child type info blacklist assertions" {
     );
 
     try std.testing.expectEqual(
-        ArrayError.BanishesChildTypeInfo,
+        ArrayError.AssertsBlacklistChildTypeInfo,
         comptime array.eval([3]usize),
     );
 }

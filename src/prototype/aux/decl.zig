@@ -16,9 +16,9 @@ const DeclError = error{
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// *actual* requires struct, enum, or union type info.
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
     /// *actual* is missing declaration.
     AssertsDecl,
 };
@@ -53,10 +53,10 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) DeclError!bool {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.ExpectsTypeValue,
-                        => DeclError.ExpectsTypeValue,
-                        info.Error.RequiresTypeInfo,
-                        => DeclError.RequiresTypeInfo,
+                        info.Error.AssertsTypeValue,
+                        => DeclError.AssertsTypeValue,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => DeclError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -74,8 +74,8 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    DeclError.ExpectsTypeValue,
-                    DeclError.RequiresTypeInfo,
+                    DeclError.AssertsTypeValue,
+                    DeclError.AssertsWhitelistTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
                     DeclError.AssertsDecl,
@@ -96,7 +96,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test DeclError {
-    _ = DeclError.ExpectsTypeValue catch void;
+    _ = DeclError.AssertsTypeValue catch void;
     _ = DeclError.AssertsDecl catch void;
 }
 
@@ -238,11 +238,11 @@ test "fails argument type info assertion" {
     const has_decl: Prototype = init(params);
 
     try std.testing.expectEqual(
-        Error.RequiresTypeInfo,
+        Error.AssertsWhitelistTypeInfo,
         comptime has_decl.eval(bool),
     );
 
-    // comptime has_decl.onError.?(Error.RequiresTypeInfo, has_decl, bool);
+    // comptime has_decl.onError.?(Error.AssertsWhitelistTypeInfo, has_decl, bool);
 }
 
 test "fails argument value assertion" {
@@ -253,9 +253,9 @@ test "fails argument value assertion" {
     const has_decl: Prototype = init(params);
 
     try std.testing.expectEqual(
-        Error.ExpectsTypeValue,
+        Error.AssertsTypeValue,
         comptime has_decl.eval(false),
     );
 
-    // comptime has_decl.onError.?(Error.RequiresTypeInfo, has_decl, bool);
+    // comptime has_decl.onError.?(Error.AssertsWhitelistTypeInfo, has_decl, bool);
 }

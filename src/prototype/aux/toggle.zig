@@ -11,7 +11,7 @@ const ToggleError = error{
     /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresTypeInfo,
+    AssertsWhitelistTypeInfo,
     /// *actual* is false.
     AssertsTrue,
     /// *actual* is true.
@@ -37,8 +37,8 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = info_validator.eval(@TypeOf(actual)) catch |err|
                     return switch (err) {
-                        info.Error.RequiresTypeInfo,
-                        => ToggleError.RequiresTypeInfo,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => ToggleError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -64,8 +64,8 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    ToggleError.ExpectsTypeValue,
-                    ToggleError.RequiresTypeInfo,
+                    ToggleError.AssertsTypeValue,
+                    ToggleError.AssertsWhitelistTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
                     else => @compileError(
@@ -82,7 +82,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test ToggleError {
-    _ = ToggleError.RequiresTypeInfo catch void;
+    _ = ToggleError.AssertsWhitelistTypeInfo catch void;
     _ = ToggleError.AssertsTrue catch void;
     _ = ToggleError.AssertsFalse catch void;
 }

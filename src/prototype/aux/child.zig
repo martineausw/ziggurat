@@ -17,13 +17,13 @@ const ChildError = error{
     /// See also: 
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    ExpectsTypeValue,
+    AssertsTypeValue,
     /// *actual* requires array, pointer, vector, or optional type info.
     /// 
     /// See also: 
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    RequiresTypeInfo
+    AssertsWhitelistTypeInfo
 };
 
 pub const Error = ChildError;
@@ -57,10 +57,10 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime info_validator.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.ExpectsTypeValue,
-                        => ChildError.ExpectsTypeValue,
-                        info.Error.RequiresTypeInfo,
-                        => ChildError.RequiresTypeInfo,
+                        info.Error.AssertsTypeValue,
+                        => ChildError.AssertsTypeValue,
+                        info.Error.AssertsWhitelistTypeInfo,
+                        => ChildError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -76,7 +76,7 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    ChildError.ExpectsTypeValue,
+                    ChildError.AssertsTypeValue,
                     => info_validator.onError.?(err, prototype, actual),
 
                     else => @compileError(
@@ -93,7 +93,7 @@ pub fn init(params: Params) Prototype {
 }
 
 test ChildError {
-    _ = ChildError.ExpectsTypeValue catch void;
+    _ = ChildError.AssertsTypeValue catch void;
 }
 
 test Params {
