@@ -7,8 +7,8 @@ const info = @import("../aux/info.zig");
 /// Error set for *toggle* prototype.
 const ToggleError = error{
     /// *actual* requires bool type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
@@ -21,7 +21,7 @@ const ToggleError = error{
 pub const Error = ToggleError;
 
 /// Type value assertion for *toggle* prototype evaluation argument.
-/// 
+///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .bool = true,
@@ -39,7 +39,7 @@ pub fn init(params: Params) Prototype {
                     return switch (err) {
                         info.Error.RequiresTypeInfo,
                         => ToggleError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 if (params) |param| {

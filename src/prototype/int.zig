@@ -1,5 +1,5 @@
 //! Evaluates an *integer* type value.
-//! 
+//!
 //! See also: [`std.builtin.Type.Int`](#std.builtin.Type.Int)
 const std = @import("std");
 const testing = std.testing;
@@ -12,31 +12,31 @@ const filter = @import("aux/filter.zig");
 /// Error set for *int* prototype.
 const IntError = error{
     /// *actual* is not a type value.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
     /// *actual* requires float type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
     /// *actual* int bits value is less than minimum.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMinBits,
     /// *actual* int bits value is greater than maximum.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMaxBits,
     /// *actual* int signedness has active tag that belongs to blacklist.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesSignedness,
     /// *actual* int signedness has active tag that does not belong to whitelist.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresSignedness,
 };
@@ -44,14 +44,14 @@ const IntError = error{
 pub const Error = IntError;
 
 /// Type value assertion for *int* prototype evaluation argument.
-/// 
+///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .int = true,
 });
 
 /// Assertion parameters for *signedness* filter prototype.
-/// 
+///
 /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
 const SignednessParams = struct {
     signed: ?bool = null,
@@ -59,24 +59,24 @@ const SignednessParams = struct {
 };
 
 /// *Signedness* prototype.
-/// 
-/// See also: 
+///
+/// See also:
 /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
 const Signedness = filter.Filter(SignednessParams);
 
 /// Assertion parameters for *int* prototype.
-/// 
+///
 /// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
 pub const Params = struct {
     /// Asserts int bits interval.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
     /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     bits: interval.Params = .{},
     /// Asserts signedness.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     signedness: SignednessParams = .{},
@@ -96,28 +96,23 @@ pub fn init(params: Params) Prototype {
                         => IntError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => IntError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
-                const actual_info = switch (@typeInfo(actual)) {
-                    .int => |int_info| int_info,
-                    else => unreachable,
-                };
-
-                _ = bits_validator.eval(actual_info.bits) catch |err|
+                _ = bits_validator.eval(@typeInfo(actual).int.bits) catch |err|
                     return switch (err) {
                         interval.Error.AssertsMin => IntError.AssertsMinBits,
                         interval.Error.AssertsMax => IntError.AssertsMaxBits,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 _ = comptime signedness_validator.eval(
-                    actual_info.signedness,
+                    @typeInfo(actual).int.signedness,
                 ) catch |err|
                     return switch (err) {
                         filter.Error.Banishes => IntError.BanishesSignedness,
                         filter.Error.Requires => IntError.RequiresSignedness,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 return true;
@@ -150,7 +145,7 @@ pub fn init(params: Params) Prototype {
                         @typeInfo(actual).int.signedness,
                     ),
 
-                    else => unreachable,
+                    else => @panic("unhandled error"),
                 }
             }
         }.onError,

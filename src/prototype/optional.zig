@@ -1,5 +1,5 @@
 //! Evaluates an *optional* type value.
-//! 
+//!
 //! See also: `std.builtin.Type.Optional`
 const std = @import("std");
 const testing = std.testing;
@@ -10,26 +10,26 @@ const info = @import("aux/info.zig");
 /// Error set for optional.
 const OptionalError = error{
     /// *actual* is a type value.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
     /// *actual* requires array type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
     /// *actual* array child type info has active tag that belongs to blacklist.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesChildTypeInfo,
     /// *actual* array child type info has active tag that does not belong to whitelist.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresChildTypeInfo,
@@ -38,23 +38,23 @@ const OptionalError = error{
 pub const Error = OptionalError;
 
 /// Type value assertion for *optional* prototype evaluation argument.
-/// 
+///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .optional = true,
 });
 
 /// Assertion parameters for *optional* prototype.
-/// 
+///
 /// See also: `std.builtin.Type.Optional`
 pub const Params = struct {
     /// Asserts optional child type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// `std.builtin.Type.Optional`
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// `ziggurat.prototype.aux.info.Params`
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)   
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     child: info.Params = .{},
 };
 
@@ -71,21 +71,16 @@ pub fn init(params: Params) Prototype {
                         => OptionalError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => OptionalError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
-                const actual_info = switch (@typeInfo(actual)) {
-                    .optional => |optional_info| optional_info,
-                    else => unreachable,
-                };
-
-                _ = child_validator.eval(actual_info.child) catch |err|
+                _ = child_validator.eval(@typeInfo(actual).optional.child) catch |err|
                     return switch (err) {
                         info.Error.BanishesTypeInfo,
                         => OptionalError.BanishesChildTypeInfo,
                         info.Error.RequiresTypeInfo,
                         => OptionalError.RequiresChildTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 return true;
@@ -110,7 +105,7 @@ pub fn init(params: Params) Prototype {
                         @typeInfo(actual).optional.child,
                     ),
 
-                    else => unreachable,
+                    else => @panic("unhandled error"),
                 }
             }
         }.onError,

@@ -1,6 +1,6 @@
 //! Evaluates a *type* value with type info containing *fields*.
-//! 
-//! See also: 
+//!
+//! See also:
 //! - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
 //! - [`std.builtin.Type.Union`](#std.builtin.Type.Union)
 const std = @import("std");
@@ -11,28 +11,28 @@ const info = @import("info.zig");
 /// Error set for *field* prototype.
 const FieldError = error{
     /// `actual` is not a type value.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
     /// `actual` requires struct or union type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
     /// `actual` is missing field.
     AssertsField,
     /// `actual` has field with type info that belongs to blacklist.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesFieldTypeInfo,
     /// `actual` has field with type info that does not belong to whitelist.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresFieldTypeInfo,
@@ -41,8 +41,8 @@ const FieldError = error{
 pub const Error = FieldError;
 
 /// Type info assertions for *field* prototype evaluation argument.
-/// 
-/// See also: 
+///
+/// See also:
 /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 /// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
 /// `std.builtin.Type.Union`
@@ -53,19 +53,19 @@ pub const info_validator = info.init(.{
 
 /// Parameters used for prototype evaluation.
 ///
-/// See also: 
+/// See also:
 /// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
 /// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)
 pub const Params = struct {
     /// Asserts struct field.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
     /// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)
     name: [:0]const u8,
     /// Asserts struct field type.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
     /// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)e
     type: info.Params,
@@ -82,7 +82,7 @@ pub fn init(params: Params) Prototype {
                         => FieldError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => FieldError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 if (!@hasField(actual, params.name)) {
@@ -96,7 +96,7 @@ pub fn init(params: Params) Prototype {
                     return switch (err) {
                         info.Error.BanishesTypeInfo => FieldError.BanishesFieldTypeInfo,
                         info.Error.RequiresTypeInfo => FieldError.RequiresFieldTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 return true;
@@ -134,7 +134,7 @@ pub fn init(params: Params) Prototype {
                         },
                     )),
 
-                    else => unreachable,
+                    else => @panic("unhandled error"),
                 }
             }
         }.onError,

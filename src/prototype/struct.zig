@@ -1,5 +1,5 @@
 //! Evaluatesa a *struct* type value.
-//! 
+//!
 //! See also: [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
 const std = @import("std");
 const testing = std.testing;
@@ -14,47 +14,47 @@ const toggle = @import("aux/toggle.zig");
 /// Error set for array.
 const StructError = error{
     /// *actual* value is a type.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
     /// *actual* type value requires array type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
     /// *actual* struct layout has active tag that belongs to blacklist.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesLayout,
     /// *actual* struct layout has active tag that does not belong to whitelist.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresLayout,
     /// *actual* struct is missing field.
-    /// 
+    ///
     /// See also: `ziggurat.prototype.aux.field`
     AssertsStructField,
     /// *actual* struct field type info has active tag that does not belong to whitelist.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresStructFieldTypeInfo,
     /// *actual* struct field type info has active tag that belongs to blacklist.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesStructFieldTypeInfo,
     /// *actual* struct is missing declaration.
-    /// 
+    ///
     /// See also: `ziggurat.prototype.aux.decl`
     AssertsDecl,
     /// *actual* struct is not a tuple.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     AssertsTrueIsTuple,
     /// *actual* struct is a tuple.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     AssertsFalseIsTuple,
 };
@@ -62,15 +62,15 @@ const StructError = error{
 pub const Error = StructError;
 
 /// Type value assertion for *struct* prototype evaluation argument.
-/// 
+///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .@"struct" = true,
 });
 
 /// Assertion parameters for *Layout* filter prototype.
-/// 
-/// See also: 
+///
+/// See also:
 /// `std.builtin.Type.Layout`
 /// `LayoutParams`
 /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
@@ -81,38 +81,38 @@ const LayoutParams = struct {
 };
 
 /// *Layout* filter prototype.
-/// 
-/// See also: 
+///
+/// See also:
 /// `LayoutParams`
 /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
 const Layout = filter.Filter(LayoutParams);
 
 /// Assertion parameters for *struct* prototype.
-/// 
+///
 /// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
 pub const Params = struct {
     /// Asserts struct layout.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// `std.builtin.Type.Layout`
     /// `Layout`
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     layout: LayoutParams = .{},
     /// Asserts struct fields.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
     /// - [`ziggurat.prototype.aux.field`](#root.prototype.aux.field)
     fields: []const field.Params = &.{},
     /// Asserts struct declarations.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Declaration`](#std.builtin.Type.Declaration)
     /// - [`ziggurat.prototype.aux.decl`](#root.prototype.aux.decl)
     decls: []const decl.Params = &.{},
     /// Asserts struct tuple type.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
     /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     is_tuple: ?bool = null,
@@ -131,7 +131,7 @@ pub fn init(params: Params) Prototype {
                         => StructError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => StructError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 _ = comptime layout_validator.eval(@typeInfo(actual).@"struct".layout) catch |err|
@@ -140,7 +140,7 @@ pub fn init(params: Params) Prototype {
                         => StructError.BanishesLayout,
                         filter.Error.Requires,
                         => StructError.RequiresLayout,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 inline for (params.fields) |param_field| {
@@ -153,7 +153,7 @@ pub fn init(params: Params) Prototype {
                             => StructError.BanishesStructFieldTypeInfo,
                             field.Error.RequiresFieldTypeInfo,
                             => StructError.RequiresStructFieldTypeInfo,
-                            else => unreachable,
+                            else => @panic("unhandled error"),
                         };
                 }
 
@@ -163,7 +163,7 @@ pub fn init(params: Params) Prototype {
                         return switch (err) {
                             decl.Error.AssertsDecl,
                             => StructError.AssertsDecl,
-                            else => unreachable,
+                            else => @panic("unhandled error"),
                         };
                 }
 
@@ -173,7 +173,7 @@ pub fn init(params: Params) Prototype {
                         => StructError.AssertsTrueIsTuple,
                         toggle.Error.AssertsFalse,
                         => StructError.AssertsFalseIsTuple,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 return true;
@@ -234,7 +234,7 @@ pub fn init(params: Params) Prototype {
                     Error.UnexpectedType,
                     => info_validator.onError.?(err, prototype, actual),
 
-                    else => unreachable,
+                    else => @panic("unhandled error"),
                 }
             }
         }.onError,

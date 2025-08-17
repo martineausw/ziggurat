@@ -6,14 +6,14 @@ const info = @import("aux/info.zig");
 
 const BoolError = error{
     /// *actual* is a type value.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
     /// *actual* requires array type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
@@ -22,7 +22,7 @@ const BoolError = error{
 pub const Error = BoolError;
 
 /// Type value assertion for *bool* prototype evaluation argument.
-/// 
+///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .bool = true,
@@ -40,7 +40,7 @@ pub const init: Prototype = .{
                     => BoolError.ExpectsTypeValue,
                     info.Error.RequiresTypeInfo,
                     => BoolError.RequiresTypeInfo,
-                    else => unreachable,
+                    else => @panic("unhandled error"),
                 };
 
             return true;
@@ -57,7 +57,7 @@ pub const init: Prototype = .{
                 BoolError.RequiresTypeInfo,
                 => info_validator.onError.?(err, prototype, actual),
 
-                else => unreachable,
+                else => @panic("unhandled error"),
             }
         }
     }.onError,

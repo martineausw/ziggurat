@@ -1,5 +1,5 @@
 //! Evaluates an *array* type value.
-//! 
+//!
 //! See also: [`std.builtin.Type.Array`](#std.builtin.Type.Array)
 const std = @import("std");
 const testing = std.testing;
@@ -12,43 +12,43 @@ const exists = @import("aux/exists.zig");
 /// Error set for array.
 const ArrayError = error{
     /// *actual* is a type value.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
     /// *actual* requires array type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
     /// *actual* array child type info has active tag that belongs to blacklist.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesChildTypeInfo,
     /// *actual* array child type info has active tag that does not belong to whitelist.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresChildTypeInfo,
-    /// *actual* array length is less than minimum. 
-    /// 
+    /// *actual* array length is less than minimum.
+    ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMinLen,
-    /// *actual* array length is greater than maximum. 
-    /// 
+    /// *actual* array length is greater than maximum.
+    ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMaxLen,
     /// *actual* sentinel is null.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     AssertsNotNullSentinel,
     /// *actual* sentinel is not null.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     AssertsNullSentinel,
 };
@@ -57,7 +57,7 @@ const ArrayError = error{
 pub const Error = ArrayError;
 
 /// Type value assertion for *array* prototype evaluation argument.
-/// 
+///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .array = true,
@@ -68,28 +68,27 @@ pub const info_validator = info.init(.{
 /// See also: [`std.builtin.Type.Array`](#std.builtin.Type.Array).
 pub const Params = struct {
     /// Asserts array child type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)    
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     child: info.Params = .{},
 
     /// Asserts array length interval.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
     /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     len: interval.Params = .{},
 
     /// Asserts sentinel existence.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
     /// - [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     sentinel: exists.Params = null,
 };
-
 
 pub fn init(params: Params) Prototype {
     const child_validator = info.init(params.child);
@@ -108,7 +107,7 @@ pub fn init(params: Params) Prototype {
                         => ArrayError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => ArrayError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 _ = comptime child_validator.eval(
@@ -119,7 +118,7 @@ pub fn init(params: Params) Prototype {
                         => ArrayError.BanishesChildTypeInfo,
                         info.Error.RequiresTypeInfo,
                         => ArrayError.RequiresChildTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 _ = len_validator.eval(
@@ -130,7 +129,7 @@ pub fn init(params: Params) Prototype {
                         => ArrayError.AssertsMinLen,
                         interval.Error.AssertsMax,
                         => ArrayError.AssertsMaxLen,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 _ = sentinel_validator.eval(
@@ -141,7 +140,7 @@ pub fn init(params: Params) Prototype {
                         => ArrayError.AssertsNotNullSentinel,
                         exists.Error.AssertsNull,
                         => ArrayError.AssertsNullSentinel,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 return true;
@@ -182,7 +181,7 @@ pub fn init(params: Params) Prototype {
                         @typeInfo(actual).array.sentinel(),
                     ),
 
-                    else => unreachable,
+                    else => @panic("unhandled error"),
                 }
             }
         }.onError,

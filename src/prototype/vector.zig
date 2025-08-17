@@ -1,5 +1,5 @@
 //! Evaluates a *vector* type value.
-//! 
+//!
 //! See also: [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
 const std = @import("std");
 const testing = std.testing;
@@ -11,34 +11,34 @@ const info = @import("aux/info.zig");
 /// Error set for *vector* prototype.
 const VectorError = error{
     /// *actual* is a type value.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`test.prototype.int`](#test.prototype.int)
     ExpectsTypeValue,
     /// *actual* requires array type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
     /// *actual* array child type info has active tag that belongs to blacklist.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesChildTypeInfo,
     /// *actual* array child type info has active tag that does not belong to whitelist.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresChildTypeInfo,
-    /// *actual* array length is less than minimum. 
-    /// 
+    /// *actual* array length is less than minimum.
+    ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMinLen,
-    /// *actual* array length is greater than maximum. 
-    /// 
+    /// *actual* array length is greater than maximum.
+    ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMaxLen,
 };
@@ -46,26 +46,26 @@ const VectorError = error{
 pub const Error = VectorError;
 
 /// Type value assertion for *vector* prototype evaluation argument.
-/// 
+///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .vector = true,
 });
 
 /// Assertion parameters for *vector* prototype.
-/// 
+///
 /// - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
 pub const Params = struct {
     /// Asserts vector child type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     child: info.Params = .{},
     /// Asserts vector length interval.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
     /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     len: interval.Params = .{},
@@ -85,31 +85,26 @@ pub fn init(params: Params) Prototype {
                         => VectorError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => VectorError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
-                const actual_info = switch (@typeInfo(actual)) {
-                    .vector => |vector_info| vector_info,
-                    else => unreachable,
-                };
-
-                _ = child_validator.eval(actual_info.child) catch |err| {
+                _ = child_validator.eval(@typeInfo(actual).vector.child) catch |err| {
                     return switch (err) {
                         info.Error.BanishesTypeInfo,
                         => VectorError.BanishesChildTypeInfo,
                         info.Error.RequiresTypeInfo,
                         => VectorError.RequiresChildTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
                 };
 
-                _ = len_validator.eval(actual_info.len) catch |err|
+                _ = len_validator.eval(@typeInfo(actual).vector.len) catch |err|
                     return switch (err) {
                         interval.Error.AssertsMin,
                         => VectorError.AssertsMinLen,
                         interval.Error.AssertsMax,
                         => VectorError.AssertsMaxLen,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 return true;
@@ -142,7 +137,7 @@ pub fn init(params: Params) Prototype {
                         @typeInfo(actual).vector.len,
                     ),
 
-                    else => unreachable,
+                    else => @panic("unhandled error"),
                 }
             }
         }.onError,

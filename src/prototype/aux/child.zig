@@ -61,7 +61,7 @@ pub fn init(params: Params) Prototype {
                         => ChildError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => ChildError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 _ = comptime try params.eval(std.meta.Child(actual));

@@ -1,7 +1,7 @@
-//! Evaluates the *active tag* of a *union* value or an *enum* value against a 
+//! Evaluates the *active tag* of a *union* value or an *enum* value against a
 //! *blacklist* and/or a *whitelist* of tags.
-//! 
-//! See also: 
+//!
+//! See also:
 //! - [`std.builtin.Type.Union`](#std.builtin.Type.Union)
 //! - [`std.builtin.Type.Enum`](#std.builtin.Type.Enum)
 const std = @import("std");
@@ -11,7 +11,7 @@ const @"type" = @import("../type.zig");
 /// Error set for filter.
 const FilterError = error{
     /// *actual* is a union or enum type.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
     /// *actual* has an active tag that belongs to blacklist.
@@ -25,11 +25,22 @@ pub const Error = FilterError;
 pub const type_validator = @"type".init;
 
 /// Filter type with given Params consisting of `?bool` fields named after
-/// its corresponding union or enum definitions.
+/// its derived union or enum fields.
+///
+/// - *null* is no assertion.
+/// - *true* asserts tag belongs to the whitelist.
+/// - *false* asserts tag belongs to the blacklist.
 pub fn Filter(comptime Params: type) type {
     switch (@typeInfo(Params)) {
-        .@"struct" => {},
-        else => unreachable,
+        .@"struct" => |info| inline for (info.fields) |field| {
+            switch (@typeInfo(field.type)) {
+                .optional => |field_info| if (field_info.child != bool) {
+                    @panic("field must be a ?bool type");
+                },
+                else => @panic("field must be a ?bool type"),
+            }
+        },
+        else => @panic("param type must be a struct type"),
     }
 
     return struct {

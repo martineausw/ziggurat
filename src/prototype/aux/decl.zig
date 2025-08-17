@@ -1,6 +1,6 @@
 //! Evaluates a *type* value with type info containing *declarations*.
-//! 
-//! See also: 
+//!
+//! See also:
 //! - [`std.builtin.Type.Enum`](#std.builtin.Type.Enum)
 //! - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
 //! - [`std.builtin.Type.Union`](#std.builtin.Type.Union)
@@ -12,8 +12,8 @@ const info = @import("info.zig");
 /// Error set for *decl* prototype.
 const DeclError = error{
     /// *actual* is not a type value.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
@@ -26,7 +26,7 @@ const DeclError = error{
 pub const Error = DeclError;
 
 /// Type info assertions for *decl* prototype evaluation argument.
-/// 
+///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .@"struct" = true,
@@ -36,7 +36,7 @@ pub const info_validator = info.init(.{
 
 /// Assertion parameters for *decl* prototype.
 ///
-/// See also: 
+/// See also:
 /// - [`std.builtin.Type.Declaration`](#std.builtin.Type.Declaration).
 /// - [`std.builtin.Type.Enum`](#std.builtin.Type.Enum)
 /// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
@@ -57,7 +57,7 @@ pub fn init(params: Params) Prototype {
                         => DeclError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => DeclError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 if (!@hasDecl(actual, params.name)) {
@@ -88,7 +88,7 @@ pub fn init(params: Params) Prototype {
                         },
                     )),
 
-                    else => unreachable,
+                    else => @panic("unhandled error"),
                 }
             }
         }.onError,

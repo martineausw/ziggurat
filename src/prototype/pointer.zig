@@ -1,5 +1,5 @@
 //! Evaluates a *pointer* type value.
-//! 
+//!
 //! See also: [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
 const std = @import("std");
 const testing = std.testing;
@@ -14,59 +14,59 @@ const exists = @import("aux/exists.zig");
 /// Error set for `prototype.pointer`.
 const PointerError = error{
     /// *actual* is a type value.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
     /// *actual* type value requires array type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
     /// *actual* pointer child type info has active tag that belongs to blacklist.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesChildTypeInfo,
     /// *actual* pointer child type info has active tag that does not belong to whitelist.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresChildTypeInfo,
     /// *actual* pointer size has active tag that belongs to blacklist.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesSize,
     /// *actual* pointer size has active tag that does not belong to whitelist.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresSize,
     /// *actual* pointer is not const.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     AssertsTrueIsConst,
     /// *actual* pointer is const.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     AssertsFalseIsConst,
     /// *actual* pointer is not volatile.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     AssertsTrueIsVolatile,
     /// *actual* pointer is volatile.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     AssertsFalseIsVolatile,
     /// *actual* pointer sentinel is null.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     AssertsNotNullSentinel,
     /// *actual* pointer sentinel is not null.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     AssertsNullSentinel,
 };
@@ -74,7 +74,7 @@ const PointerError = error{
 pub const Error = PointerError;
 
 /// Type value assertion for *optional* prototype evaluation argument.
-/// 
+///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .pointer = true,
@@ -89,8 +89,8 @@ const SizeParams = struct {
 };
 
 /// *Size* prototype.
-/// 
-/// See also: 
+///
+/// See also:
 /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
 const Size = filter.Filter(SizeParams);
 
@@ -99,38 +99,37 @@ const Size = filter.Filter(SizeParams);
 /// See also: [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer).
 pub const Params = struct {
     /// Asserts pointer child type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)    
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     child: info.Params = .{},
     /// Asserts pointer size.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)  
+    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     size: SizeParams = .{},
     /// Asserts pointer const qualifier presence.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
-    /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)   
+    /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     is_const: ?bool = null,
     /// Asserts pointer volatile qualifier presence.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
-    /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)   
+    /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     is_volatile: ?bool = null,
     /// Asserts sentinel existence.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
-    /// - [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)   
+    /// - [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     sentinel: ?bool = null,
 };
-
 
 pub fn init(params: Params) Prototype {
     const child_validator = info.init(params.child);
@@ -148,7 +147,7 @@ pub fn init(params: Params) Prototype {
                         => PointerError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => PointerError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 _ = child_validator.eval(@typeInfo(actual).pointer.child) catch |err|
@@ -157,7 +156,7 @@ pub fn init(params: Params) Prototype {
                         => PointerError.BanishesChildTypeInfo,
                         info.Error.RequiresTypeInfo,
                         => PointerError.RequiresChildTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 _ = comptime size_validator.eval(
@@ -168,7 +167,7 @@ pub fn init(params: Params) Prototype {
                         => PointerError.BanishesSize,
                         filter.Error.Requires,
                         => PointerError.RequiresSize,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 _ = is_const_validator.eval(
@@ -179,7 +178,7 @@ pub fn init(params: Params) Prototype {
                         => PointerError.AssertsTrueIsConst,
                         toggle.Error.AssertsFalse,
                         => PointerError.AssertsFalseIsConst,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 _ = is_volatile_validator.eval(
@@ -190,7 +189,7 @@ pub fn init(params: Params) Prototype {
                         => PointerError.AssertsTrueIsVolatile,
                         toggle.Error.AssertsFalse,
                         => PointerError.AssertsFalseIsVolatile,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 _ = sentinel_validator.eval(
@@ -201,7 +200,7 @@ pub fn init(params: Params) Prototype {
                         => PointerError.AssertsNotNullSentinel,
                         exists.Error.AssertsNull,
                         => PointerError.AssertsNullSentinel,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 return true;
@@ -257,7 +256,7 @@ pub fn init(params: Params) Prototype {
                         prototype,
                         @typeInfo(actual).pointer.sentinel(),
                     ),
-                    else => unreachable,
+                    else => @panic("unhandled error"),
                 }
             }
         }.onError,

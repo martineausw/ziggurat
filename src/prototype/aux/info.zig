@@ -1,6 +1,6 @@
-//! Evaluates the *active tag* of a type value's type info against a 
+//! Evaluates the *active tag* of a type value's type info against a
 //! *blacklist* and/or *whitelist*.
-//! 
+//!
 //! See also: [`std.builtin.Type`](#std.builtin.Type)
 const std = @import("std");
 const testing = std.testing;
@@ -13,35 +13,34 @@ const @"type" = @import("../type.zig");
 /// Error set for *info* prototype.
 const InfoError = error{
     /// `actual` is not a type value.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
     /// `actual` type info has active tag that belongs to blacklist.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     BanishesTypeInfo,
     /// `actual` type info has active tag that does not belong to whitelist.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
-
 };
 
 pub const Error = InfoError;
 
 /// Type value assertion for *info* prototype evaluation argument.
-/// 
+///
 /// See also: [`ziggurat.prototype.type`](#root.prototype.type).
 const type_validator = @"type".init;
 
 /// Assertion parameters for *info* filter prototype.
-/// 
+///
 /// For any field:
 /// - *null*, no assertion.
 /// - *true* asserts active tag belongs to subset of `true` members.
 /// - *false* asserts active tag does not belong to subset of `false` members.
-/// 
-/// See also: 
+///
+/// See also:
 /// - [`std.builtin.Type`](#std.builtin.Type).
 /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter).
 pub const Params = struct {
@@ -82,7 +81,7 @@ pub fn init(params: Params) Prototype {
                 _ = type_validator.eval(actual) catch |err|
                     return switch (err) {
                         @"type".Error.ExpectsTypeValue => InfoError.ExpectsTypeValue,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 _ = filter_validator.eval(
@@ -91,7 +90,7 @@ pub fn init(params: Params) Prototype {
                     return switch (err) {
                         filter.Error.Banishes => InfoError.BanishesTypeInfo,
                         filter.Error.Requires => InfoError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 return true;
@@ -119,7 +118,7 @@ pub fn init(params: Params) Prototype {
                         },
                     )),
 
-                    else => unreachable,
+                    else => @panic("unhandled error"),
                 }
             }
         }.onError,

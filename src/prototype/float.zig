@@ -1,5 +1,5 @@
 //! Evaluates a *float* type value.
-//! 
+//!
 //! See also: [/// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)](#std.builtin.Type.Float)
 const std = @import("std");
 const testing = std.testing;
@@ -12,23 +12,23 @@ const info = @import("aux/info.zig");
 /// Error set for *float* prototype.
 const FloatError = error{
     /// *actual* is not a type value.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
     /// *actual* requires float type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
     /// *actual* float bits value is less than minimum.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMinBits,
     /// *actual* float bits value is greater than maximum.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMaxBits,
 };
@@ -36,19 +36,19 @@ const FloatError = error{
 pub const Error = FloatError;
 
 /// Type value assertion for *float* prototype evaluation argument.
-/// 
+///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .float = true,
 });
 
 /// Assertion parameters for *float* prototype.
-/// 
+///
 /// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)](#std.builtin.Type.Float)
 pub const Params = struct {
     /// Asserts float bits interval.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)](#std.builtin.Type.Float)
     /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     bits: interval.Params = .{},
@@ -67,7 +67,7 @@ pub fn init(params: Params) Prototype {
                         => FloatError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => FloatError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 _ = bits_validator.eval(@typeInfo(actual).float.bits) catch |err|
@@ -76,7 +76,7 @@ pub fn init(params: Params) Prototype {
                         => FloatError.AssertsMinBits,
                         interval.Error.AssertsMax,
                         => FloatError.AssertsMaxBits,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 return true;
@@ -100,7 +100,7 @@ pub fn init(params: Params) Prototype {
                         @typeInfo(actual).float.bits,
                     ),
 
-                    else => unreachable,
+                    else => @panic("unhandled error"),
                 }
             }
         }.onError,

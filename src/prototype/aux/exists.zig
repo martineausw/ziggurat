@@ -7,8 +7,8 @@ const info = @import("info.zig");
 /// Error set for *exists* prototype.
 const ExistsError = error{
     /// *actual* is not type value.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
@@ -25,7 +25,7 @@ const ExistsError = error{
 pub const Error = ExistsError;
 
 /// Type info assertions for *exists* prototype evaluation argument.
-/// 
+///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 pub const info_validator = info.init(.{
     .optional = true,
@@ -44,7 +44,7 @@ pub fn init(params: Params) Prototype {
                         => ExistsError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => ExistsError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 if (params) |param| {

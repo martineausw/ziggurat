@@ -8,23 +8,23 @@ const info = @import("info.zig");
 /// Error set for interval.
 const IntervalError = error{
     /// *actual* is not a type value.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     ExpectsTypeValue,
     /// *actual* requires int, float, comptime_int, or comptime_float type info.
-    /// 
-    /// See also: 
+    ///
+    /// See also:
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     RequiresTypeInfo,
     /// *actual* value is less than minimum.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMin,
     /// *actual* value is greater than maximum.
-    /// 
+    ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMax,
 };
@@ -32,7 +32,7 @@ const IntervalError = error{
 pub const Error = IntervalError;
 
 /// Type value assertion for *interval* prototype evaluation argument.
-/// 
+///
 /// See also: [`ziggurat.prototype.type`](#root.prototype.type)
 pub const info_validator = info.init(.{
     .int = true,
@@ -62,7 +62,7 @@ pub fn init(params: Params) Prototype {
                         => IntervalError.ExpectsTypeValue,
                         info.Error.RequiresTypeInfo,
                         => IntervalError.RequiresTypeInfo,
-                        else => unreachable,
+                        else => @panic("unhandled error"),
                     };
 
                 const tolerance = params.tolerance orelse std.math.floatEps(f128);
