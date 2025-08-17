@@ -1,4 +1,4 @@
-//! Auxillary prototypes for intermediate evaluation.
+//! Auxiliary prototypes for intermediate evaluation.
 const std = @import("std");
 
 pub const child = @import("aux/child.zig");

@@ -1,4 +1,4 @@
-//! Auxillary prototype *info*.
+//! Auxiliary prototype *info*.
 //!
 //! Asserts an *actual* type info active tag of a type value to respect
 //! a given blacklist and/or whitelist.

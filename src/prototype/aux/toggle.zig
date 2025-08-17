@@ -1,4 +1,4 @@
-//! Auxillary prototype *toggle*.
+//! Auxiliary prototype *toggle*.
 //!
 //! Asserts an *actual* boolean value to be either true or false.
 const std = @import("std");

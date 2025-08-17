@@ -1,4 +1,4 @@
-//! Auxillary prototype *child*.
+//! Auxiliary prototype *child*.
 //! 
 //! Asserts an *actual* array, pointer, optional, or vector child type 
 //! value to  pass evaluation of given prototype.

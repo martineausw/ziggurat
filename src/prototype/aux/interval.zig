@@ -1,4 +1,4 @@
-//! Auxillary prototype interval.
+//! Auxiliary prototype interval.
 //!
 //! Asserts an *actual* integer or float to be within a given inclusive interval.
 const std = @import("std");

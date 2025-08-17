@@ -1,4 +1,4 @@
-//! Auxillary prototype *field*.
+//! Auxiliary prototype *field*.
 //!
 //! Asserts an *actual* struct or union type value to have a field of type
 //! and optionally respect a type info whitelist and/or blacklist.

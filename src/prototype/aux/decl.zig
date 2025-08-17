@@ -1,4 +1,4 @@
-//! Auxillary prototype *decl*.
+//! Auxiliary prototype *decl*.
 //!
 //! Asserts an *actual* struct, union, or enum type value to have a
 //! declaration.

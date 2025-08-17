@@ -1,4 +1,4 @@
-//! Auxillary prototype *exists*.
+//! Auxiliary prototype *exists*.
 //!
 //! Asserts an *actual* optional value to either be null or not null.
 const std = @import("std");

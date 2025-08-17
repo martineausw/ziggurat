@@ -8,7 +8,7 @@ Inspired off of [this brainstorming thread](https://ziggit.dev/t/implementing-ge
 
 ## About
 
-The goal of ziggurat is to be able to comprehensibly define arbitrarily complex type constraints for `anytype` parameters within function signatures.
+The goal of ziggurat is to enable developers to comprehensibly define arbitrarily complex type constraints and assertions.
 
 ## Installation
 
@@ -67,9 +67,9 @@ That out of the way, hopefully this isn't terribly intimidating:
 fn foo(actual_value: anytype) sign(some_prototype)(actual_value)(void) { ... }
 ```
 
-### `Prototype` Abstract
+### Prototype abstract
 
-A `Prototype` is an abstract class that requires an `eval` function. `eval` is invoked by `sign` and other `Prototype` instances.
+Prototype requires an `eval` function pointer.
 
 ```zig
 const Prototype = struct {
@@ -113,11 +113,44 @@ const odd_int: Prototype = .{
 };
 ```
 
-Feel free to go crazy.
+### Included prototypes
 
-### `sign` Function
+Intended to be used in comptime:
 
-`sign` is a function invokes the evaluation of a `Prototype`. Complex `Prototype`s are intended to be composed into a single instance.
+-   array - to assert an array type value with length interval, child type info, and sentinel existence assertions.
+-   bool - to assert a boolean type value.
+-   float - to assert a float type value with a bit interval assertion.
+-   int - to assert an integer type value with bit interval and signedness filter assertions.
+-   optional - to assert an optional type value with a child type info filter assertion.
+-   pointer - to assert a pointer type value with child type info filter, size filter, const qualifier presence, volatile qualifier presence, and sentinel existence assertions.
+-   struct - to assert a struct type value with layout filter, field set, declaration set, and tuple type assertions.
+-   type - to assert a type value.
+-   vector - to assert a vector type value with child type info filter and length interval assertions.
+
+#### Auxiliary prototypes
+
+Intermediate and utility prototypes:
+
+-   child - to assert on type values with a child type.
+-   decl - to assert a type value contains a declaration.
+-   exists - to assert an optional value is null or not null
+-   field - to assert a type value contains a field of a parametric type.
+-   filter - to assert a blacklist and/or whitelist of possible active tags of a union or enum.
+-   info - to assert a type value blacklist and/or whitelist of potential type info tags.
+-   interval - to assert a number value is within an inclusive range.
+-   toggle - to assert a boolean value is either true or false.
+
+#### Operator prototypes
+
+Boolean operations for prototype evaluation results
+
+-   conjoin - to assert all prototypes evaluate to true.
+-   disjoin - to assert at least one prototype evaluates to true.
+-   negate - to assert a prototype evaluates to false without an error.
+
+### `sign` function
+
+`sign` calls `eval` on a given prototype and will call `onError` or `onFail` for error or false return values, respectively. Complex prototypes are intended to be composed using operators and auxiliary prototypes.
 
 ```zig
 pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type: type) type {
@@ -139,5 +172,4 @@ pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type:
         }
     }.validate;
 };
-
 ```

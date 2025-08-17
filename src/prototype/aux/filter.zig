@@ -1,4 +1,4 @@
-//! Auxillary prototype *filter*.
+//! Auxiliary prototype *filter*.
 //!
 //! Asserts an *actual* active tag of a union value or enum value to
 //! optionally respect a blacklist and/or whitelist of tags.
