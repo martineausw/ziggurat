@@ -3,7 +3,7 @@
 //! Asserts *actual* is a float type value with a parametric bits
 //! assertion.
 //!
-//! See also: - [`std.builtin.Type.Float`](#std.builtin.Type.Float)
+//! See also: [`std.builtin.Type.Float`](#std.builtin.Type.Float)
 const std = @import("std");
 const testing = std.testing;
 

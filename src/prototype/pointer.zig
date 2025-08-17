@@ -117,19 +117,19 @@ pub const Params = struct {
     /// Asserts pointer const qualifier presence.
     ///
     /// See also:
-    /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Array)
+    /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
     /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     is_const: ?bool = null,
     /// Asserts pointer volatile qualifier presence.
     ///
     /// See also:
-    /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Array)
+    /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
     /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
     is_volatile: ?bool = null,
     /// Asserts pointer sentinel existence.
     ///
     /// See also:
-    /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Array)
+    /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
     /// - [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     sentinel: ?bool = null,
 };
