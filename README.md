@@ -2,7 +2,7 @@
 
 ![zig 0.14.1](https://img.shields.io/badge/zig-0.14.1-brightgreen)
 
-Microlibrary to introduce type constraints in zig 0.14.1.
+Library for defining type constraints and assertions.
 
 Inspired off of [this brainstorming thread](https://ziggit.dev/t/implementing-generic-concepts-on-function-declarations/1490).
 
@@ -12,21 +12,18 @@ The goal of ziggurat is to enable developers to comprehensibly define arbitraril
 
 ## Installation
 
-### Remote repository
+### Remote
 
 ```bash
 zig fetch --save git+https://github.com/martineausw/ziggurat.git
 ```
 
-### Local directory
+### Local
 
 ```bash
 cd /path/to/clone/
 
-# either start
-git clone https://github.com/martineausw/ziggurat.git # via HTTPS
-git clone git@github.com:martineausw/ziggurat.git # via SSH
-# either end
+git clone https://github.com/martineausw/ziggurat.git
 
 cd /path/to/zig/project
 
@@ -67,9 +64,9 @@ That out of the way, hopefully this isn't terribly intimidating:
 fn foo(actual_value: anytype) sign(some_prototype)(actual_value)(void) { ... }
 ```
 
-### Prototype abstract
+### Prototype
 
-Prototype requires an `eval` function pointer.
+Prototype requires an _eval_ function pointer.
 
 ```zig
 const Prototype = struct {
@@ -80,9 +77,9 @@ const Prototype = struct {
 };
 ```
 
-#### Implementing `Prototype`
+#### Implementing
 
-Here is an example implementation of a `Prototype` type.
+Here is an example implementation of a prototype.
 
 ```zig
 const int: Prototype = .{
@@ -113,9 +110,9 @@ const odd_int: Prototype = .{
 };
 ```
 
-### Included prototypes
+### Included
 
-Intended to be used in comptime:
+Intended to be used in _comptime_:
 
 -   array - to assert an array type value with length interval, child type info, and sentinel existence assertions.
 -   bool - to assert a boolean type value.
@@ -127,7 +124,7 @@ Intended to be used in comptime:
 -   type - to assert a type value.
 -   vector - to assert a vector type value with child type info filter and length interval assertions.
 
-#### Auxiliary prototypes
+#### Auxiliary
 
 Intermediate and utility prototypes:
 
@@ -140,7 +137,7 @@ Intermediate and utility prototypes:
 -   interval - to assert a number value is within an inclusive range.
 -   toggle - to assert a boolean value is either true or false.
 
-#### Operator prototypes
+#### Operator
 
 Boolean operations for prototype evaluation results
 
@@ -148,9 +145,9 @@ Boolean operations for prototype evaluation results
 -   disjoin - to assert at least one prototype evaluates to true.
 -   negate - to assert a prototype evaluates to false without an error.
 
-### Sign function
+### Sign
 
-`sign` calls `eval` on a given prototype and will call `onError` or `onFail` for error or false return values, respectively. Complex prototypes are intended to be composed using operators and auxiliary prototypes.
+_sign_ calls _eval_ on a given prototype and will call _onError_ or _onFail_ for error or false return values, respectively. Complex prototypes are intended to be composed using operators and auxiliary prototypes.
 
 ```zig
 pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type: type) type {
