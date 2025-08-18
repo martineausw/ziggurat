@@ -88,9 +88,18 @@ pub fn disjoin(prototypes: anytype) Prototype {
                     errs[i] = null;
                 }
 
+                inline for (prototypes, 0..) |p, i| {
+                    if (comptime p.eval(actual)) |result| {
+                        results[i] = result;
+                    } else |err| {
+                        errs[i] = err;
+                        results[i] = false;
+                    }
+                }
+
                 for (0..prototypes.len) |i| {
                     if (errs[i]) |e| {
-                        comptime prototypes[i].onError.?(e, prototype, actual);
+                        prototypes[i].onError.?(e, prototype, actual);
                     }
                 }
             }

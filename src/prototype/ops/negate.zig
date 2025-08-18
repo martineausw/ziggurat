@@ -1,6 +1,6 @@
 //! Prototype operation *conjoin*.
-//! 
-//! Asserts an *actual* value to fail evaluation of provided 
+//!
+//! Asserts an *actual* value to fail evaluation of provided
 //! prototype without an error.
 const std = @import("std");
 const testing = std.testing;
