@@ -3,7 +3,12 @@
     .version = "0.0.0",
     .fingerprint = 0x5865cceb21fc7ba9,
     .minimum_zig_version = "0.14.1",
-    .dependencies = .{},
+    .dependencies = .{
+        .ziggurat = .{
+            .url = "git+https://github.com/martineausw/ziggurat.git?ref=HEAD#e9e91163e80298f1b18b8d738a50f3f4e98742c9",
+            .hash = "ziggurat-0.0.0-qXv8IWVUAgCy3FnSHf-JSZhzww86u23Nn7Iibz_8lqG-",
+        },
+    },
     .paths = .{
         "build.zig",
         "build.zig.zon",

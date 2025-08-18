@@ -8,7 +8,7 @@ const Prototype = @import("prototype/Prototype.zig");
 /// Calls prototype's *onFail* in comptime when its *eval* returns *false*.
 ///
 /// Calls prototype's *onError* in comptime when its *eval* returns an error.
-pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type: type) type {
+pub inline fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type: type) type {
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
             if (comptime prototype.eval(actual)) |result| {
