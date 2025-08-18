@@ -54,6 +54,26 @@ pub fn disjoin(prototypes: anytype) Prototype {
                 return false;
             }
         }.eval,
+        .onFail = struct {
+            fn onFail(
+                prototype: Prototype,
+                actual: anytype,
+            ) void {
+                var results: [prototypes.len]bool = undefined;
+                var errs: [prototypes.len]?anyerror = undefined;
+
+                inline for (0..prototypes.len) |i| {
+                    results[i] = false;
+                    errs[i] = null;
+                }
+
+                for (0..prototypes.len) |i| {
+                    if (errs[i]) |e| {
+                        prototypes[i].onError.?(e, prototype, actual);
+                    }
+                }
+            }
+        }.onFail,
         .onError = struct {
             fn onError(
                 _: anyerror,
