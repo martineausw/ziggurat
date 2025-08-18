@@ -106,7 +106,7 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     InfoError.AssertsTypeValue,
-                    => type_validator.onError.?(err, prototype, actual),
+                    => comptime type_validator.onError.?(err, prototype, actual),
 
                     InfoError.AssertsBlacklistTypeInfo,
                     InfoError.AssertsWhitelistTypeInfo,

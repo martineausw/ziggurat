@@ -90,7 +90,7 @@ pub fn disjoin(prototypes: anytype) Prototype {
 
                 for (0..prototypes.len) |i| {
                     if (errs[i]) |e| {
-                        prototypes[i].onError.?(e, prototype, actual);
+                        comptime prototypes[i].onError.?(e, prototype, actual);
                     }
                 }
             }
