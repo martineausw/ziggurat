@@ -114,7 +114,7 @@ pub fn init(params: Params) Prototype {
                             prototype.name,
                             @errorName(err),
                             params,
-                            @typeName(@typeInfo(actual)),
+                            @typeName(actual),
                         },
                     )),
                 }
