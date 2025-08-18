@@ -108,9 +108,7 @@ pub fn init(params: Params) Prototype {
                     InfoError.AssertsTypeValue,
                     => comptime type_validator.onError.?(err, prototype, actual),
 
-                    InfoError.AssertsBlacklistTypeInfo,
-                    InfoError.AssertsWhitelistTypeInfo,
-                    => @compileError(std.fmt.comptimePrint(
+                    else => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: expect: {any}, actual: {s}",
                         .{
                             prototype.name,
@@ -119,8 +117,6 @@ pub fn init(params: Params) Prototype {
                             @typeName(@typeInfo(actual)),
                         },
                     )),
-
-                    else => @panic("unhandled error"),
                 }
             }
         }.onError,

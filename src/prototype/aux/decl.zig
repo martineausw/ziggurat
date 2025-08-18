@@ -81,8 +81,7 @@ pub fn init(params: Params) Prototype {
                     DeclError.AssertsWhitelistTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
-                    DeclError.AssertsDecl,
-                    => @compileError(std.fmt.comptimePrint(
+                    else => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: {s}",
                         .{
                             prototype.name,
@@ -90,8 +89,6 @@ pub fn init(params: Params) Prototype {
                             params.name,
                         },
                     )),
-
-                    else => @panic("unhandled error"),
                 }
             }
         }.onError,

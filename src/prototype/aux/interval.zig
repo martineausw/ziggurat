@@ -97,7 +97,7 @@ pub fn init(params: Params) Prototype {
                 switch (err) {
                     IntervalError.AssertsTypeValue,
                     IntervalError.AssertsWhitelistTypeInfo,
-                    => info_validator.onError.?(err, prototype, actual),
+                    => comptime info_validator.onError.?(err, prototype, actual),
 
                     else => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: {d}",

@@ -116,28 +116,15 @@ pub fn init(params: Params) Prototype {
                     FieldError.AssertsWhitelistTypeInfo,
                     => info_validator.onError.?(err, prototype, actual),
 
-                    FieldError.AssertsField,
-                    => @compileError(std.fmt.comptimePrint(
-                        "{s}.{s}: {s}",
+                    else => @compileError(std.fmt.comptimePrint(
+                        "{s}.{s}: {s}: ",
                         .{
                             prototype.name,
                             @errorName(err),
                             params.name,
-                        },
-                    )),
-
-                    FieldError.AssertsBlacklistFieldTypeInfo,
-                    FieldError.AssertsWhitelistFieldTypeInfo,
-                    => @compileError(std.fmt.comptimePrint(
-                        "{s}.{s}: {s}",
-                        .{
-                            prototype.name,
-                            @errorName(err),
                             @FieldType(actual, params.name),
                         },
                     )),
-
-                    else => @panic("unhandled error"),
                 }
             }
         }.onError,
