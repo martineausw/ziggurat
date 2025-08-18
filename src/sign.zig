@@ -11,6 +11,7 @@ const Prototype = @import("prototype/Prototype.zig");
 pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type: type) type {
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
+            @compileLog("validating");
             if (prototype.eval(actual)) |result| {
                 if (!result) if (prototype.onFail) |onFail|
                     onFail(prototype, actual);
@@ -21,6 +22,7 @@ pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type:
 
             comptime return struct {
                 pub fn returns(comptime return_type: type) type {
+                    @compileLog("returning");
                     return return_type;
                 }
             }.returns;
