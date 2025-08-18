@@ -12,11 +12,15 @@ pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type:
     return struct {
         pub fn validate(actual: anytype) fn (comptime return_type: type) type {
             if (prototype.eval(actual)) |result| {
-                if (!result) if (prototype.onFail) |onFail|
+                if (!result) if (prototype.onFail) |onFail| {
                     onFail(prototype, actual);
+                    @compileError(prototype.name ++ ".onFail");
+                };
             } else |err| {
-                if (prototype.onError) |onError|
+                if (prototype.onError) |onError| {
                     onError(err, prototype, actual);
+                    @compileError(prototype.name ++ ".onError");
+                }
             }
 
             comptime return struct {
