@@ -21,7 +21,7 @@ pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type:
                 }
             }
 
-            comptime return struct {
+            return struct {
                 pub fn returns(comptime return_type: type) type {
                     return return_type;
                 }
