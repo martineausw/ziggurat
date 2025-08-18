@@ -1,6 +1,6 @@
 //! Prototype operation *conjoin*.
-//! 
-//! Asserts an *actual* value to pass at least one evaluation of provided 
+//!
+//! Asserts an *actual* value to pass at least one evaluation of provided
 //! prototypes.
 const std = @import("std");
 const testing = std.testing;
@@ -32,6 +32,7 @@ pub fn disjoin(prototypes: anytype) Prototype {
                         results[i] = result;
                     } else |err| {
                         errs[i] = err;
+                        results[i] = false;
                     }
                 }
 
