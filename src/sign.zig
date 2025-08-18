@@ -14,13 +14,12 @@ pub fn sign(prototype: Prototype) fn (actual: anytype) fn (comptime return_type:
             if (prototype.eval(actual)) |result| {
                 if (!result) if (prototype.onFail) |onFail| {
                     onFail(prototype, actual);
-                    @compileError(prototype.name ++ ".onFail");
                 };
             } else |err| {
                 if (prototype.onError) |onError| {
                     onError(err, prototype, actual);
-                    @compileError(prototype.name ++ ".onError");
                 }
+                @compileError(prototype.name ++ "." ++ @errorName(err));
             }
 
             comptime return struct {
