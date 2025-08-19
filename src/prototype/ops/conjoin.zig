@@ -23,7 +23,7 @@ pub fn conjoin(prototypes: anytype) Prototype {
                 var results: [prototypes.len]bool = undefined;
                 var errs: [prototypes.len]?anyerror = undefined;
 
-                for (0..prototypes.len) |i| {
+                inline for (0..prototypes.len) |i| {
                     results[i] = false;
                     errs[i] = null;
                 }
