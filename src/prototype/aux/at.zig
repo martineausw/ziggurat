@@ -53,7 +53,7 @@ pub const info_validator = info.init(.{
 /// 
 /// See also: `ziggurat.Prototype`
 pub const Params = struct {
-    child: Prototype,
+    prototype: Prototype,
     index: usize = 0,
 };
 
@@ -70,7 +70,7 @@ pub fn init(params: Params) Prototype {
                     };
                     
 
-                _ = try params.child.eval(actual[params.index]);
+                _ = try params.prototype.eval(actual[params.index]);
 
                 return true;
             }
@@ -103,27 +103,25 @@ test AtError {
 
 test Params {
     const params: Params = .{
-        .child = @import("../int.zig").init(.{}),
-        .at = 0, 
-    }
-
+        .prototype = @import("../int.zig").init(.{}),
+        .index= 0, 
+    };
+    _ = params;
 }
 
 test init {
     const at = init(.{
-        .child = @import("../int.zig").init(.{}),
-        .at = 0,
+        .prototype= @import("../int.zig").init(.{}),
+        .index = 0,
     });
 
     _ = at;
 }
 
 test "passes at assertions" {
-    std.testing.log_level = .debug;
     const int_prototype = @import("../int.zig");
-    std.log.debug("{s}", .{@typeName(@TypeOf(.{i32}))});
     const child_prototype = init(.{
-            .child = int_prototype.init(.{.bits = .{.min = 32, .max = 32}}),
+            .prototype = int_prototype.init(.{.bits = .{.min = 32, .max = 32}}),
             .index = 0,
         });
 
