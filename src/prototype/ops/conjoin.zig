@@ -33,6 +33,7 @@ pub fn conjoin(prototypes: anytype) Prototype {
                         results[i] = result;
                     } else |err| {
                         errs[i] = err;
+                        results[i] = false;
                     }
                 }
 
