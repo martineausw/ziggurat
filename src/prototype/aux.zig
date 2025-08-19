@@ -15,9 +15,10 @@ test child {
 }
 
 test filter {
-    const Foo = struct {
-        bar: ?bool = null,
+    const Foo = union(enum) {
+        bar: bool,
     };
+
     _ = filter.Filter(Foo).init(.{});
 }
 

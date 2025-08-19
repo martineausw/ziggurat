@@ -1,8 +1,8 @@
 //! Prototype *pointer*.
-//! 
-//! Asserts *actual* is a pointer type value with parametric child, size, 
+//!
+//! Asserts *actual* is a pointer type value with parametric child, size,
 //! const, volatile, and sentinel assertions.
-//! 
+//!
 //! See also: [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
 const std = @import("std");
 const testing = std.testing;
@@ -83,19 +83,11 @@ pub const info_validator = info.init(.{
     .pointer = true,
 });
 
-/// Assertion parameters for *size* prototype.
-const SizeParams = struct {
-    one: ?bool = null,
-    many: ?bool = null,
-    slice: ?bool = null,
-    c: ?bool = null,
-};
-
 /// *Size* prototype.
 ///
 /// See also:
 /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-const Size = filter.Filter(SizeParams);
+const size = @import("aux/filter.zig").Filter(std.builtin.Type.Pointer.Size);
 
 /// Assertion parameters for *pointer* prototype.
 ///
@@ -113,30 +105,30 @@ pub const Params = struct {
     /// See also:
     /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    size: SizeParams = .{},
+    size: size.Params = .{},
     /// Asserts pointer const qualifier presence.
     ///
     /// See also:
     /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
     /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
-    is_const: ?bool = null,
+    is_const: toggle.Params = null,
     /// Asserts pointer volatile qualifier presence.
     ///
     /// See also:
     /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
     /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
-    is_volatile: ?bool = null,
+    is_volatile: toggle.Params = null,
     /// Asserts pointer sentinel existence.
     ///
     /// See also:
     /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
     /// - [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
-    sentinel: ?bool = null,
+    sentinel: exists.Params = null,
 };
 
 pub fn init(params: Params) Prototype {
     const child_validator = info.init(params.child);
-    const size_validator = Size.init(params.size);
+    const size_validator = size.init(params.size);
     const is_const_validator = toggle.init(params.is_const);
     const is_volatile_validator = toggle.init(params.is_volatile);
     const sentinel_validator = exists.init(params.sentinel);
@@ -166,9 +158,9 @@ pub fn init(params: Params) Prototype {
                     @typeInfo(actual).pointer.size,
                 ) catch |err|
                     return switch (err) {
-                        filter.Error.AssertsBlacklist,
+                        size.Error.AssertsBlacklist,
                         => PointerError.AssertsBlacklistSize,
-                        filter.Error.AssertsWhitelist,
+                        size.Error.AssertsWhitelist,
                         => PointerError.AssertsWhitelistSize,
                         else => @panic("unhandled error"),
                     };

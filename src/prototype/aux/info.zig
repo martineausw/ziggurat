@@ -8,7 +8,7 @@ const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("../Prototype.zig");
-const filter = @import("filter.zig");
+const filter = @import("filter.zig").Filter(std.builtin.Type);
 
 const @"type" = @import("../type.zig");
 
@@ -45,37 +45,10 @@ const type_validator = @"type".init;
 /// See also:
 /// - [`std.builtin.Type`](#std.builtin.Type).
 /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter).
-pub const Params = struct {
-    type: ?bool = null,
-    void: ?bool = null,
-    bool: ?bool = null,
-    noreturn: ?bool = null,
-    int: ?bool = null,
-    float: ?bool = null,
-    pointer: ?bool = null,
-    array: ?bool = null,
-    @"struct": ?bool = null,
-    comptime_float: ?bool = null,
-    comptime_int: ?bool = null,
-    undefined: ?bool = null,
-    null: ?bool = null,
-    optional: ?bool = null,
-    error_union: ?bool = null,
-    error_set: ?bool = null,
-    @"enum": ?bool = null,
-    @"union": ?bool = null,
-    @"fn": ?bool = null,
-    @"opaque": ?bool = null,
-    frame: ?bool = null,
-    @"anyframe": ?bool = null,
-    vector: ?bool = null,
-    enum_literal: ?bool = null,
-};
+pub const Params = filter.Params;
 
-const Filter = filter.Filter(Params);
-
-pub fn init(params: Params) Prototype {
-    const filter_validator = Filter.init(params);
+pub fn init(params: filter.Params) Prototype {
+    const filter_validator = filter.init(params);
     return .{
         .name = "Info",
         .eval = struct {
@@ -129,67 +102,9 @@ test InfoError {
     _ = InfoError.AssertsWhitelistTypeInfo catch void;
 }
 
-test Params {
-    const params: Params = .{
-        .type = null,
-        .void = null,
-        .bool = null,
-        .noreturn = null,
-        .int = null,
-        .float = null,
-        .pointer = null,
-        .array = null,
-        .@"struct" = null,
-        .comptime_float = null,
-        .comptime_int = null,
-        .undefined = null,
-        .null = null,
-        .optional = null,
-        .error_union = null,
-        .error_set = null,
-        .@"enum" = null,
-        .@"union" = null,
-        .@"fn" = null,
-        .@"opaque" = null,
-        .frame = null,
-        .@"anyframe" = null,
-        .vector = null,
-        .enum_literal = null,
-    };
+test Params {}
 
-    _ = params;
-}
-
-test init {
-    const info: Prototype = init(.{
-        .type = null,
-        .void = null,
-        .bool = null,
-        .noreturn = null,
-        .int = null,
-        .float = null,
-        .pointer = null,
-        .array = null,
-        .@"struct" = null,
-        .comptime_float = null,
-        .comptime_int = null,
-        .undefined = null,
-        .null = null,
-        .optional = null,
-        .error_union = null,
-        .error_set = null,
-        .@"enum" = null,
-        .@"union" = null,
-        .@"fn" = null,
-        .@"opaque" = null,
-        .frame = null,
-        .@"anyframe" = null,
-        .vector = null,
-        .enum_literal = null,
-    });
-
-    _ = info;
-}
+test init {}
 
 test "passes whitelist assertions" {
     const params: Params = .{

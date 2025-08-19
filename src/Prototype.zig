@@ -5,6 +5,7 @@ const testing = std.testing;
 pub const array = @import("prototype/array.zig");
 pub const @"bool" = @import("prototype/bool.zig");
 pub const float = @import("prototype/float.zig");
+pub const @"fn" = @import("prototype/fn.zig");
 pub const int = @import("prototype/int.zig");
 pub const optional = @import("prototype/optional.zig");
 pub const pointer = @import("prototype/pointer.zig");
@@ -28,6 +29,10 @@ test array {
 test @"bool" {
     _ = @"bool".init;
     _ = @"bool".Error;
+}
+
+test @"fn" {
+    _ = @"fn".init(.{});
 }
 
 test float {

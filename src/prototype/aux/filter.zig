@@ -22,30 +22,44 @@ const FilterError = error{
     AssertsWhitelist,
 };
 
-pub const Error = FilterError;
-
-pub const type_validator = @"type".init;
-
 /// Filter type with given Params consisting of `?bool` fields named after
 /// its derived union or enum fields.
 ///
 /// - *null* is no assertion.
 /// - *true* asserts tag belongs to the whitelist.
 /// - *false* asserts tag belongs to the blacklist.
-pub fn Filter(comptime Params: type) type {
-    switch (@typeInfo(Params)) {
-        .@"struct" => |info| inline for (info.fields) |field| {
-            switch (@typeInfo(field.type)) {
-                .optional => |field_info| if (field_info.child != bool) {
-                    @panic("field must be a ?bool type");
-                },
-                else => @panic("field must be a ?bool type"),
-            }
-        },
-        else => @panic("param type must be a struct type"),
-    }
-
+pub fn Filter(comptime T: type) type {
     return struct {
+        pub const Error = FilterError;
+
+        pub const type_validator = @"type".init;
+
+        pub const Params =
+            switch (@typeInfo(T)) {
+                .@"union", .@"enum" => @Type(.{ .@"struct" = .{
+                    .layout = .auto,
+                    .backing_integer = null,
+                    .fields = fields: {
+                        var fields: [std.meta.fields(T).len]std.builtin.Type.StructField = undefined;
+
+                        for (0..std.meta.fields(T).len) |i| {
+                            fields[i] = .{
+                                .name = std.meta.fields(T)[i].name,
+                                .type = ?bool,
+                                .default_value_ptr = &@as(?bool, null),
+                                .is_comptime = false,
+                                .alignment = @alignOf(?bool),
+                            };
+                        }
+
+                        break :fields &fields;
+                    },
+                    .decls = &[0]std.builtin.Type.Declaration{},
+                    .is_tuple = false,
+                } }),
+                else => @panic("type must be a tagged union or enum"),
+            };
+
         pub fn init(params: Params) Prototype {
             return .{
                 .name = "Filter",
@@ -114,15 +128,8 @@ test Filter {
         zig: usize,
         zag: f128,
     };
-    _ = T;
 
-    const Params = struct {
-        bar: ?bool = null,
-        zig: ?bool = null,
-        zag: ?bool = null,
-    };
-
-    const t_validator = Filter(Params).init(.{
+    const t_validator = Filter(T).init(.{
         .bar = null,
         .zig = null,
         .zag = null,
@@ -138,13 +145,7 @@ test "passes whitelist filter assertions on tagged union" {
         c: f128,
     };
 
-    const Params = struct {
-        a: ?bool,
-        b: ?bool,
-        c: ?bool,
-    };
-
-    const filter = Filter(Params).init(.{
+    const filter = Filter(U).init(.{
         .a = true,
         .b = true,
         .c = null,
@@ -168,13 +169,7 @@ test "passes blacklist filter assertions on tagged union" {
         c: f128,
     };
 
-    const Params = struct {
-        a: ?bool,
-        b: ?bool,
-        c: ?bool,
-    };
-
-    const filter = Filter(Params).init(.{
+    const filter = Filter(U).init(.{
         .a = null,
         .b = null,
         .c = false,
@@ -198,13 +193,7 @@ test "fails whitelist assertion on tagged union" {
         c: f128,
     };
 
-    const Params = struct {
-        a: ?bool,
-        b: ?bool,
-        c: ?bool,
-    };
-
-    const filter = Filter(Params).init(.{
+    const filter = Filter(U).init(.{
         .a = true,
         .b = true,
         .c = null,
@@ -223,13 +212,7 @@ test "fails blacklist assertion on tagged union" {
         c: f128,
     };
 
-    const Params = struct {
-        a: ?bool,
-        b: ?bool,
-        c: ?bool,
-    };
-
-    const filter = Filter(Params).init(.{
+    const filter = Filter(U).init(.{
         .a = null,
         .b = null,
         .c = false,

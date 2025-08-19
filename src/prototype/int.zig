@@ -1,5 +1,5 @@
 //! Prototype *int*.
-//! 
+//!
 //! Asserts *actual* is an integer type value with parametric bits
 //! and signedness assertions.
 //!
@@ -53,19 +53,11 @@ pub const info_validator = info.init(.{
     .int = true,
 });
 
-/// Assertion parameters for *signedness* filter prototype.
-///
-/// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-const SignednessParams = struct {
-    signed: ?bool = null,
-    unsigned: ?bool = null,
-};
-
 /// *Signedness* prototype.
 ///
 /// See also:
 /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-const Signedness = filter.Filter(SignednessParams);
+const signedness = @import("aux/filter.zig").Filter(std.builtin.Signedness);
 
 /// Assertion parameters for *int* prototype.
 ///
@@ -82,12 +74,12 @@ pub const Params = struct {
     /// See also:
     /// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    signedness: SignednessParams = .{},
+    signedness: signedness.Params = .{},
 };
 
 pub fn init(params: Params) Prototype {
     const bits_validator = interval.init(params.bits);
-    const signedness_validator = Signedness.init(params.signedness);
+    const signedness_validator = signedness.init(params.signedness);
 
     return .{
         .name = "Int",
@@ -113,8 +105,8 @@ pub fn init(params: Params) Prototype {
                     @typeInfo(actual).int.signedness,
                 ) catch |err|
                     return switch (err) {
-                        filter.Error.AssertsBlacklist => IntError.AssertsBlacklistSignedness,
-                        filter.Error.AssertsWhitelist => IntError.AssertsWhitelistSignedness,
+                        signedness.Error.AssertsBlacklist => IntError.AssertsBlacklistSignedness,
+                        signedness.Error.AssertsWhitelist => IntError.AssertsWhitelistSignedness,
                         else => @panic("unhandled error"),
                     };
 

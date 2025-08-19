@@ -1,6 +1,6 @@
 //! Prototype *struct*.
-//! 
-//! Asserts *actual* is a struct type value with parametric layout, 
+//!
+//! Asserts *actual* is a struct type value with parametric layout,
 //! field, declaration, and tuple assertions.
 //!
 //! See also: [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
@@ -71,24 +71,12 @@ pub const info_validator = info.init(.{
     .@"struct" = true,
 });
 
-/// Assertion parameters for *Layout* filter prototype.
-///
-/// See also:
-/// `std.builtin.Type.Layout`
-/// `LayoutParams`
-/// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-const LayoutParams = struct {
-    auto: ?bool = null,
-    @"extern": ?bool = null,
-    @"packed": ?bool = null,
-};
-
 /// *Layout* filter prototype.
 ///
 /// See also:
 /// `LayoutParams`
 /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-const Layout = filter.Filter(LayoutParams);
+const layout = @import("aux/filter.zig").Filter(std.builtin.Type.ContainerLayout);
 
 /// Assertion parameters for *struct* prototype.
 ///
@@ -100,7 +88,7 @@ pub const Params = struct {
     /// `std.builtin.Type.Layout`
     /// `Layout`
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    layout: LayoutParams = .{},
+    layout: layout.Params = .{},
     /// Asserts struct fields.
     ///
     /// See also:
@@ -122,7 +110,7 @@ pub const Params = struct {
 };
 
 pub fn init(params: Params) Prototype {
-    const layout_validator = Layout.init(params.layout);
+    const layout_validator = layout.init(params.layout);
     const is_tuple_validator = toggle.init(params.is_tuple);
     return .{
         .name = "Struct",
@@ -139,9 +127,9 @@ pub fn init(params: Params) Prototype {
 
                 _ = comptime layout_validator.eval(@typeInfo(actual).@"struct".layout) catch |err|
                     return switch (err) {
-                        filter.Error.AssertsBlacklist,
+                        layout.Error.AssertsBlacklist,
                         => StructError.AssertsBlacklistLayout,
-                        filter.Error.AssertsWhitelist,
+                        layout.Error.AssertsWhitelist,
                         => StructError.AssertsWhitelistLayout,
                         else => @panic("unhandled error"),
                     };
