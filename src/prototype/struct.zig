@@ -74,7 +74,6 @@ pub const info_validator = info.init(.{
 /// *Layout* filter prototype.
 ///
 /// See also:
-/// `LayoutParams`
 /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
 const layout = @import("aux/filter.zig").Filter(std.builtin.Type.ContainerLayout);
 
@@ -85,8 +84,7 @@ pub const Params = struct {
     /// Asserts struct layout.
     ///
     /// See also:
-    /// `std.builtin.Type.Layout`
-    /// `Layout`
+    /// - [`std.builtin.Type.ContainerLayout`](#std.builtin.Type.ContainerLayout)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     layout: layout.Params = .{},
     /// Asserts struct fields.
