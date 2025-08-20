@@ -32,10 +32,13 @@ pub fn init(params: Params) Prototype {
         .name = "InfoSwitch",
         .eval = struct {
             fn eval(actual: anytype) anyerror!bool {
-                _ = try @field(
+                if (@field(
                     params,
                     @tagName(@typeInfo(@TypeOf(actual))),
-                ).eval(@TypeOf(actual));
+                )) |prototype| {
+                    _ = try prototype.eval(@TypeOf(actual));
+                }
+
                 return true;
             }
         }.eval,
