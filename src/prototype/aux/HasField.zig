@@ -9,11 +9,11 @@
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
-const info = @import("info.zig");
-const info_switch = @import("info_switch.zig");
+const FiltersTypeInfo = @import("FiltersTypeInfo.zig");
+const OnTypeInfo = @import("OnTypeInfo.zig");
 
 /// Error set for *field* prototype.
-const FieldError = error{
+const HasFieldError = error{
     /// `actual` is not a type value.
     ///
     /// See also:
@@ -27,7 +27,7 @@ const FieldError = error{
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     AssertsWhitelistTypeInfo,
     /// `actual` is missing field.
-    AssertsField,
+    AssertsHasField,
     /// `actual` has field with type info that belongs to blacklist.
     ///
     /// See also:
@@ -42,7 +42,7 @@ const FieldError = error{
     AssertsWhitelistFieldTypeInfo,
 };
 
-pub const Error = FieldError;
+pub const Error = HasFieldError;
 
 /// Type info assertions for *field* prototype evaluation argument.
 ///
@@ -50,7 +50,7 @@ pub const Error = FieldError;
 /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
 /// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
 /// - [`std.builtin.Type.Union`](#std.builtin.Type.Union)
-pub const info_validator = info.init(.{
+pub const has_type_info = FiltersTypeInfo.init(.{
     .@"struct" = true,
     .@"union" = true,
 });
@@ -72,36 +72,31 @@ pub const Params = struct {
     /// See also:
     /// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
     /// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)
-    type: info_switch.Params,
+    type: OnTypeInfo.Params,
 };
 
 pub fn init(params: Params) Prototype {
     return .{
-        .name = "Field",
+        .name = @typeName(@This()),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = info_validator.eval(actual) catch |err|
+                _ = has_type_info.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.AssertsTypeValue,
-                        => FieldError.AssertsTypeValue,
-                        info.Error.AssertsWhitelistTypeInfo,
-                        => FieldError.AssertsWhitelistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsTypeValue,
+                        => HasFieldError.AssertsTypeValue,
+                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
+                        => HasFieldError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
                 if (!@hasField(actual, params.name)) {
-                    return FieldError.AssertsField;
+                    return HasFieldError.AssertsHasField;
                 }
 
-                _ = info_switch.init(params.type).eval(@FieldType(
+                _ = try OnTypeInfo.init(params.type).eval(@FieldType(
                     actual,
                     params.name,
-                )) catch |err|
-                    return switch (err) {
-                        info.Error.AssertsBlacklistTypeInfo => FieldError.AssertsBlacklistFieldTypeInfo,
-                        info.Error.AssertsWhitelistTypeInfo => FieldError.AssertsWhitelistFieldTypeInfo,
-                        else => @panic("unhandled error"),
-                    };
+                ));
 
                 return true;
             }
@@ -113,9 +108,9 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    FieldError.AssertsTypeValue,
-                    FieldError.AssertsWhitelistTypeInfo,
-                    => info_validator.onError.?(err, prototype, actual),
+                    HasFieldError.AssertsTypeValue,
+                    HasFieldError.AssertsWhitelistTypeInfo,
+                    => has_type_info.onError.?(err, prototype, actual),
 
                     else => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: {s}: ",
@@ -132,10 +127,9 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test FieldError {
-    _ = FieldError.AssertsTypeValue catch void;
-    _ = FieldError.AssertsField catch void;
-    _ = FieldError.AssertsBlacklistFieldTypeInfo catch void;
+test HasFieldError {
+    _ = HasFieldError.AssertsTypeValue catch void;
+    _ = HasFieldError.AssertsHasField catch void;
 }
 
 test Params {
@@ -184,11 +178,11 @@ test "passes field assertions on struct" {
         },
     };
 
-    const has_field: Prototype = init(params);
+    const HasField: Prototype = init(params);
 
     try std.testing.expectEqual(
         true,
-        has_field.eval(T),
+        HasField.eval(T),
     );
 }
 
@@ -204,11 +198,11 @@ test "passes field assertions on union" {
         },
     };
 
-    const has_field: Prototype = init(params);
+    const HasField: Prototype = init(params);
 
     try std.testing.expectEqual(
         true,
-        has_field.eval(T),
+        HasField.eval(T),
     );
 }
 
@@ -222,50 +216,10 @@ test "fails field assertion on struct" {
         },
     };
 
-    const has_field: Prototype = init(params);
+    const HasField: Prototype = init(params);
 
     try std.testing.expectEqual(
-        FieldError.AssertsField,
-        has_field.eval(T),
-    );
-}
-
-test "fails field type info whitelist assertion on struct" {
-    const T = struct {
-        field: ?bool,
-    };
-
-    const params: Params = .{
-        .name = "field",
-        .type = .{
-            .bool = .true,
-        },
-    };
-
-    const has_field: Prototype = init(params);
-
-    try std.testing.expectEqual(
-        FieldError.AssertsWhitelistFieldTypeInfo,
-        comptime has_field.eval(T),
-    );
-}
-
-test "fails field type info blacklist assertion on struct" {
-    const T = struct {
-        field: bool,
-    };
-
-    const params: Params = .{
-        .name = "field",
-        .type = .{
-            .bool = .false,
-        },
-    };
-
-    const has_field: Prototype = init(params);
-
-    try std.testing.expectEqual(
-        FieldError.AssertsBlacklistFieldTypeInfo,
-        comptime has_field.eval(T),
+        HasFieldError.AssertsHasField,
+        HasField.eval(T),
     );
 }

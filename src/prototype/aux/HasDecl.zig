@@ -1,4 +1,4 @@
-//! Auxiliary prototype *decl*.
+//! Auxiliary prototype *HasDecl*.
 //!
 //! Asserts an *actual* struct, union, or enum type value to have a
 //! declaration.
@@ -10,10 +10,10 @@
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
-const info = @import("info.zig");
+const FiltersTypeInfo = @import("FiltersTypeInfo.zig");
 
-/// Error set for *decl* prototype.
-const DeclError = error{
+/// Error set for *HasDecl* prototype.
+const HasDeclError = error{
     /// *actual* is not a type value.
     ///
     /// See also:
@@ -23,15 +23,15 @@ const DeclError = error{
     /// *actual* requires struct, enum, or union type info.
     AssertsWhitelistTypeInfo,
     /// *actual* is missing declaration.
-    AssertsDecl,
+    AssertsHasDecl,
 };
 
-pub const Error = DeclError;
+pub const Error = HasDeclError;
 
-/// Type info assertions for *decl* prototype evaluation argument.
+/// Type info assertions for *HasDecl* prototype evaluation argument.
 ///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-pub const info_validator = info.init(.{
+pub const has_type_info = FiltersTypeInfo.init(.{
     .@"struct" = true,
     .@"enum" = true,
     .@"union" = true,
@@ -51,20 +51,20 @@ pub const Params = struct {
 
 pub fn init(params: Params) Prototype {
     return .{
-        .name = "Decl",
+        .name = @typeName(@This()),
         .eval = struct {
-            fn eval(actual: anytype) DeclError!bool {
-                _ = comptime info_validator.eval(actual) catch |err|
+            fn eval(actual: anytype) HasDeclError!bool {
+                _ = comptime has_type_info.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.AssertsTypeValue,
-                        => DeclError.AssertsTypeValue,
-                        info.Error.AssertsWhitelistTypeInfo,
-                        => DeclError.AssertsWhitelistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsTypeValue,
+                        => HasDeclError.AssertsTypeValue,
+                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
+                        => HasDeclError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
                 if (!@hasDecl(actual, params.name)) {
-                    return DeclError.AssertsDecl;
+                    return HasDeclError.AssertsHasDecl;
                 }
 
                 return true;
@@ -77,9 +77,9 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    DeclError.AssertsTypeValue,
-                    DeclError.AssertsWhitelistTypeInfo,
-                    => info_validator.onError.?(err, prototype, actual),
+                    HasDeclError.AssertsTypeValue,
+                    HasDeclError.AssertsWhitelistTypeInfo,
+                    => has_type_info.onError.?(err, prototype, actual),
 
                     else => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: {s}",
@@ -95,9 +95,8 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test DeclError {
-    _ = DeclError.AssertsTypeValue catch void;
-    _ = DeclError.AssertsDecl catch void;
+test HasDeclError {
+    _ = HasDeclError.AssertsHasDecl catch void;
 }
 
 test Params {
@@ -137,11 +136,11 @@ test "passes declaration assertion on struct" {
         .name = "decl",
     };
 
-    const has_decl: Prototype = init(params);
+    const HasDecl: Prototype = init(params);
 
     try std.testing.expectEqual(
         true,
-        has_decl.eval(T),
+        HasDecl.eval(T),
     );
 }
 
@@ -154,11 +153,11 @@ test "passes declaration assertion on union" {
         .name = "decl",
     };
 
-    const has_decl: Prototype = init(params);
+    const HasDecl: Prototype = init(params);
 
     try std.testing.expectEqual(
         true,
-        has_decl.eval(T),
+        HasDecl.eval(T),
     );
 }
 
@@ -171,11 +170,11 @@ test "passes declaration assertion on enum" {
         .name = "decl",
     };
 
-    const has_decl: Prototype = init(params);
+    const HasDecl: Prototype = init(params);
 
     try std.testing.expectEqual(
         true,
-        has_decl.eval(T),
+        HasDecl.eval(T),
     );
 }
 
@@ -186,14 +185,14 @@ test "fails declaration assertions on struct" {
         .name = "decl",
     };
 
-    const has_decl: Prototype = init(params);
+    const HasDecl: Prototype = init(params);
 
     try std.testing.expectEqual(
-        Error.AssertsDecl,
-        has_decl.eval(T),
+        Error.AssertsHasDecl,
+        HasDecl.eval(T),
     );
 
-    // has_decl.onError.?(Error.AssertsDecl, has_decl, T);
+    // HasDecl.onError.?(Error.AssertsHasDecl, HasDecl, T);
 }
 
 test "fails declaration assertion on union" {
@@ -203,14 +202,14 @@ test "fails declaration assertion on union" {
         .name = "decl",
     };
 
-    const has_decl: Prototype = init(params);
+    const HasDecl: Prototype = init(params);
 
     try std.testing.expectEqual(
-        Error.AssertsDecl,
-        has_decl.eval(T),
+        Error.AssertsHasDecl,
+        HasDecl.eval(T),
     );
 
-    // comptime has_decl.onError.?(Error.AssertsDecl, has_decl, T);
+    // comptime HasDecl.onError.?(Error.AssertsHasDecl, HasDecl, T);
 }
 
 test "fails declaration assertion on enum" {
@@ -220,14 +219,14 @@ test "fails declaration assertion on enum" {
         .name = "decl",
     };
 
-    const has_decl: Prototype = init(params);
+    const HasDecl: Prototype = init(params);
 
     try std.testing.expectEqual(
-        Error.AssertsDecl,
-        has_decl.eval(T),
+        Error.AssertsHasDecl,
+        HasDecl.eval(T),
     );
 
-    // comptime has_decl.onError.?(Error.AssertsDecl, has_decl, T);
+    // comptime HasDecl.onError.?(Error.AssertsHasDecl, HasDecl, T);
 }
 
 test "fails argument type info assertion" {
@@ -235,14 +234,14 @@ test "fails argument type info assertion" {
         .name = "decl",
     };
 
-    const has_decl: Prototype = init(params);
+    const HasDecl: Prototype = init(params);
 
     try std.testing.expectEqual(
         Error.AssertsWhitelistTypeInfo,
-        comptime has_decl.eval(bool),
+        comptime HasDecl.eval(bool),
     );
 
-    // comptime has_decl.onError.?(Error.AssertsWhitelistTypeInfo, has_decl, bool);
+    // comptime HasDecl.onError.?(Error.AssertsWhitelistTypeInfo, HasDecl, bool);
 }
 
 test "fails argument value assertion" {
@@ -250,12 +249,12 @@ test "fails argument value assertion" {
         .name = "decl",
     };
 
-    const has_decl: Prototype = init(params);
+    const HasDecl: Prototype = init(params);
 
     try std.testing.expectEqual(
         Error.AssertsTypeValue,
-        comptime has_decl.eval(false),
+        comptime HasDecl.eval(false),
     );
 
-    // comptime has_decl.onError.?(Error.AssertsWhitelistTypeInfo, has_decl, bool);
+    // comptime HasDecl.onError.?(Error.AssertsWhitelistTypeInfo, HasDecl, bool);
 }

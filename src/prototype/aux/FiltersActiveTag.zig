@@ -1,4 +1,4 @@
-//! Auxiliary prototype *filter*.
+//! Auxiliary prototype *has_active_tag*.
 //!
 //! Asserts an *actual* active tag of a union value or enum value to
 //! optionally respect a blacklist and/or whitelist of tags.
@@ -11,7 +11,7 @@ const Prototype = @import("../Prototype.zig");
 const @"type" = @import("../type.zig");
 
 /// Error set for filter.
-const FilterError = error{
+const HasActiveTagError = error{
     /// *actual* is not a union or enum type.
     ///
     /// See also: [`ziggurat.prototype.type`](#root.prototype.type)
@@ -28,11 +28,11 @@ const FilterError = error{
 /// - *null* is no assertion.
 /// - *true* asserts tag belongs to the whitelist.
 /// - *false* asserts tag belongs to the blacklist.
-pub fn Filter(comptime T: type) type {
+pub fn Of(comptime T: type) type {
     return struct {
-        pub const Error = FilterError;
+        pub const Error = HasActiveTagError;
 
-        pub const type_validator = @"type".init;
+        pub const is_type_value = @"type".init;
 
         pub const Params =
             switch (@typeInfo(T)) {
@@ -62,24 +62,24 @@ pub fn Filter(comptime T: type) type {
 
         pub fn init(params: Params) Prototype {
             return .{
-                .name = "Filter",
+                .name = @typeName(@This()),
                 .eval = struct {
                     fn eval(actual: anytype) !bool {
                         _ = switch (@typeInfo(@TypeOf(actual))) {
                             inline .@"union", .@"enum" => {},
-                            else => return FilterError.AssertsTypeValue,
+                            else => return HasActiveTagError.AssertsTypeValue,
                         };
 
                         // Checks active tag against blacklist
                         if (@field(params, @tagName(actual))) |param| {
-                            if (!param) return FilterError.AssertsBlacklist;
+                            if (!param) return HasActiveTagError.AssertsBlacklist;
                             return true;
                         }
 
                         // Checks remaining fields for active whitelist
                         inline for (std.meta.fields(Params)) |field| {
                             if (@field(params, field.name)) |value| {
-                                if (value) return FilterError.AssertsWhitelist;
+                                if (value) return HasActiveTagError.AssertsWhitelist;
                             }
                         }
                         return true;
@@ -92,9 +92,9 @@ pub fn Filter(comptime T: type) type {
                         actual: anytype,
                     ) void {
                         switch (err) {
-                            FilterError.AssertsTypeValue,
-                            FilterError.AssertsWhitelistTypeInfo,
-                            => comptime type_validator.onError.?(
+                            HasActiveTagError.AssertsTypeValue,
+                            HasActiveTagError.AssertsWhitelistTypeInfo,
+                            => comptime is_type_value.onError.?(
                                 err,
                                 prototype,
                                 actual,
@@ -116,20 +116,20 @@ pub fn Filter(comptime T: type) type {
     };
 }
 
-test FilterError {
-    _ = FilterError.AssertsTypeValue catch void;
-    _ = FilterError.AssertsBlacklist catch void;
-    _ = FilterError.AssertsWhitelist catch void;
+test HasActiveTagError {
+    _ = HasActiveTagError.AssertsTypeValue catch void;
+    _ = HasActiveTagError.AssertsBlacklist catch void;
+    _ = HasActiveTagError.AssertsWhitelist catch void;
 }
 
-test Filter {
+test Of {
     const T = union(enum) {
         bar: bool,
         zig: usize,
         zag: f128,
     };
 
-    const t_validator = Filter(T).init(.{
+    const t_validator = Of(T).init(.{
         .bar = null,
         .zig = null,
         .zag = null,
@@ -145,7 +145,7 @@ test "passes whitelist filter assertions on tagged union" {
         c: f128,
     };
 
-    const filter = Filter(U).init(.{
+    const filter = Of(U).init(.{
         .a = true,
         .b = true,
         .c = null,
@@ -169,7 +169,7 @@ test "passes blacklist filter assertions on tagged union" {
         c: f128,
     };
 
-    const filter = Filter(U).init(.{
+    const filter = Of(U).init(.{
         .a = null,
         .b = null,
         .c = false,
@@ -193,14 +193,14 @@ test "fails whitelist assertion on tagged union" {
         c: f128,
     };
 
-    const filter = Filter(U).init(.{
+    const filter = Of(U).init(.{
         .a = true,
         .b = true,
         .c = null,
     });
 
     try std.testing.expectEqual(
-        FilterError.AssertsWhitelist,
+        HasActiveTagError.AssertsWhitelist,
         comptime filter.eval(U{ .c = 0.0 }),
     );
 }
@@ -212,14 +212,14 @@ test "fails blacklist assertion on tagged union" {
         c: f128,
     };
 
-    const filter = Filter(U).init(.{
+    const filter = Of(U).init(.{
         .a = null,
         .b = null,
         .c = false,
     });
 
     try std.testing.expectEqual(
-        FilterError.AssertsBlacklist,
+        HasActiveTagError.AssertsBlacklist,
         comptime filter.eval(U{ .c = 0.0 }),
     );
 }

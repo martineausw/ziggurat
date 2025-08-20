@@ -1,9 +1,9 @@
 const std = @import("std");
 const Prototype = @import("../Prototype.zig");
 
-const InfoSwitchError = error{};
+const OnTypeInfoError = error{};
 
-pub const Error = InfoSwitchError;
+pub const Error = OnTypeInfoError;
 
 pub const Params = struct {
     type: ?Prototype = null,
@@ -56,20 +56,11 @@ pub const Params = struct {
 
 pub fn init(params: Params) Prototype {
     return .{
-        .name = "InfoSwitch",
+        .name = @typeName(@This()),
         .eval = struct {
             fn eval(actual: anytype) anyerror!bool {
-                // Checks active tag against blacklist
                 if (@field(params, @tagName(@typeInfo(actual)))) |prototype| {
-                    if (!try prototype.eval(actual)) return error.AssertsBlacklistTypeInfo;
-                    return true;
-                }
-
-                // Checks remaining fields for active whitelist
-                inline for (std.meta.fields(Params)) |field| {
-                    if (@field(params, field.name)) |prototype| {
-                        if (try prototype.eval(actual)) return error.AssertsWhitelistTypeInfo;
-                    }
+                    return prototype.eval(actual);
                 }
 
                 return true;

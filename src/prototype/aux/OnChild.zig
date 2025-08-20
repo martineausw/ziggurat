@@ -1,7 +1,7 @@
-//! Auxiliary prototype *at*.
+//! Auxiliary prototype *child*.
 //! 
 //! Asserts an *actual* array, pointer, optional, or vector child type 
-//! value at a given index to pass evaluation of given prototype.
+//! value to  pass evaluation of given prototype.
 //! 
 //! See also: 
 //! - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
@@ -11,18 +11,17 @@
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
-const info = @import("../aux/info.zig");
-const child = @import("../aux/child.zig");
+const FiltersTypeInfo = @import("FiltersTypeInfo.zig");
 
-/// Error set for *at* prototype.
-const AtError= error{
+/// Error set for *child* prototype.
+const OnChildError = error{
     /// *actual* is not a type value.
     /// 
     /// See also: 
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.type`](#root.prototype.type)
     AssertsTypeValue,
-    /// *actual* requires array, pointer, vector, or struct type info.
+    /// *actual* requires array, pointer, vector, or optional type info.
     /// 
     /// See also: 
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
@@ -30,9 +29,9 @@ const AtError= error{
     AssertsWhitelistTypeInfo
 };
 
-pub const Error = AtError;
+pub const Error = OnChildError;
 
-/// Type info assertions for *at* prototype evaluation argument.
+/// Type info assertions for *child* prototype evaluation argument.
 /// 
 /// See also: 
 /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
@@ -40,11 +39,11 @@ pub const Error = AtError;
 /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
 /// - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
 /// - [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
-pub const info_validator = info.init(.{
+pub const has_type_info = FiltersTypeInfo.init(.{
     .array = true,
     .pointer = true,
     .vector = true,
-    .@"struct" = true,
+    .optional = true,
 });
 
 /// Assertion parameter for *child*.
@@ -52,25 +51,23 @@ pub const info_validator = info.init(.{
 /// Asserts child prototype evaluation.
 /// 
 /// See also: `ziggurat.Prototype`
-pub const Params = struct {
-    prototype: Prototype,
-    index: usize = 0,
-};
+pub const Params = Prototype;
 
 pub fn init(params: Params) Prototype {
     return .{
-        .name = "Child",
+        .name = @typeName(@This()),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = comptime info_validator.eval(@TypeOf(actual)) catch |err|
+                _ = comptime has_type_info.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.AssertsWhitelistTypeInfo,
-                        => AtError.AssertsWhitelistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsTypeValue,
+                        => OnChildError.AssertsTypeValue,
+                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
+                        => OnChildError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
-                    
 
-                _ = try params.prototype.eval(actual[params.index]);
+                _ = comptime try params.eval(std.meta.Child(actual));
 
                 return true;
             }
@@ -82,14 +79,14 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    AtError.AssertsWhitelistTypeInfo,
-                    => info_validator.onError.?(err, prototype, actual),
+                    OnChildError.AssertsTypeValue,
+                    => has_type_info.onError.?(err, prototype, actual),
 
                     else => @compileError(
                         std.fmt.comptimePrint("{s}.{s}: {s}", .{
                             prototype.name,
                             @errorName(err),
-                            @typeName(actual),
+                            @typeName(std.meta.Child(actual)),
                         }),
                     ),
                 }
@@ -98,32 +95,29 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test AtError {
+test OnChildError {
+    _ = OnChildError.AssertsTypeValue catch void;
 }
 
 test Params {
-    const params: Params = .{
-        .prototype = @import("../int.zig").init(.{}),
-        .index= 0, 
-    };
+    const int = @import("../int.zig");
+    const params: Params = int.init(.{});
+
     _ = params;
 }
 
 test init {
-    const at = init(.{
-        .prototype= @import("../int.zig").init(.{}),
-        .index = 0,
-    });
+    const int = @import("../int.zig");
+    const child = init(int.init(.{}));
 
-    _ = at;
+    _ = child;
 }
 
-test "passes at assertions" {
-    const int_prototype = @import("../int.zig");
-    const child_prototype = init(.{
-            .prototype = int_prototype.init(.{.bits = .{.min = 32, .max = 32}}),
-            .index = 0,
-        });
+test "passes child assertions" {
+    const int = @import("../int.zig");
+    const child = init(int.init(
+        .{ .bits = .{ .min = 32, .max = 32 } },
+    ));
 
-    try std.testing.expectEqual(true, comptime child_prototype.eval(&.{ i32 }));
+    try std.testing.expectEqual(true, comptime child.eval(*i32));
 }

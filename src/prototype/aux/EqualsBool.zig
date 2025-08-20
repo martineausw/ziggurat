@@ -4,10 +4,10 @@
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
-const info = @import("../aux/info.zig");
+const FiltersTypeInfo = @import("FiltersTypeInfo.zig");
 
 /// Error set for *toggle* prototype.
-const ToggleError = error{
+const EqualsBoolError = error{
     /// *actual* requires bool type info.
     ///
     /// See also:
@@ -20,12 +20,12 @@ const ToggleError = error{
     AssertsFalse,
 };
 
-pub const Error = ToggleError;
+pub const Error = EqualsBoolError;
 
 /// Type value assertion for *toggle* prototype evaluation argument.
 ///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-pub const info_validator = info.init(.{
+pub const has_type_info = FiltersTypeInfo.init(.{
     .bool = true,
 });
 
@@ -34,24 +34,24 @@ pub const Params = ?bool;
 
 pub fn init(params: Params) Prototype {
     return .{
-        .name = "Toggle",
+        .name = @typeName(@This()),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = info_validator.eval(@TypeOf(actual)) catch |err|
+                _ = has_type_info.eval(@TypeOf(actual)) catch |err|
                     return switch (err) {
-                        info.Error.AssertsWhitelistTypeInfo,
-                        => ToggleError.AssertsWhitelistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
+                        => EqualsBoolError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
                 if (params) |param| {
                     if (param) {
                         if (!actual) {
-                            return ToggleError.AssertsTrue;
+                            return EqualsBoolError.AssertsTrue;
                         }
                     } else {
                         if (actual) {
-                            return ToggleError.AssertsFalse;
+                            return EqualsBoolError.AssertsFalse;
                         }
                     }
                 }
@@ -66,9 +66,9 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    ToggleError.AssertsTypeValue,
-                    ToggleError.AssertsWhitelistTypeInfo,
-                    => info_validator.onError.?(err, prototype, actual),
+                    EqualsBoolError.AssertsTypeValue,
+                    EqualsBoolError.AssertsWhitelistTypeInfo,
+                    => has_type_info.onError.?(err, prototype, actual),
 
                     else => @compileError(
                         std.fmt.comptimePrint("{s}.{s}: {s}", .{
@@ -83,10 +83,10 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test ToggleError {
-    _ = ToggleError.AssertsWhitelistTypeInfo catch void;
-    _ = ToggleError.AssertsTrue catch void;
-    _ = ToggleError.AssertsFalse catch void;
+test EqualsBoolError {
+    _ = EqualsBoolError.AssertsWhitelistTypeInfo catch void;
+    _ = EqualsBoolError.AssertsTrue catch void;
+    _ = EqualsBoolError.AssertsFalse catch void;
 }
 
 test Params {
@@ -116,7 +116,7 @@ test "fails toggle false assertion" {
     const is_false = init(false);
 
     try std.testing.expectEqual(
-        ToggleError.AssertsFalse,
+        EqualsBoolError.AssertsFalse,
         is_false.eval(true),
     );
 }
@@ -125,7 +125,7 @@ test "fails toggle true assertion" {
     const is_true = init(true);
 
     try std.testing.expectEqual(
-        ToggleError.AssertsTrue,
+        EqualsBoolError.AssertsTrue,
         is_true.eval(false),
     );
 }

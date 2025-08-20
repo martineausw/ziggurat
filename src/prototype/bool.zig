@@ -1,10 +1,10 @@
 //! Prototype *bool*.
-//! 
+//!
 //! Asserts *actual* is a bool type value.
 const std = @import("std");
 
 const Prototype = @import("Prototype.zig");
-const info = @import("aux/info.zig");
+const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
 
 const BoolError = error{
     /// *actual* is not a type value.
@@ -26,7 +26,7 @@ pub const Error = BoolError;
 /// Type value assertion for *bool* prototype evaluation argument.
 ///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-pub const info_validator = info.init(.{
+pub const has_type_info = FiltersTypeInfo.init(.{
     .bool = true,
 });
 
@@ -34,13 +34,13 @@ pub const init: Prototype = .{
     .name = "Bool",
     .eval = struct {
         fn eval(actual: anytype) Error!bool {
-            _ = comptime info_validator.eval(
+            _ = comptime has_type_info.eval(
                 actual,
             ) catch |err|
                 return switch (err) {
-                    info.Error.AssertsTypeValue,
+                    FiltersTypeInfo.Error.AssertsTypeValue,
                     => BoolError.AssertsTypeValue,
-                    info.Error.AssertsWhitelistTypeInfo,
+                    FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
                     => BoolError.AssertsWhitelistTypeInfo,
                     else => @panic("unhandled error"),
                 };
@@ -57,7 +57,7 @@ pub const init: Prototype = .{
             switch (err) {
                 BoolError.AssertsTypeValue,
                 BoolError.AssertsWhitelistTypeInfo,
-                => info_validator.onError.?(err, prototype, actual),
+                => has_type_info.onError.?(err, prototype, actual),
 
                 else => @panic("unhandled error"),
             }

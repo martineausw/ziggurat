@@ -5,10 +5,10 @@ const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("../Prototype.zig");
-const info = @import("info.zig");
+const FiltersTypeInfo = @import("FiltersTypeInfo.zig");
 
 /// Error set for interval.
-const IntervalError = error{
+const WithinIntervalError = error{
     /// *actual* is not a type value.
     ///
     /// See also:
@@ -31,12 +31,12 @@ const IntervalError = error{
     AssertsMax,
 };
 
-pub const Error = IntervalError;
+pub const Error = WithinIntervalError;
 
 /// Type value assertion for *interval* prototype evaluation argument.
 ///
 /// See also: [`ziggurat.prototype.type`](#root.prototype.type)
-pub const info_validator = info.init(.{
+pub const has_type_info = FiltersTypeInfo.init(.{
     .int = true,
     .float = true,
     .comptime_int = true,
@@ -55,15 +55,15 @@ pub const Params = struct {
 
 pub fn init(params: Params) Prototype {
     return .{
-        .name = "Interval",
+        .name = @typeName(@This()),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = info_validator.eval(@TypeOf(actual)) catch |err|
+                _ = has_type_info.eval(@TypeOf(actual)) catch |err|
                     return switch (err) {
-                        info.Error.AssertsTypeValue,
-                        => IntervalError.AssertsTypeValue,
-                        info.Error.AssertsWhitelistTypeInfo,
-                        => IntervalError.AssertsWhitelistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsTypeValue,
+                        => WithinIntervalError.AssertsTypeValue,
+                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
+                        => WithinIntervalError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -78,11 +78,11 @@ pub fn init(params: Params) Prototype {
                 };
 
                 if (!std.math.approxEqAbs(f128, min, value, tolerance) and min > value) {
-                    return IntervalError.AssertsMin;
+                    return WithinIntervalError.AssertsMin;
                 }
 
                 if (!std.math.approxEqAbs(f128, max, value, tolerance) and max < value) {
-                    return IntervalError.AssertsMax;
+                    return WithinIntervalError.AssertsMax;
                 }
 
                 return true;
@@ -95,9 +95,9 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    IntervalError.AssertsTypeValue,
-                    IntervalError.AssertsWhitelistTypeInfo,
-                    => comptime info_validator.onError.?(err, prototype, actual),
+                    WithinIntervalError.AssertsTypeValue,
+                    WithinIntervalError.AssertsWhitelistTypeInfo,
+                    => comptime has_type_info.onError.?(err, prototype, actual),
 
                     else => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: {d}",
@@ -113,11 +113,11 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test IntervalError {
-    _ = IntervalError.AssertsTypeValue catch void;
-    _ = IntervalError.AssertsWhitelistTypeInfo catch void;
-    _ = IntervalError.AssertsMin catch void;
-    _ = IntervalError.AssertsMax catch void;
+test WithinIntervalError {
+    _ = WithinIntervalError.AssertsTypeValue catch void;
+    _ = WithinIntervalError.AssertsWhitelistTypeInfo catch void;
+    _ = WithinIntervalError.AssertsMin catch void;
+    _ = WithinIntervalError.AssertsMax catch void;
 }
 
 test Params {
@@ -229,7 +229,7 @@ test "fails inclusive minimum assertion" {
     });
 
     try std.testing.expectEqual(
-        IntervalError.AssertsMin,
+        WithinIntervalError.AssertsMin,
         interval.eval(@as(comptime_float, -1.001)),
     );
 }
@@ -241,7 +241,7 @@ test "fails inclusive maximum assertion" {
     });
 
     try std.testing.expectEqual(
-        IntervalError.AssertsMax,
+        WithinIntervalError.AssertsMax,
         interval.eval(@as(comptime_float, 1.001)),
     );
 }

@@ -8,7 +8,7 @@ const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("../Prototype.zig");
-const filter = @import("filter.zig").Filter(std.builtin.Type);
+const FiltersActiveTag = @import("FiltersActiveTag.zig").Of(std.builtin.Type);
 
 const @"type" = @import("../type.zig");
 
@@ -33,7 +33,7 @@ pub const Error = InfoError;
 /// Type value assertion for *info* prototype evaluation argument.
 ///
 /// See also: [`ziggurat.prototype.type`](#root.prototype.type).
-const type_validator = @"type".init;
+const is_type_value = @"type".init;
 
 /// Assertion parameters for *info* filter prototype.
 ///
@@ -45,15 +45,15 @@ const type_validator = @"type".init;
 /// See also:
 /// - [`std.builtin.Type`](#std.builtin.Type).
 /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter).
-pub const Params = filter.Params;
+pub const Params = FiltersActiveTag.Params;
 
-pub fn init(params: filter.Params) Prototype {
-    const filter_validator = filter.init(params);
+pub fn init(params: FiltersActiveTag.Params) Prototype {
+    const filter_validator = FiltersActiveTag.init(params);
     return .{
-        .name = "Info",
+        .name = @typeName(@This()),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = type_validator.eval(actual) catch |err|
+                _ = is_type_value.eval(actual) catch |err|
                     return switch (err) {
                         @"type".Error.AssertsTypeValue => InfoError.AssertsTypeValue,
                         else => @panic("unhandled error"),
@@ -63,8 +63,8 @@ pub fn init(params: filter.Params) Prototype {
                     @typeInfo(actual),
                 ) catch |err|
                     return switch (err) {
-                        filter.Error.AssertsBlacklist => InfoError.AssertsBlacklistTypeInfo,
-                        filter.Error.AssertsWhitelist => InfoError.AssertsWhitelistTypeInfo,
+                        FiltersActiveTag.Error.AssertsBlacklist => InfoError.AssertsBlacklistTypeInfo,
+                        FiltersActiveTag.Error.AssertsWhitelist => InfoError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
@@ -79,7 +79,7 @@ pub fn init(params: filter.Params) Prototype {
             ) void {
                 switch (err) {
                     InfoError.AssertsTypeValue,
-                    => comptime type_validator.onError.?(err, prototype, actual),
+                    => comptime is_type_value.onError.?(err, prototype, actual),
 
                     else => @compileError(std.fmt.comptimePrint(
                         "{s}.{s}: expect: {any}, actual: {s}",

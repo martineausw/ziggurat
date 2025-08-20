@@ -1,6 +1,8 @@
 //! Evaluates values to guide control flow and type reasoning.
 const std = @import("std");
 
+const Self = @This();
+
 /// Name to be used for messages.
 name: [:0]const u8,
 
@@ -15,16 +17,16 @@ eval: *const fn (actual: anytype) anyerror!bool = struct {
 /// Callback triggered by `Sign` when `eval` returns an error.
 onError: ?*const fn (
     err: anyerror,
-    prototype: @This(),
+    prototype: Self,
     actual: anytype,
 ) void = null,
 
 /// Callback triggered by `Sign` when `eval` returns `false`.
-onFail: ?*const fn (prototype: @This(), actual: anytype) void = null,
+onFail: ?*const fn (prototype: Self, actual: anytype) void = null,
 
 const Error = error{UnimplementedError};
 
-pub const @"false": @This() = .{
+pub const @"false": Self = .{
     .name = "false",
     .eval = struct {
         fn eval(_: anytype) !bool {
@@ -33,7 +35,7 @@ pub const @"false": @This() = .{
     }.eval,
 };
 
-pub const @"true": @This() = .{
+pub const @"true": Self = .{
     .name = "true",
     .eval = struct {
         fn eval(_: anytype) !bool {
@@ -42,32 +44,47 @@ pub const @"true": @This() = .{
     }.eval,
 };
 
-pub const @"error": @This() = .{ .name = "error", .eval = struct {
-    fn eval(_: anytype) !bool {
-        return error.Error;
-    }
-}.eval, .onError = struct {
-    fn onError(err: anyerror, _: @This(), _: anytype) void {
-        if (@inComptime()) {
-            @compileError(@errorName(err));
+pub const @"error": Self = .{
+    .name = "error",
+    .eval = struct {
+        fn eval(_: anytype) !bool {
+            return error.Error;
         }
-        @panic(@errorName(err));
-    }
-} };
+    }.eval,
+    .onError = struct {
+        fn onError(err: anyerror, _: Self, _: anytype) void {
+            if (@inComptime()) {
+                @compileError(@errorName(err));
+            }
+            @panic(@errorName(err));
+        }
+    }.onError,
+};
 
-pub const array = @import("array.zig");
-pub const @"bool" = @import("bool.zig");
-pub const float = @import("float.zig");
-pub const @"fn" = @import("fn.zig");
-pub const int = @import("int.zig");
-pub const optional = @import("optional.zig");
-pub const pointer = @import("pointer.zig");
-pub const @"struct" = @import("struct.zig");
-pub const @"type" = @import("type.zig");
-pub const vector = @import("vector.zig");
+pub const Array = @import("Array.zig");
+pub const Bool = @import("Bool.zig");
+pub const Float = @import("Float.zig");
+pub const Fn = @import("Fn.zig");
+pub const Int = @import("Int.zig");
+pub const Optional = @import("Optional.zig");
+pub const Pointer = @import("Pointer.zig");
+pub const Struct = @import("Struct.zig");
+pub const Type = @import("Type.zig");
+pub const Vector = @import("Vector.zig");
 
-test array {
-    _ = array.Params{
+pub const is_array = Array.init;
+pub const is_bool = Bool.init;
+pub const is_float = Float.init;
+pub const is_fn = Fn.init;
+pub const is_int = Int.init;
+pub const is_optional = Optional.init;
+pub const is_pointer = Pointer.init;
+pub const is_struct = Struct.init;
+pub const is_type = Type.init;
+pub const is_vector = Vector.init;
+
+test Array {
+    _ = Array.Params{
         .child = .{},
         .len = .{
             .min = null,
@@ -75,32 +92,32 @@ test array {
         },
         .sentinel = null,
     };
-    _ = array.Error;
-    _ = array.init(.{});
+    _ = Array.Error;
+    _ = Array.init(.{});
 }
 
-test @"bool" {
-    _ = @"bool".init;
-    _ = @"bool".Error;
+test Bool {
+    _ = Bool.init;
+    _ = Bool.Error;
 }
 
-test @"fn" {
-    _ = @"fn".init(.{});
+test Fn {
+    _ = Fn.init(.{});
 }
 
-test float {
-    _ = float.Params{
+test Float {
+    _ = Float.Params{
         .bits = .{
             .min = null,
             .max = null,
         },
     };
-    _ = float.Error;
-    _ = float.init(.{});
+    _ = Float.Error;
+    _ = Float.init(.{});
 }
 
-test int {
-    _ = int.Params{
+test Int {
+    _ = Int.Params{
         .bits = .{
             .min = null,
             .max = null,
@@ -110,20 +127,20 @@ test int {
             .unsigned = null,
         },
     };
-    _ = int.Error;
-    _ = int.info_validator;
+    _ = Int.Error;
+    _ = Int.has_type_info;
 }
 
-test optional {
-    _ = optional.Params{
+test Optional {
+    _ = Optional.Params{
         .child = .{},
     };
-    _ = optional.Error;
-    _ = optional.init(.{});
+    _ = Optional.Error;
+    _ = Optional.init(.{});
 }
 
-test pointer {
-    _ = pointer.Params{
+test Pointer {
+    _ = Pointer.Params{
         .child = .{},
         .is_const = null,
         .is_volatile = null,
@@ -135,13 +152,13 @@ test pointer {
             .c = null,
         },
     };
-    _ = pointer.init(.{});
-    _ = pointer.Error;
+    _ = Pointer.init(.{});
+    _ = Pointer.Error;
 }
 
-test @"struct" {
-    _ = @"struct".Error;
-    _ = @"struct".Params{
+test Struct {
+    _ = Struct.Error;
+    _ = Struct.Params{
         .layout = .{
             .@"extern" = null,
             .@"packed" = null,
@@ -151,16 +168,16 @@ test @"struct" {
         .decls = &.{},
         .is_tuple = null,
     };
-    _ = @"struct".init(.{});
+    _ = Struct.init(.{});
 }
 
-test @"type" {
-    _ = @"type".init;
-    _ = @"type".Error;
+test Type {
+    _ = Type.init;
+    _ = Type.Error;
 }
 
-test vector {
-    _ = vector.Params{
+test Vector {
+    _ = Vector.Params{
         .child = .{},
         .len = .{
             .min = null,
@@ -168,6 +185,110 @@ test vector {
         },
     };
 
-    _ = vector.Error;
-    _ = vector.init(.{});
+    _ = Vector.Error;
+    _ = Vector.init(.{});
+}
+
+pub const EqualsBool = @import("aux/EqualsBool.zig");
+pub const FiltersActiveTag = @import("aux/FiltersActiveTag.zig");
+pub const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
+pub const HasDecl = @import("aux/HasDecl.zig");
+pub const HasField = @import("aux/HasField.zig");
+pub const OnChild = @import("aux/OnChild.zig");
+pub const OnIndex = @import("aux/OnIndex.zig");
+pub const OnOptional = @import("aux/OnOptional.zig");
+pub const OnTypeInfo = @import("aux/OnTypeInfo.zig");
+pub const WithinInterval = @import("aux/WithinInterval.zig");
+
+pub const equals_bool = EqualsBool.init;
+pub const filters = FiltersActiveTag.Of;
+pub const has_type_info = FiltersTypeInfo.init;
+pub const has_decl = HasDecl.init;
+pub const has_field = HasField.init;
+pub const on_child = OnChild.init;
+pub const on_index = OnIndex.init;
+pub const on_optional = OnOptional.init;
+pub const on_type_info = OnTypeInfo.init;
+pub const within_interval = WithinInterval.init;
+
+test OnIndex {
+    _ = OnIndex;
+}
+
+test OnChild {
+    _ = OnChild;
+}
+
+test FiltersActiveTag {
+    const Foo = union(enum) {
+        bar: bool,
+    };
+
+    _ = FiltersActiveTag.Of(Foo).init(.{});
+}
+
+test FiltersTypeInfo {
+    const info_params: FiltersTypeInfo.Params = .{
+        .type = null,
+        .void = null,
+        .bool = null,
+        .noreturn = null,
+        .int = null,
+        .float = null,
+        .pointer = null,
+        .array = null,
+        .@"struct" = null,
+        .comptime_float = null,
+        .comptime_int = null,
+        .undefined = null,
+        .null = null,
+        .optional = null,
+        .error_union = null,
+        .error_set = null,
+        .@"enum" = null,
+        .@"union" = null,
+        .@"fn" = null,
+        .@"opaque" = null,
+        .frame = null,
+        .@"anyframe" = null,
+        .vector = null,
+        .enum_literal = null,
+    };
+
+    const info_prototype = FiltersTypeInfo.init(info_params);
+
+    _ = info_prototype;
+    _ = FiltersTypeInfo.Error;
+}
+
+test OnTypeInfo {
+    _ = OnTypeInfo;
+}
+
+test WithinInterval {
+    const interval_params: WithinInterval.Params = .{
+        .min = null,
+        .max = null,
+    };
+
+    const interval_prototype = WithinInterval.init(interval_params);
+
+    _ = interval_prototype;
+    _ = WithinInterval.Error;
+}
+
+pub const conjoin = @import("ops/conjoin.zig").conjoin;
+pub const disjoin = @import("ops/disjoin.zig").disjoin;
+pub const negate = @import("ops/negate.zig").negate;
+
+test conjoin {
+    _ = conjoin;
+}
+
+test disjoin {
+    _ = disjoin;
+}
+
+test negate {
+    _ = negate;
 }

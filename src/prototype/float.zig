@@ -1,5 +1,5 @@
 //! Prototype *float*.
-//! 
+//!
 //! Asserts *actual* is a float type value with a parametric bits
 //! assertion.
 //!
@@ -9,8 +9,8 @@ const testing = std.testing;
 
 const Prototype = @import("Prototype.zig");
 
-const interval = @import("aux/interval.zig");
-const info = @import("aux/info.zig");
+const WithinInterval = @import("aux/WithinInterval.zig");
+const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
 
 /// Error set for *float* prototype.
 const FloatError = error{
@@ -41,7 +41,7 @@ pub const Error = FloatError;
 /// Type value assertion for *float* prototype evaluation argument.
 ///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-pub const info_validator = info.init(.{
+pub const has_type_info = FiltersTypeInfo.init(.{
     .float = true,
 });
 
@@ -54,30 +54,30 @@ pub const Params = struct {
     /// See also:
     /// - [`std.builtin.Type.Float`](#std.builtin.Type.Float)
     /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
-    bits: interval.Params = .{},
+    bits: WithinInterval.Params = .{},
 };
 
 pub fn init(params: Params) Prototype {
-    const bits_validator = interval.init(params.bits);
+    const bits = WithinInterval.init(params.bits);
 
     return .{
         .name = "Float",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = comptime info_validator.eval(actual) catch |err|
+                _ = comptime has_type_info.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.AssertsTypeValue,
+                        FiltersTypeInfo.Error.AssertsTypeValue,
                         => FloatError.AssertsTypeValue,
-                        info.Error.AssertsWhitelistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
                         => FloatError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
-                _ = bits_validator.eval(@typeInfo(actual).float.bits) catch |err|
+                _ = bits.eval(@typeInfo(actual).float.bits) catch |err|
                     return switch (err) {
-                        interval.Error.AssertsMin,
+                        WithinInterval.Error.AssertsMin,
                         => FloatError.AssertsMinBits,
-                        interval.Error.AssertsMax,
+                        WithinInterval.Error.AssertsMax,
                         => FloatError.AssertsMaxBits,
                         else => @panic("unhandled error"),
                     };
@@ -93,11 +93,11 @@ pub fn init(params: Params) Prototype {
             ) void {
                 switch (err) {
                     FloatError.AssertsTypeValue,
-                    => info_validator.onError.?(err, prototype, actual),
+                    => has_type_info.onError.?(err, prototype, actual),
 
                     FloatError.AssertsMinBits,
                     FloatError.AssertsMaxBits,
-                    => bits_validator.onError.?(
+                    => bits.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).float.bits,

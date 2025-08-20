@@ -8,9 +8,9 @@ const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("Prototype.zig");
-const interval = @import("aux/interval.zig");
-const info = @import("aux/info.zig");
-const filter = @import("aux/filter.zig");
+const WithinInterval = @import("aux/WithinInterval.zig");
+const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
+const FiltersActiveTag = @import("aux/FiltersActiveTag.zig");
 
 /// Error set for *int* prototype.
 const IntError = error{
@@ -49,7 +49,7 @@ pub const Error = IntError;
 /// Type value assertion for *int* prototype evaluation argument.
 ///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-pub const info_validator = info.init(.{
+pub const has_type_info = FiltersTypeInfo.init(.{
     .int = true,
 });
 
@@ -57,7 +57,7 @@ pub const info_validator = info.init(.{
 ///
 /// See also:
 /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-const signedness = @import("aux/filter.zig").Filter(std.builtin.Signedness);
+const FiltersSignedness = FiltersActiveTag.Of(std.builtin.Signedness);
 
 /// Assertion parameters for *int* prototype.
 ///
@@ -68,45 +68,45 @@ pub const Params = struct {
     /// See also:
     /// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
     /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
-    bits: interval.Params = .{},
+    bits: WithinInterval.Params = .{},
     /// Asserts int signedness.
     ///
     /// See also:
     /// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    signedness: signedness.Params = .{},
+    signedness: FiltersSignedness.Params = .{},
 };
 
 pub fn init(params: Params) Prototype {
-    const bits_validator = interval.init(params.bits);
-    const signedness_validator = signedness.init(params.signedness);
+    const bits = WithinInterval.init(params.bits);
+    const signedness = FiltersSignedness.init(params.signedness);
 
     return .{
         .name = "Int",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = comptime info_validator.eval(actual) catch |err|
+                _ = comptime has_type_info.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.AssertsTypeValue,
+                        FiltersTypeInfo.Error.AssertsTypeValue,
                         => IntError.AssertsTypeValue,
-                        info.Error.AssertsWhitelistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
                         => IntError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
-                _ = bits_validator.eval(@typeInfo(actual).int.bits) catch |err|
+                _ = bits.eval(@typeInfo(actual).int.bits) catch |err|
                     return switch (err) {
-                        interval.Error.AssertsMin => IntError.AssertsMinBits,
-                        interval.Error.AssertsMax => IntError.AssertsMaxBits,
+                        WithinInterval.Error.AssertsMin => IntError.AssertsMinBits,
+                        WithinInterval.Error.AssertsMax => IntError.AssertsMaxBits,
                         else => @panic("unhandled error"),
                     };
 
-                _ = comptime signedness_validator.eval(
+                _ = comptime signedness.eval(
                     @typeInfo(actual).int.signedness,
                 ) catch |err|
                     return switch (err) {
-                        signedness.Error.AssertsBlacklist => IntError.AssertsBlacklistSignedness,
-                        signedness.Error.AssertsWhitelist => IntError.AssertsWhitelistSignedness,
+                        FiltersSignedness.Error.AssertsBlacklist => IntError.AssertsBlacklistSignedness,
+                        FiltersSignedness.Error.AssertsWhitelist => IntError.AssertsWhitelistSignedness,
                         else => @panic("unhandled error"),
                     };
 
@@ -118,7 +118,7 @@ pub fn init(params: Params) Prototype {
                 switch (err) {
                     IntError.AssertsTypeValue,
                     IntError.AssertsWhitelistTypeInfo,
-                    => info_validator.onError.?(
+                    => has_type_info.onError.?(
                         err,
                         prototype,
                         actual,
@@ -126,7 +126,7 @@ pub fn init(params: Params) Prototype {
 
                     IntError.AssertsMinBits,
                     IntError.AssertsMaxBits,
-                    => bits_validator.onError.?(
+                    => bits.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).int.bits,
@@ -134,7 +134,7 @@ pub fn init(params: Params) Prototype {
 
                     IntError.AssertsBlacklistSignedness,
                     IntError.AssertsWhitelistSignedness,
-                    => signedness_validator.onError.?(
+                    => signedness.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).int.signedness,

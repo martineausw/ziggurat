@@ -6,16 +6,10 @@ const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("../Prototype.zig");
-const info = @import("../aux/info.zig");
-
-pub const info_validator = info.init(.{
-    .array = true,
-    .pointer = true,
-    .vector = true,
-});
+const FiltersTypeInfo = @import("../aux/FiltersTypeInfo.zig");
 
 /// Boolean OR of prototypes' evaluation results.
-pub fn disjoin(prototypes: anytype) Prototype {
+pub fn disjoin(comptime prototypes: []const Prototype) Prototype {
     return .{
         .name = "disjoin",
         .eval = struct {
@@ -38,7 +32,7 @@ pub fn disjoin(prototypes: anytype) Prototype {
 
                 var result = results[0];
 
-                for (1..results.len) |i|
+                for (1..prototypes.len) |i|
                     result = result or results[i];
 
                 if (result) {
@@ -108,82 +102,29 @@ pub fn disjoin(prototypes: anytype) Prototype {
 }
 
 test disjoin {
-    _ = disjoin(.{
-        Prototype{
-            .name = "prototype",
-            .eval = struct {
-                fn eval(actual: anytype) !bool {
-                    _ = actual;
-                    return true;
-                }
-            }.eval,
-        },
-    });
+    _ = disjoin(&.{.true});
 }
 
 test "evaluates conjoin to true" {
-    const is_true: Prototype = .{
-        .name = "true",
-        .eval = struct {
-            fn eval(_: anytype) !bool {
-                return true;
-            }
-        }.eval,
-    };
-
-    const is_false: Prototype = .{
-        .name = "false",
-        .eval = struct {
-            fn eval(_: anytype) !bool {
-                return false;
-            }
-        }.eval,
-    };
-
-    try std.testing.expectEqual(true, disjoin(.{is_true}).eval(void));
-    try std.testing.expectEqual(true, disjoin(.{ is_true, is_true }).eval(void));
-    try std.testing.expectEqual(true, disjoin(.{ is_false, is_true }).eval(void));
-    try std.testing.expectEqual(true, disjoin(.{ is_true, is_false }).eval(void));
-    try std.testing.expectEqual(true, disjoin(.{ is_true, is_true, is_false }).eval(void));
+    try std.testing.expectEqual(true, disjoin(&.{.true}).eval(void));
+    try std.testing.expectEqual(true, disjoin(&.{ .true, .true }).eval(void));
+    try std.testing.expectEqual(true, disjoin(&.{ .false, .true }).eval(void));
+    try std.testing.expectEqual(true, disjoin(&.{ .true, .false }).eval(void));
+    try std.testing.expectEqual(true, disjoin(&.{ .true, .true, .false }).eval(void));
 }
 
 test "evaluates conjoin to false" {
-    const is_false: Prototype = .{
-        .name = "false",
-        .eval = struct {
-            fn eval(_: anytype) !bool {
-                return false;
-            }
-        }.eval,
-    };
-
-    try std.testing.expectEqual(false, disjoin(.{is_false}).eval(void));
-    try std.testing.expectEqual(false, disjoin(.{ is_false, is_false }).eval(void));
-    try std.testing.expectEqual(false, disjoin(.{ is_false, is_false, is_false }).eval(void));
+    try std.testing.expectEqual(false, disjoin(&.{.false}).eval(void));
+    try std.testing.expectEqual(false, disjoin(&.{ .false, .false }).eval(void));
+    try std.testing.expectEqual(false, disjoin(&.{ .false, .false, .false }).eval(void));
 }
 
 test "evaluates conjoin to error" {
-    const is_false: Prototype = .{
-        .name = "false",
-        .eval = struct {
-            fn eval(_: anytype) !bool {
-                return false;
-            }
-        }.eval,
-    };
-
-    const is_error: Prototype = .{
-        .name = "error",
-        .eval = struct {
-            fn eval(_: anytype) !bool {
-                return error.Error;
-            }
-        }.eval,
-    };
-
-    try std.testing.expectEqual(error.Error, disjoin(.{is_error}).eval(void));
-    try std.testing.expectEqual(error.Error, disjoin(.{ is_error, is_error }).eval(void));
-    try std.testing.expectEqual(error.Error, disjoin(.{ is_false, is_error }).eval(void));
-    try std.testing.expectEqual(error.Error, disjoin(.{ is_error, is_false }).eval(void));
-    try std.testing.expectEqual(error.Error, disjoin(.{ is_error, is_false, is_error }).eval(void));
+    try std.testing.expectEqual(error.Error, disjoin(&.{
+        .@"error",
+    }).eval(void));
+    try std.testing.expectEqual(error.Error, disjoin(&.{ .@"error", .@"error" }).eval(void));
+    try std.testing.expectEqual(error.Error, disjoin(&.{ .false, .@"error" }).eval(void));
+    try std.testing.expectEqual(error.Error, disjoin(&.{ .@"error", .false }).eval(void));
+    try std.testing.expectEqual(error.Error, disjoin(&.{ .@"error", .false, .@"error" }).eval(void));
 }

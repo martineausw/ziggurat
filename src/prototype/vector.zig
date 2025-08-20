@@ -8,9 +8,9 @@ const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("Prototype.zig");
-const interval = @import("aux/interval.zig");
-const info = @import("aux/info.zig");
-const info_switch = @import("aux/info_switch.zig");
+const WithinInterval = @import("aux/WithinInterval.zig");
+const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
+const OnTypeInfo = @import("aux/OnTypeInfo.zig");
 
 /// Error set for *vector* prototype.
 const VectorError = error{
@@ -25,18 +25,7 @@ const VectorError = error{
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     AssertsWhitelistTypeInfo,
-    /// *actual* vector child type info has active tag that belongs to blacklist.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    AssertsBlacklistChildTypeInfo,
-    /// *actual* vector child type info has active tag that does not belong to whitelist.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    AssertsWhitelistChildTypeInfo,
+
     /// *actual* vector length is less than minimum.
     ///
     /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
@@ -52,7 +41,7 @@ pub const Error = VectorError;
 /// Type value assertion for *vector* prototype evaluation argument.
 ///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-pub const info_validator = info.init(.{
+pub const has_type_info = FiltersTypeInfo.init(.{
     .vector = true,
 });
 
@@ -66,47 +55,39 @@ pub const Params = struct {
     /// - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    child: info_switch.Params = .{},
+    child: OnTypeInfo.Params = .{},
     /// Asserts vector length interval.
     ///
     /// See also:
     /// - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
     /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
-    len: interval.Params = .{},
+    len: WithinInterval.Params = .{},
 };
 
 pub fn init(params: Params) Prototype {
-    const child_validator = info_switch.init(params.child);
-    const len_validator = interval.init(params.len);
+    const child = OnTypeInfo.init(params.child);
+    const len = WithinInterval.init(params.len);
 
     return .{
         .name = "Vector",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = info_validator.eval(actual) catch |err|
+                _ = has_type_info.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.AssertsTypeValue,
+                        FiltersTypeInfo.Error.AssertsTypeValue,
                         => VectorError.AssertsTypeValue,
-                        info.Error.AssertsWhitelistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
                         => VectorError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
-                _ = child_validator.eval(@typeInfo(actual).vector.child) catch |err| {
-                    return switch (err) {
-                        info.Error.AssertsBlacklistTypeInfo,
-                        => VectorError.AssertsBlacklistChildTypeInfo,
-                        info.Error.AssertsWhitelistTypeInfo,
-                        => VectorError.AssertsWhitelistChildTypeInfo,
-                        else => @panic("unhandled error"),
-                    };
-                };
+                _ = try child.eval(@typeInfo(actual).vector.child);
 
-                _ = len_validator.eval(@typeInfo(actual).vector.len) catch |err|
+                _ = len.eval(@typeInfo(actual).vector.len) catch |err|
                     return switch (err) {
-                        interval.Error.AssertsMin,
+                        WithinInterval.Error.AssertsMin,
                         => VectorError.AssertsMinLen,
-                        interval.Error.AssertsMax,
+                        WithinInterval.Error.AssertsMax,
                         => VectorError.AssertsMaxLen,
                         else => @panic("unhandled error"),
                     };
@@ -123,25 +104,21 @@ pub fn init(params: Params) Prototype {
                 switch (err) {
                     VectorError.AssertsTypeValue,
                     VectorError.AssertsWhitelistTypeInfo,
-                    => info_validator.onError.?(err, prototype, actual),
-
-                    VectorError.AssertsBlacklistChildType,
-                    VectorError.AssertsWhitelistChildType,
-                    => child_validator.onError.?(
-                        err,
-                        prototype,
-                        @typeInfo(actual).vector.child,
-                    ),
+                    => has_type_info.onError.?(err, prototype, actual),
 
                     VectorError.AssertsMinLen,
                     VectorError.AssertsMaxLen,
-                    => len_validator.onError.?(
+                    => len.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).vector.len,
                     ),
 
-                    else => @panic("unhandled error"),
+                    else => child.onError.?(
+                        err,
+                        prototype,
+                        @typeInfo(actual).vector.child,
+                    ),
                 }
             }
         }.onError,
@@ -151,9 +128,6 @@ pub fn init(params: Params) Prototype {
 test VectorError {
     _ = VectorError.AssertsTypeValue catch void;
     _ = VectorError.AssertsWhitelistTypeInfo catch void;
-
-    _ = VectorError.AssertsBlacklistChildTypeInfo catch void;
-    _ = VectorError.AssertsWhitelistChildTypeInfo catch void;
 
     _ = VectorError.AssertsMinLen catch void;
     _ = VectorError.AssertsMaxLen catch void;
@@ -192,40 +166,6 @@ test "passes vector assertions" {
     });
 
     try std.testing.expectEqual(true, vector.eval(@Vector(3, f128)));
-}
-
-test "fails vector child type info blacklist assertions" {
-    const vector = init(.{
-        .child = .{
-            .float = .false,
-        },
-        .len = .{
-            .min = null,
-            .max = null,
-        },
-    });
-
-    try std.testing.expectEqual(
-        VectorError.AssertsBlacklistChildTypeInfo,
-        comptime vector.eval(@Vector(3, f128)),
-    );
-}
-
-test "fails vector child type info whitelist assertions" {
-    const vector = init(.{
-        .child = .{
-            .int = .true,
-        },
-        .len = .{
-            .min = null,
-            .max = null,
-        },
-    });
-
-    try std.testing.expectEqual(
-        VectorError.AssertsWhitelistChildTypeInfo,
-        comptime vector.eval(@Vector(3, f128)),
-    );
 }
 
 test "fails vector length interval assertions" {

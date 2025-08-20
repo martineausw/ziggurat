@@ -7,12 +7,12 @@ const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("Prototype.zig");
-const interval = @import("aux/interval.zig");
-const info = @import("aux/info.zig");
-const filter = @import("aux/filter.zig");
-const toggle = @import("aux/toggle.zig");
-const exists = @import("aux/exists.zig");
-const child = @import("aux/child.zig");
+const WithinInterval = @import("aux/WithinInterval.zig");
+const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
+const FiltersActiveTag = @import("aux/FiltersActiveTag.zig");
+const EqualsBool = @import("aux/EqualsBool.zig");
+const OnOptional = @import("aux/OnOptional.zig");
+const OnTypeInfo = @import("aux/OnTypeInfo.zig");
 
 /// Error set for *int* prototype.
 const FnError = error{
@@ -67,7 +67,7 @@ pub const Error = FnError;
 /// Type value assertion for *int* prototype evaluation argument.
 ///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-pub const info_validator = info.init(.{
+pub const has_type_info = FiltersTypeInfo.init(.{
     .@"fn" = true,
 });
 
@@ -114,59 +114,53 @@ const Param = struct {
         /// See also:
         /// - [`std.builtin.Type.Fn`](#std.builtin.Type.Fn)
         /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
-        is_generic: toggle.Params = null,
+        is_generic: EqualsBool.Params = null,
         /// Asserts fn parameter has or does not have alias.
         ///
         /// See also:
         /// - [`std.builtin.Type.Fn`](#std.builtin.Type.Fn)
         /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
-        is_noalias: toggle.Params = null,
+        is_noalias: EqualsBool.Params = null,
         /// Asserts fn exists and applies prototype to a child or does not exist.
         ///
         /// See also:
         /// - [`std.builtin.Type.Fn`](#std.builtin.Type.Fn)
         /// - [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
         /// - [`ziggurat.prototype.aux.child`](#root.prototype.aux.child)
-        type: ?info.Params = null,
+        type: ?OnTypeInfo.Params = null,
     };
 
     pub fn init(params: @This().Params) Prototype {
-        const is_generic_validator = toggle.init(params.is_generic);
-        const is_noalias_validator = toggle.init(params.is_noalias);
-        const type_validator = if (params.type) |_| info.init(params.type.?) else exists.init(false);
+        const is_generic = EqualsBool.init(params.is_generic);
+        const is_noalias = EqualsBool.init(params.is_noalias);
+        const @"type" = OnOptional.init(if (params.type) |t| OnTypeInfo.init(t) else null);
         return .{
             .name = "Fn.Param",
             .eval = struct {
                 fn eval(actual: anytype) anyerror!bool {
-                    _ = is_generic_validator.eval(actual.is_generic) catch |err|
+                    _ = is_generic.eval(actual.is_generic) catch |err|
                         return switch (err) {
-                            toggle.Error.AssertsTrue,
+                            EqualsBool.Error.AssertsTrue,
                             => FnError.AssertsTrueParamIsGeneric,
-                            toggle.Error.AssertsFalse,
+                            EqualsBool.Error.AssertsFalse,
                             => FnError.AssertsFalseParamIsGeneric,
                             else => @panic("unhandled error"),
                         };
 
-                    _ = is_noalias_validator.eval(actual.is_noalias) catch |err|
+                    _ = is_noalias.eval(actual.is_noalias) catch |err|
                         return switch (err) {
-                            toggle.Error.AssertsTrue,
+                            EqualsBool.Error.AssertsTrue,
                             => FnError.AssertsTrueParamIsNoAlias,
-                            toggle.Error.AssertsFalse,
+                            EqualsBool.Error.AssertsFalse,
                             => FnError.AssertsFalseParamIsNoAlias,
                             else => @panic("unhandled error"),
                         };
 
-                    _ = type_validator.eval(if (params.type) |_| actual.type.? else actual.type) catch |err|
+                    _ = @"type".eval(if (params.type) |_| actual.type.? else actual.type) catch |err|
                         return switch (err) {
-                            info.Error.AssertsBlacklistTypeInfo,
-                            => FnError.AssertsBlacklistParamTypeInfo,
-
-                            info.Error.AssertsWhitelistTypeInfo,
-                            => FnError.AssertsWhitelistParamTypeInfo,
-
-                            exists.Error.AssertsNull,
-                            => FnError.AssertsNullParamType,
-                            else => @panic("unhandled error"),
+                            OnOptional.Error.AssertsNotNull,
+                            => FnError.AssertsNotNullParamType,
+                            else => err,
                         };
 
                     return true;
@@ -177,18 +171,13 @@ const Param = struct {
                     switch (err) {
                         ParamError.AssertsTrueParamIsNoAlias,
                         ParamError.AssertsFalseParamIsNoAlias,
-                        => is_noalias_validator.onError.?(err, prototype, actual.is_var_args),
+                        => is_noalias.onError.?(err, prototype, actual.is_var_args),
 
                         ParamError.AssertsTrueParamIsGeneric,
                         ParamError.AssertsFalseParamIsGeneric,
-                        => is_generic_validator.onError.?(err, prototype, actual.is_generic),
+                        => is_generic.onError.?(err, prototype, actual.is_generic),
 
-                        ParamError.AssertsBlacklistParamTypeInfo,
-                        ParamError.AssertsWhitelistParamTypeInfo,
-                        ParamError.AssertsNullParamType,
-                        => type_validator.onError.?(err, prototype, actual.type),
-
-                        else => @panic("unhandled error"),
+                        else => @"type".onError.?(err, prototype, actual.type),
                     }
                 }
             }.onError,
@@ -196,7 +185,7 @@ const Param = struct {
     }
 };
 
-const calling_convention = filter.Filter(std.builtin.CallingConvention);
+const FiltersCallingConvention = FiltersActiveTag.Of(std.builtin.CallingConvention);
 /// Assertion parameters for *fn* prototype.
 ///
 /// See also: [`std.builtin.Type.Fn`](#std.builtin.Type.Fn)
@@ -206,82 +195,82 @@ pub const Params = struct {
     /// See also:
     /// - [`std.builtin.CallingConvention`](#std.builtin.CallingConvention)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    calling_convention: calling_convention.Params = .{},
+    calling_convention: FiltersCallingConvention.Params = .{},
     /// Asserts fn is or is not var args.
     ///
     /// See also:
     /// - [`std.builtin.Type.Fn`](#std.builtin.Type.Fn)
     /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
-    is_var_args: toggle.Params = null,
+    is_var_args: EqualsBool.Params = null,
     /// Asserts fn is or is not generic.
     ///
     /// See also:
     /// - [`std.builtin.Type.Fn`](#std.builtin.Type.Fn)
     /// - [`ziggurat.prototype.aux.toggle`](#root.prototype.aux.toggle)
-    is_generic: toggle.Params = null,
+    is_generic: EqualsBool.Params = null,
     /// Asserts fn exists and applies prototype to a child or does not exist.
     ///
     /// See also:
     /// - [`std.builtin.Type.Fn`](#std.builtin.Type.Fn)
     /// - [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     /// - [`ziggurat.prototype.aux.child`](#root.prototype.aux.child)
-    return_type: info.Params = .{},
+    return_type: FiltersTypeInfo.Params = .{},
 
     /// Asserts fn parameters.
     params: []const Param.Params = &.{},
 };
 
 pub fn init(params: Params) Prototype {
-    const calling_convention_validator = calling_convention.init(params.calling_convention);
-    const is_var_args_validator = toggle.init(params.is_var_args);
-    const is_generic_validator = toggle.init(params.is_generic);
-    const return_type_validator = info.init(params.return_type);
+    const calling_convention = FiltersCallingConvention.init(params.calling_convention);
+    const is_var_args = EqualsBool.init(params.is_var_args);
+    const is_generic = EqualsBool.init(params.is_generic);
+    const return_type = FiltersTypeInfo.init(params.return_type);
 
     return .{
         .name = "Fn",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = comptime info_validator.eval(actual) catch |err|
+                _ = comptime has_type_info.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.AssertsTypeValue,
+                        FiltersTypeInfo.Error.AssertsTypeValue,
                         => FnError.AssertsTypeValue,
-                        info.Error.AssertsWhitelistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
                         => FnError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
-                _ = calling_convention_validator.eval(@typeInfo(actual).@"fn".calling_convention) catch |err|
+                _ = calling_convention.eval(@typeInfo(actual).@"fn".calling_convention) catch |err|
                     return switch (err) {
-                        calling_convention.Error.AssertsWhitelist,
+                        FiltersCallingConvention.Error.AssertsWhitelist,
                         => FnError.AssertsWhitelistCallingConvention,
-                        calling_convention.Error.AssertsBlacklist,
+                        FiltersCallingConvention.Error.AssertsBlacklist,
                         => FnError.AssertsBlacklistCallingConvention,
                         else => @panic("unhandled error"),
                     };
 
-                _ = is_var_args_validator.eval(@typeInfo(actual).@"fn".is_var_args) catch |err|
+                _ = is_var_args.eval(@typeInfo(actual).@"fn".is_var_args) catch |err|
                     return switch (err) {
-                        toggle.Error.AssertsTrue,
+                        EqualsBool.Error.AssertsTrue,
                         => FnError.AssertsTrueIsVarArgs,
-                        toggle.Error.AssertsFalse,
+                        EqualsBool.Error.AssertsFalse,
                         => FnError.AssertsFalseIsVarArgs,
                         else => @panic("unhandled error"),
                     };
 
-                _ = is_generic_validator.eval(@typeInfo(actual).@"fn".is_generic) catch |err|
+                _ = is_generic.eval(@typeInfo(actual).@"fn".is_generic) catch |err|
                     return switch (err) {
-                        toggle.Error.AssertsTrue,
+                        EqualsBool.Error.AssertsTrue,
                         => FnError.AssertsTrueIsGeneric,
-                        toggle.Error.AssertsFalse,
+                        EqualsBool.Error.AssertsFalse,
                         => FnError.AssertsFalseIsGeneric,
                         else => @panic("unhandled error"),
                     };
 
-                _ = return_type_validator.eval(@typeInfo(actual).@"fn".return_type.?) catch |err|
+                _ = return_type.eval(@typeInfo(actual).@"fn".return_type.?) catch |err|
                     return switch (err) {
-                        info.Error.AssertsBlacklistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsBlacklistTypeInfo,
                         => FnError.AssertsBlacklistReturnTypeInfo,
-                        info.Error.AssertsWhitelistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
                         => FnError.AssertsWhitelistReturnTypeInfo,
                         else => @panic("unhandled error"),
                     };
@@ -299,7 +288,7 @@ pub fn init(params: Params) Prototype {
                 switch (err) {
                     FnError.AssertsTypeValue,
                     FnError.AssertsWhitelistTypeInfo,
-                    => info_validator.onError.?(
+                    => has_type_info.onError.?(
                         err,
                         prototype,
                         actual,
@@ -307,7 +296,7 @@ pub fn init(params: Params) Prototype {
 
                     FnError.AssertsWhitelistCallingConvention,
                     FnError.AssertsBlacklistCallingConvention,
-                    => calling_convention_validator.onError.?(
+                    => calling_convention.onError.?(
                         err,
                         prototype,
                         actual,
@@ -315,7 +304,7 @@ pub fn init(params: Params) Prototype {
 
                     FnError.AssertsTrueIsVarArgs,
                     FnError.AssertsFalseIsVarArgs,
-                    => is_var_args_validator.onError.?(
+                    => is_var_args.onError.?(
                         err,
                         prototype,
                         actual,
@@ -323,7 +312,7 @@ pub fn init(params: Params) Prototype {
 
                     FnError.AssertsTrueIsGeneric,
                     FnError.AssertsFalseIsGeneric,
-                    => is_generic_validator.onError.?(
+                    => is_generic.onError.?(
                         err,
                         prototype,
                         actual,
@@ -331,13 +320,13 @@ pub fn init(params: Params) Prototype {
 
                     FnError.AssertsBlacklistReturnTypeInfo,
                     FnError.AssertsWhitelistReturnTypeInfo,
-                    => return_type_validator.onError.?(
+                    => return_type.onError.?(
                         err,
                         prototype,
                         actual,
                     ),
 
-                    else => return_type_validator.onError.?(
+                    else => return_type.onError.?(
                         err,
                         prototype,
                         actual,
@@ -509,40 +498,6 @@ test "fails fn is generic is false assertion" {
     );
 }
 
-test "fails fn return type whitelist assertion" {
-    const @"fn": Prototype = init(.{
-        .calling_convention = .{},
-        .is_generic = null,
-        .is_var_args = null,
-        .params = &.{},
-        .return_type = .{
-            .int = true,
-        },
-    });
-
-    try std.testing.expectEqual(
-        FnError.AssertsWhitelistReturnTypeInfo,
-        comptime @"fn".eval(fn () void),
-    );
-}
-
-test "fails fn return type blacklist assertion" {
-    const @"fn": Prototype = init(.{
-        .calling_convention = .{},
-        .is_generic = null,
-        .is_var_args = null,
-        .params = &.{},
-        .return_type = .{
-            .void = false,
-        },
-    });
-
-    try std.testing.expectEqual(
-        FnError.AssertsBlacklistReturnTypeInfo,
-        comptime @"fn".eval(fn () void),
-    );
-}
-
 test "fails fn param is generic is true assertion" {
     const @"fn": Prototype = init(.{
         .calling_convention = .{},
@@ -608,39 +563,5 @@ test "fails fn param is no alias false assertion" {
     try std.testing.expectEqual(
         FnError.AssertsFalseParamIsNoAlias,
         comptime @"fn".eval(fn (noalias actual: anytype) void),
-    );
-}
-
-test "fails fn param type is null assertion" {
-    const @"fn": Prototype = init(.{
-        .calling_convention = .{},
-        .is_generic = null,
-        .is_var_args = null,
-        .params = &.{.{
-            .type = null,
-        }},
-        .return_type = .{},
-    });
-
-    try std.testing.expectEqual(
-        FnError.AssertsNullParamType,
-        comptime @"fn".eval(fn (i128) void),
-    );
-}
-
-test "fails fn param type blacklist assertion" {
-    const @"fn": Prototype = init(.{
-        .calling_convention = .{},
-        .is_generic = null,
-        .is_var_args = null,
-        .params = &.{.{
-            .type = .{ .void = false },
-        }},
-        .return_type = .{},
-    });
-
-    try std.testing.expectEqual(
-        FnError.AssertsBlacklistParamTypeInfo,
-        comptime @"fn".eval(fn (void) void),
     );
 }

@@ -4,10 +4,10 @@
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
-const info = @import("info.zig");
+const FiltersTypeInfo = @import("FiltersTypeInfo.zig");
 
 /// Error set for *exists* prototype.
-const ExistsError = error{
+const OnOptionalError = error{
     /// *actual* is not a type value.
     ///
     /// See also:
@@ -20,55 +20,48 @@ const ExistsError = error{
     AssertsWhitelistTypeInfo,
     /// *actual* is null.
     AssertsNotNull,
-    /// *actual* is not null.
-    AssertsNull,
 };
 
-pub const Error = ExistsError;
+pub const Error = OnOptionalError;
 
 /// Type info assertions for *exists* prototype evaluation argument.
 ///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-pub const info_validator = info.init(.{
+pub const has_type_info = FiltersTypeInfo.init(.{
     .optional = true,
 });
 
-pub const Params = ?bool;
+pub const Params = ?Prototype;
 
 pub fn init(params: Params) Prototype {
     return .{
-        .name = "Toggle",
+        .name = @typeName(@This()),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = info_validator.eval(@TypeOf(actual)) catch |err|
+                _ = has_type_info.eval(@TypeOf(actual)) catch |err|
                     return switch (err) {
-                        info.Error.AssertsTypeValue,
-                        => ExistsError.AssertsTypeValue,
-                        info.Error.AssertsWhitelistTypeInfo,
-                        => ExistsError.AssertsWhitelistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsTypeValue,
+                        => OnOptionalError.AssertsTypeValue,
+                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
+                        => OnOptionalError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
                 if (params) |param| {
-                    if (param) {
-                        if (actual) |_| {} else {
-                            return ExistsError.AssertsNotNull;
-                        }
+                    if (actual) |value| {
+                        return param.eval(value);
                     } else {
-                        if (actual) |_| {
-                            return ExistsError.AssertsNull;
-                        }
+                        return OnOptionalError.AssertsNotNull;
                     }
                 }
-
                 return true;
             }
         }.eval,
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    ExistsError.AssertsTypeValue,
-                    => info_validator.onError.?(err, prototype, actual),
+                    OnOptionalError.AssertsTypeValue,
+                    => has_type_info.onError.?(err, prototype, actual),
 
                     else => @compileError(
                         std.fmt.comptimePrint("{s}.{s}: {any}", .{
@@ -83,7 +76,7 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test ExistsError {}
+test OnOptionalError {}
 
 test Params {
     const params: Params = null;
@@ -98,45 +91,24 @@ test init {
 }
 
 test "passes exists assertions" {
-    const no_assertion = init(null);
-    const asserts_not_null = init(true);
-    const asserts_null = init(false);
+    const asserts_not_null = init(.true);
 
     try std.testing.expectEqual(
         true,
-        no_assertion.eval(@as(?u8, 'a')),
-    );
-
-    try std.testing.expectEqual(
-        true,
-        no_assertion.eval(@as(?u8, null)),
+        init(null).eval(@as(?u8, null)),
     );
 
     try std.testing.expectEqual(
         true,
         asserts_not_null.eval(@as(?u8, 'a')),
     );
-
-    try std.testing.expectEqual(
-        true,
-        asserts_null.eval(@as(?u8, null)),
-    );
 }
 
 test "fails not null optional assertion" {
-    const asserts_not_null = init(true);
+    const asserts_not_null = init(.true);
 
     try std.testing.expectEqual(
-        ExistsError.AssertsNotNull,
+        OnOptionalError.AssertsNotNull,
         asserts_not_null.eval(@as(?u8, null)),
-    );
-}
-
-test "fails null optional assertion" {
-    const asserts_null = init(false);
-
-    try std.testing.expectEqual(
-        ExistsError.AssertsNull,
-        asserts_null.eval(@as(?u8, 'a')),
     );
 }

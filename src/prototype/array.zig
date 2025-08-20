@@ -8,10 +8,10 @@ const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("Prototype.zig");
-const interval = @import("aux/interval.zig");
-const info = @import("aux/info.zig");
-const info_switch = @import("aux/info_switch.zig");
-const exists = @import("aux/exists.zig");
+const WithinInterval = @import("aux/WithinInterval.zig");
+const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
+const OnTypeInfo = @import("aux/OnTypeInfo.zig");
+const OnOptional = @import("aux/OnOptional.zig");
 
 /// Error set for array.
 const ArrayError = error{
@@ -63,7 +63,7 @@ pub const Error = ArrayError;
 /// Type value assertion for *array* prototype evaluation argument.
 ///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-pub const info_validator = info.init(.{
+pub const has_type_info = FiltersTypeInfo.init(.{
     .array = true,
 });
 
@@ -77,73 +77,64 @@ pub const Params = struct {
     /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    child: info_switch.Params = .{},
+    child: OnTypeInfo.Params = .{},
 
     /// Asserts array length interval.
     ///
     /// See also:
     /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
     /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
-    len: interval.Params = .{},
+    len: WithinInterval.Params = .{},
 
     /// Asserts array sentinel existence.
     ///
     /// See also:
     /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
     /// - [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
-    sentinel: exists.Params = null,
+    sentinel: OnOptional.Params = null,
 };
 
 pub fn init(params: Params) Prototype {
-    const child_validator = info_switch.init(params.child);
-    const len_validator = interval.init(params.len);
-    const sentinel_validator = exists.init(params.sentinel);
+    const child = OnTypeInfo.init(params.child);
+    const len = WithinInterval.init(params.len);
+    const sentinel = OnOptional.init(params.sentinel);
 
     return .{
         .name = "Array",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = comptime info_validator.eval(
+                _ = comptime has_type_info.eval(
                     actual,
                 ) catch |err|
                     return switch (err) {
-                        info.Error.AssertsTypeValue,
+                        FiltersTypeInfo.Error.AssertsTypeValue,
                         => ArrayError.AssertsTypeValue,
-                        info.Error.AssertsWhitelistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
                         => ArrayError.AssertsWhitelistTypeInfo,
                         else => @panic("unhandled error"),
                     };
 
-                _ = comptime child_validator.eval(
+                _ = try child.eval(
                     @typeInfo(actual).array.child,
-                ) catch |err|
-                    return switch (err) {
-                        info.Error.AssertsBlacklistTypeInfo,
-                        => ArrayError.AssertsBlacklistChildTypeInfo,
-                        info.Error.AssertsWhitelistTypeInfo,
-                        => ArrayError.AssertsWhitelistChildTypeInfo,
-                        else => @panic("unhandled error"),
-                    };
+                );
 
-                _ = len_validator.eval(
+                _ = len.eval(
                     @typeInfo(actual).array.len,
                 ) catch |err|
                     return switch (err) {
-                        interval.Error.AssertsMin,
+                        WithinInterval.Error.AssertsMin,
                         => ArrayError.AssertsMinLen,
-                        interval.Error.AssertsMax,
+                        WithinInterval.Error.AssertsMax,
                         => ArrayError.AssertsMaxLen,
                         else => @panic("unhandled error"),
                     };
 
-                _ = sentinel_validator.eval(
+                _ = sentinel.eval(
                     @typeInfo(actual).array.sentinel(),
                 ) catch |err|
                     return switch (err) {
-                        exists.Error.AssertsNotNull,
+                        OnOptional.Error.AssertsNotNull,
                         => ArrayError.AssertsNotNullSentinel,
-                        exists.Error.AssertsNull,
-                        => ArrayError.AssertsNullSentinel,
                         else => @panic("unhandled error"),
                     };
 
@@ -159,33 +150,28 @@ pub fn init(params: Params) Prototype {
                 switch (err) {
                     ArrayError.AssertsTypeValue,
                     ArrayError.AssertsWhitelistTypeInfo,
-                    => info_validator.onError.?(err, prototype, actual),
-
-                    ArrayError.AssertsBlacklistChildTypeInfo,
-                    ArrayError.AssertsWhitelistChildTypeInfo,
-                    => info_validator.onError.?(
-                        err,
-                        prototype,
-                        @typeInfo(actual).array.child,
-                    ),
+                    => has_type_info.onError.?(err, prototype, actual),
 
                     ArrayError.AssertsMinLen,
                     ArrayError.AssertsMaxLen,
-                    => len_validator.onError.?(
+                    => len.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).array.len,
                     ),
 
-                    ArrayError.AssertsNotNullSentinel,
                     ArrayError.AssertsNullSentinel,
-                    => sentinel_validator.onError.?(
+                    => sentinel.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).array.sentinel(),
                     ),
 
-                    else => @panic("unhandled error"),
+                    else => child.onError.?(
+                        err,
+                        prototype,
+                        @typeInfo(actual).array.child,
+                    ),
                 }
             }
         }.onError,
@@ -195,12 +181,9 @@ pub fn init(params: Params) Prototype {
 test ArrayError {
     _ = ArrayError.AssertsTypeValue catch void;
     _ = ArrayError.AssertsWhitelistTypeInfo catch void;
-    _ = ArrayError.AssertsBlacklistChildTypeInfo catch void;
-    _ = ArrayError.AssertsWhitelistChildTypeInfo catch void;
     _ = ArrayError.AssertsMinLen catch void;
     _ = ArrayError.AssertsMaxLen catch void;
     _ = ArrayError.AssertsNotNullSentinel catch void;
-    _ = ArrayError.AssertsNullSentinel catch void;
 }
 
 test Params {
@@ -265,46 +248,6 @@ test "fails type value assertion" {
     );
 }
 
-test "fails array child type info whitelist assertions" {
-    const array = init(
-        .{
-            .child = .{
-                .int = .true,
-            },
-            .len = .{
-                .min = null,
-                .max = null,
-            },
-            .sentinel = null,
-        },
-    );
-
-    try std.testing.expectEqual(
-        ArrayError.AssertsWhitelistChildTypeInfo,
-        comptime array.eval([3]f128),
-    );
-}
-
-test "fails array child type info blacklist assertions" {
-    const array = init(
-        .{
-            .child = .{
-                .int = .false,
-            },
-            .len = .{
-                .min = null,
-                .max = null,
-            },
-            .sentinel = null,
-        },
-    );
-
-    try std.testing.expectEqual(
-        ArrayError.AssertsBlacklistChildTypeInfo,
-        comptime array.eval([3]usize),
-    );
-}
-
 test "fails array length interval assertions" {
     const array = init(
         .{
@@ -336,30 +279,12 @@ test "fails array sentinel is not null assertion" {
                 .min = null,
                 .max = null,
             },
-            .sentinel = true,
+            .sentinel = .true,
         },
     );
 
     try std.testing.expectEqual(
         ArrayError.AssertsNotNullSentinel,
         array.eval([3]u8),
-    );
-}
-
-test "fails array sentinel is null assertion" {
-    const array = init(
-        .{
-            .child = .{},
-            .len = .{
-                .min = null,
-                .max = null,
-            },
-            .sentinel = false,
-        },
-    );
-
-    try std.testing.expectEqual(
-        ArrayError.AssertsNullSentinel,
-        array.eval([3:0]u8),
     );
 }

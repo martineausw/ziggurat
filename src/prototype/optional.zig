@@ -8,8 +8,8 @@ const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("Prototype.zig");
-const info = @import("aux/info.zig");
-const info_switch = @import("aux/info_switch.zig");
+const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
+const OnTypeInfo = @import("aux/OnTypeInfo.zig");
 
 /// Error set for *optional* prototype.
 const OptionalError = error{
@@ -44,7 +44,7 @@ pub const Error = OptionalError;
 /// Type value assertion for *optional* prototype evaluation argument.
 ///
 /// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-pub const info_validator = info.init(.{
+pub const has_type_info = FiltersTypeInfo.init(.{
     .optional = true,
 });
 
@@ -57,33 +57,26 @@ pub const Params = struct {
     /// See also:
     /// - [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info_switch)
-    child: info_switch.Params = .{},
+    child: OnTypeInfo.Params = .{},
 };
 
 pub fn init(params: Params) Prototype {
-    const child_validator = info_switch.init(params.child);
+    const child = OnTypeInfo.init(params.child);
 
     return .{
         .name = "Optional",
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = info_validator.eval(actual) catch |err|
+                _ = has_type_info.eval(actual) catch |err|
                     return switch (err) {
-                        info.Error.AssertsTypeValue,
+                        FiltersTypeInfo.Error.AssertsTypeValue,
                         => OptionalError.AssertsTypeValue,
-                        info.Error.AssertsWhitelistTypeInfo,
+                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
                         => OptionalError.AssertsWhitelistTypeInfo,
                         else => unreachable,
                     };
 
-                _ = child_validator.eval(@typeInfo(actual).optional.child) catch |err|
-                    return switch (err) {
-                        info.Error.AssertsBlacklistTypeInfo,
-                        => OptionalError.AssertsBlacklistChildTypeInfo,
-                        info.Error.AssertsWhitelistTypeInfo,
-                        => OptionalError.AssertsWhitelistChildTypeInfo,
-                        else => unreachable,
-                    };
+                _ = try child.eval(@typeInfo(actual).optional.child);
 
                 return true;
             }
@@ -93,21 +86,17 @@ pub fn init(params: Params) Prototype {
                 switch (err) {
                     OptionalError.AssertsTypeValue,
                     OptionalError.AssertsWhitelistTypeInfo,
-                    => info_validator.onError.?(
+                    => has_type_info.onError.?(
                         err,
                         prototype,
                         actual,
                     ),
 
-                    OptionalError.AssertsBlacklistChildTypeInfo,
-                    OptionalError.AssertsWhitelistChildTypeInfo,
-                    => child_validator.onError.?(
+                    else => child.onError.?(
                         err,
                         prototype,
                         @typeInfo(actual).optional.child,
                     ),
-
-                    else => unreachable,
                 }
             }
         }.onError,
@@ -117,8 +106,6 @@ pub fn init(params: Params) Prototype {
 test OptionalError {
     _ = OptionalError.AssertsTypeValue catch void;
     _ = OptionalError.AssertsWhitelistTypeInfo catch void;
-    _ = OptionalError.AssertsBlacklistChildTypeInfo catch void;
-    _ = OptionalError.AssertsWhitelistChildTypeInfo catch void;
 }
 
 test Params {
@@ -145,24 +132,4 @@ test "passes optional assertions" {
     });
 
     try std.testing.expectEqual(true, optional.eval(?bool));
-}
-
-test "fails optional child type info blacklist assertions" {
-    const optional = init(.{
-        .child = .{
-            .bool = .false,
-        },
-    });
-
-    try std.testing.expectEqual(OptionalError.AssertsBlacklistChildTypeInfo, optional.eval(?bool));
-}
-
-test "fails optional child type info whitelist assertions" {
-    const optional = init(.{
-        .child = .{
-            .int = .true,
-        },
-    });
-
-    try std.testing.expectEqual(OptionalError.AssertsWhitelistChildTypeInfo, optional.eval(?bool));
 }
