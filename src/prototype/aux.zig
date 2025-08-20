@@ -7,6 +7,7 @@ pub const decl = @import("aux/decl.zig");
 pub const exists = @import("aux/exists.zig");
 pub const field = @import("aux/field.zig");
 pub const filter = @import("aux/filter.zig");
+pub const info_switch = @import("aux/info_switch.zig");
 pub const info = @import("aux/info.zig");
 pub const interval = @import("aux/interval.zig");
 pub const toggle = @import("aux/toggle.zig");
@@ -59,6 +60,10 @@ test info {
 
     _ = info_prototype;
     _ = info.Error;
+}
+
+test info_switch {
+    _ = info_switch;
 }
 
 test interval {

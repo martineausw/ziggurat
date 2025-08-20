@@ -64,12 +64,12 @@ pub fn conjoin(prototypes: anytype) Prototype {
                 var results: [prototypes.len]bool = undefined;
                 var errs: [prototypes.len]?anyerror = undefined;
 
-                for (0..prototypes.len) |i| {
+                inline for (0..prototypes.len) |i| {
                     results[i] = false;
                     errs[i] = null;
                 }
 
-                for (prototypes, 0..) |proto, i| {
+                inline for (prototypes, 0..) |proto, i| {
                     if (proto.eval(actual)) |result| {
                         results[i] = result;
                     } else |err| {
