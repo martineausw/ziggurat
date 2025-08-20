@@ -10,6 +10,7 @@ const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
 const info = @import("info.zig");
+const info_switch = @import("info_switch.zig");
 
 /// Error set for *field* prototype.
 const FieldError = error{
@@ -71,7 +72,7 @@ pub const Params = struct {
     /// See also:
     /// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
     /// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)
-    type: info.Params,
+    type: info_switch.Params,
 };
 
 pub fn init(params: Params) Prototype {
@@ -92,7 +93,7 @@ pub fn init(params: Params) Prototype {
                     return FieldError.AssertsField;
                 }
 
-                _ = info.init(params.type).eval(@FieldType(
+                _ = info_switch.init(params.type).eval(@FieldType(
                     actual,
                     params.name,
                 )) catch |err|
@@ -147,7 +148,7 @@ test Params {
     const params: Params = .{
         .name = "field",
         .type = .{
-            .float = true,
+            .float = .true,
         },
     };
 
@@ -164,7 +165,7 @@ test init {
     const field: Prototype = init(.{
         .name = "field",
         .type = .{
-            .float = true,
+            .float = .true,
         },
     });
 
@@ -179,7 +180,7 @@ test "passes field assertions on struct" {
     const params: Params = .{
         .name = "field",
         .type = .{
-            .bool = true,
+            .bool = .true,
         },
     };
 
@@ -199,7 +200,7 @@ test "passes field assertions on union" {
     const params: Params = .{
         .name = "field",
         .type = .{
-            .bool = true,
+            .bool = .true,
         },
     };
 
@@ -217,7 +218,7 @@ test "fails field assertion on struct" {
     const params: Params = .{
         .name = "field",
         .type = .{
-            .bool = true,
+            .bool = .true,
         },
     };
 
@@ -237,7 +238,7 @@ test "fails field type info whitelist assertion on struct" {
     const params: Params = .{
         .name = "field",
         .type = .{
-            .bool = true,
+            .bool = .true,
         },
     };
 
@@ -257,7 +258,7 @@ test "fails field type info blacklist assertion on struct" {
     const params: Params = .{
         .name = "field",
         .type = .{
-            .bool = false,
+            .bool = .false,
         },
     };
 

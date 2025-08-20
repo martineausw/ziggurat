@@ -10,6 +10,7 @@ const testing = std.testing;
 const Prototype = @import("Prototype.zig");
 const interval = @import("aux/interval.zig");
 const info = @import("aux/info.zig");
+const info_switch = @import("aux/info_switch.zig");
 const filter = @import("aux/filter.zig");
 const toggle = @import("aux/toggle.zig");
 const exists = @import("aux/exists.zig");
@@ -99,7 +100,7 @@ pub const Params = struct {
     /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    child: info.Params = .{},
+    child: info_switch.Params = .{},
     /// Asserts pointer size.
     ///
     /// See also:
@@ -127,7 +128,7 @@ pub const Params = struct {
 };
 
 pub fn init(params: Params) Prototype {
-    const child_validator = info.init(params.child);
+    const child_validator = info_switch.init(params.child);
     const size_validator = size.init(params.size);
     const is_const_validator = toggle.init(params.is_const);
     const is_volatile_validator = toggle.init(params.is_volatile);
@@ -337,7 +338,7 @@ test "passes pointer assertions" {
 test "fails pointer child type info blacklist assertion" {
     const pointer = init(.{
         .child = .{
-            .float = false,
+            .float = .false,
         },
         .size = .{
             .one = null,
@@ -359,7 +360,7 @@ test "fails pointer child type info blacklist assertion" {
 test "fails pointer child type info whitelist assertion" {
     const pointer = init(.{
         .child = .{
-            .int = true,
+            .int = .true,
         },
         .size = .{
             .one = null,

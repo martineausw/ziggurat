@@ -1,14 +1,15 @@
 //! Prototype *optional*.
-//! 
-//! Asserts *actual* is an optional type value with a parametric 
+//!
+//! Asserts *actual* is an optional type value with a parametric
 //! child assertion.
-//! 
+//!
 //! See also: [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
 const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("Prototype.zig");
 const info = @import("aux/info.zig");
+const info_switch = @import("aux/info_switch.zig");
 
 /// Error set for *optional* prototype.
 const OptionalError = error{
@@ -27,13 +28,13 @@ const OptionalError = error{
     /// *actual* optional child type info has active tag that belongs to blacklist.
     ///
     /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info_switch)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     AssertsBlacklistChildTypeInfo,
     /// *actual* optional child type info has active tag that does not belong to whitelist.
     ///
     /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info_switch)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
     AssertsWhitelistChildTypeInfo,
 };
@@ -55,13 +56,12 @@ pub const Params = struct {
     ///
     /// See also:
     /// - [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    child: info.Params = .{},
+    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info_switch)
+    child: info_switch.Params = .{},
 };
 
 pub fn init(params: Params) Prototype {
-    const child_validator = info.init(params.child);
+    const child_validator = info_switch.init(params.child);
 
     return .{
         .name = "Optional",
@@ -132,7 +132,7 @@ test Params {
 test init {
     const optional = init(.{
         .child = .{
-            .bool = true,
+            .bool = .true,
         },
     });
 
@@ -150,7 +150,7 @@ test "passes optional assertions" {
 test "fails optional child type info blacklist assertions" {
     const optional = init(.{
         .child = .{
-            .bool = false,
+            .bool = .false,
         },
     });
 
@@ -160,7 +160,7 @@ test "fails optional child type info blacklist assertions" {
 test "fails optional child type info whitelist assertions" {
     const optional = init(.{
         .child = .{
-            .int = true,
+            .int = .true,
         },
     });
 

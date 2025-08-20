@@ -1,8 +1,8 @@
 //! Prototype *vector*.
-//! 
+//!
 //! Asserts *actual* is a vector type value with parametric child and
 //! length assertions.
-//! 
+//!
 //! See also: [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
 const std = @import("std");
 const testing = std.testing;
@@ -10,6 +10,7 @@ const testing = std.testing;
 const Prototype = @import("Prototype.zig");
 const interval = @import("aux/interval.zig");
 const info = @import("aux/info.zig");
+const info_switch = @import("aux/info_switch.zig");
 
 /// Error set for *vector* prototype.
 const VectorError = error{
@@ -65,7 +66,7 @@ pub const Params = struct {
     /// - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    child: info.Params = .{},
+    child: info_switch.Params = .{},
     /// Asserts vector length interval.
     ///
     /// See also:
@@ -75,7 +76,7 @@ pub const Params = struct {
 };
 
 pub fn init(params: Params) Prototype {
-    const child_validator = info.init(params.child);
+    const child_validator = info_switch.init(params.child);
     const len_validator = interval.init(params.len);
 
     return .{
@@ -196,7 +197,7 @@ test "passes vector assertions" {
 test "fails vector child type info blacklist assertions" {
     const vector = init(.{
         .child = .{
-            .float = false,
+            .float = .false,
         },
         .len = .{
             .min = null,
@@ -213,7 +214,7 @@ test "fails vector child type info blacklist assertions" {
 test "fails vector child type info whitelist assertions" {
     const vector = init(.{
         .child = .{
-            .int = true,
+            .int = .true,
         },
         .len = .{
             .min = null,

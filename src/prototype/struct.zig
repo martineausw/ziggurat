@@ -326,7 +326,7 @@ test "fails struct field assertion" {
             .auto = null,
         },
         .fields = &.{
-            .{ .name = "field", .type = .{ .bool = true } },
+            .{ .name = "field", .type = .{ .bool = .true } },
         },
         .decls = &.{},
         .is_tuple = null,
@@ -347,7 +347,7 @@ test "fails struct field type info whitelist assertion" {
         .fields = &.{
             .{
                 .name = "field",
-                .type = .{ .int = true },
+                .type = .{ .int = .true },
             },
         },
         .decls = &.{},
@@ -369,7 +369,7 @@ test "fails struct field type info blacklist assertion" {
         .fields = &.{
             .{
                 .name = "field",
-                .type = .{ .bool = false },
+                .type = .{ .bool = .false },
             },
         },
         .decls = &.{},

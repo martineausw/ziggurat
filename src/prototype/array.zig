@@ -1,5 +1,5 @@
 //! Prototype *array*.
-//! 
+//!
 //! Asserts *actual* is an array type value with parametric child,
 //! length, and sentinel assertions.
 //!
@@ -10,6 +10,7 @@ const testing = std.testing;
 const Prototype = @import("Prototype.zig");
 const interval = @import("aux/interval.zig");
 const info = @import("aux/info.zig");
+const info_switch = @import("aux/info_switch.zig");
 const exists = @import("aux/exists.zig");
 
 /// Error set for array.
@@ -76,7 +77,7 @@ pub const Params = struct {
     /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    child: info.Params = .{},
+    child: info_switch.Params = .{},
 
     /// Asserts array length interval.
     ///
@@ -94,7 +95,7 @@ pub const Params = struct {
 };
 
 pub fn init(params: Params) Prototype {
-    const child_validator = info.init(params.child);
+    const child_validator = info_switch.init(params.child);
     const len_validator = interval.init(params.len);
     const sentinel_validator = exists.init(params.sentinel);
 
@@ -268,7 +269,7 @@ test "fails array child type info whitelist assertions" {
     const array = init(
         .{
             .child = .{
-                .int = true,
+                .int = .true,
             },
             .len = .{
                 .min = null,
@@ -288,7 +289,7 @@ test "fails array child type info blacklist assertions" {
     const array = init(
         .{
             .child = .{
-                .int = false,
+                .int = .false,
             },
             .len = .{
                 .min = null,
