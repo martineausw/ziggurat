@@ -6,6 +6,8 @@ const std = @import("std");
 const Prototype = @import("Prototype.zig");
 const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
 
+const Self = @This();
+
 const BoolError = error{
     /// *actual* is not a type value.
     ///
@@ -31,7 +33,7 @@ pub const has_type_info = FiltersTypeInfo.init(.{
 });
 
 pub const init: Prototype = .{
-    .name = "Bool",
+    .name = @typeName(Self),
     .eval = struct {
         fn eval(actual: anytype) Error!bool {
             _ = comptime has_type_info.eval(

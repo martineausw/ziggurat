@@ -10,8 +10,10 @@ const testing = std.testing;
 const Prototype = @import("Prototype.zig");
 const WithinInterval = @import("aux/WithinInterval.zig");
 const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
-const OnTypeInfo = @import("aux/OnTypeInfo.zig");
 const OnOptional = @import("aux/OnOptional.zig");
+const OnType = @import("aux/OnType.zig");
+
+const Self = @This();
 
 /// Error set for array.
 const ArrayError = error{
@@ -77,7 +79,7 @@ pub const Params = struct {
     /// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    child: OnTypeInfo.Params = .{},
+    child: OnType.Params = null,
 
     /// Asserts array length interval.
     ///
@@ -95,12 +97,12 @@ pub const Params = struct {
 };
 
 pub fn init(params: Params) Prototype {
-    const child = OnTypeInfo.init(params.child);
+    const child = OnType.init(params.child);
     const len = WithinInterval.init(params.len);
     const sentinel = OnOptional.init(params.sentinel);
 
     return .{
-        .name = "Array",
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime has_type_info.eval(
@@ -114,9 +116,7 @@ pub fn init(params: Params) Prototype {
                         else => @panic("unhandled error"),
                     };
 
-                _ = try child.eval(
-                    @typeInfo(actual).array.child,
-                );
+                _ = try child.eval(@typeInfo(actual).array.child);
 
                 _ = len.eval(
                     @typeInfo(actual).array.len,
@@ -135,6 +135,8 @@ pub fn init(params: Params) Prototype {
                     return switch (err) {
                         OnOptional.Error.AssertsNotNull,
                         => ArrayError.AssertsNotNullSentinel,
+                        OnOptional.Error.AssertsNull,
+                        => ArrayError.AssertsNullSentinel,
                         else => @panic("unhandled error"),
                     };
 
@@ -184,11 +186,12 @@ test ArrayError {
     _ = ArrayError.AssertsMinLen catch void;
     _ = ArrayError.AssertsMaxLen catch void;
     _ = ArrayError.AssertsNotNullSentinel catch void;
+    _ = ArrayError.AssertsNullSentinel catch void;
 }
 
 test Params {
     const params: Params = .{
-        .child = .{},
+        .child = .true,
         .len = .{
             .min = null,
             .max = null,
@@ -201,7 +204,7 @@ test Params {
 
 test init {
     const array = init(.{
-        .child = .{},
+        .child = .true,
         .len = .{
             .min = null,
             .max = null,
@@ -215,7 +218,7 @@ test init {
 test "passes array assertions" {
     const array = init(
         .{
-            .child = .{},
+            .child = .true,
             .len = .{
                 .min = null,
                 .max = null,
@@ -233,7 +236,7 @@ test "passes array assertions" {
 test "fails type value assertion" {
     const array = init(
         .{
-            .child = .{},
+            .child = .true,
             .len = .{
                 .min = null,
                 .max = null,
@@ -251,7 +254,7 @@ test "fails type value assertion" {
 test "fails array length interval assertions" {
     const array = init(
         .{
-            .child = .{},
+            .child = .true,
             .len = .{
                 .min = 1,
                 .max = 2,
@@ -274,12 +277,12 @@ test "fails array length interval assertions" {
 test "fails array sentinel is not null assertion" {
     const array = init(
         .{
-            .child = .{},
+            .child = .true,
             .len = .{
                 .min = null,
                 .max = null,
             },
-            .sentinel = .true,
+            .sentinel = true,
         },
     );
 

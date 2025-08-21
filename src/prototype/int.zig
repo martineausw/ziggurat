@@ -12,6 +12,8 @@ const WithinInterval = @import("aux/WithinInterval.zig");
 const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
 const FiltersActiveTag = @import("aux/FiltersActiveTag.zig");
 
+const Self = @This();
+
 /// Error set for *int* prototype.
 const IntError = error{
     /// *actual* is not a type value.
@@ -82,7 +84,7 @@ pub fn init(params: Params) Prototype {
     const signedness = FiltersSignedness.init(params.signedness);
 
     return .{
-        .name = "Int",
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime has_type_info.eval(actual) catch |err|

@@ -6,6 +6,8 @@ const std = @import("std");
 const Prototype = @import("../Prototype.zig");
 const FiltersTypeInfo = @import("FiltersTypeInfo.zig");
 
+const Self = @This();
+
 /// Error set for *exists* prototype.
 const OnOptionalError = error{
     /// *actual* is not a type value.
@@ -20,6 +22,8 @@ const OnOptionalError = error{
     AssertsWhitelistTypeInfo,
     /// *actual* is null.
     AssertsNotNull,
+    /// *acutal* is not null.
+    AssertsNull,
 };
 
 pub const Error = OnOptionalError;
@@ -31,11 +35,11 @@ pub const has_type_info = FiltersTypeInfo.init(.{
     .optional = true,
 });
 
-pub const Params = ?Prototype;
+pub const Params = ?bool;
 
 pub fn init(params: Params) Prototype {
     return .{
-        .name = @typeName(@This()),
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = has_type_info.eval(@TypeOf(actual)) catch |err|
@@ -48,12 +52,15 @@ pub fn init(params: Params) Prototype {
                     };
 
                 if (params) |param| {
-                    if (actual) |value| {
-                        return param.eval(value);
+                    if (actual) |_| {
+                        if (param) return true;
+                        return OnOptionalError.AssertsNull;
                     } else {
+                        if (!param) return true;
                         return OnOptionalError.AssertsNotNull;
                     }
                 }
+
                 return true;
             }
         }.eval,
@@ -91,8 +98,6 @@ test init {
 }
 
 test "passes exists assertions" {
-    const asserts_not_null = init(.true);
-
     try std.testing.expectEqual(
         true,
         init(null).eval(@as(?u8, null)),
@@ -100,12 +105,12 @@ test "passes exists assertions" {
 
     try std.testing.expectEqual(
         true,
-        asserts_not_null.eval(@as(?u8, 'a')),
+        init(true).eval(@as(?u8, 'a')),
     );
 }
 
 test "fails not null optional assertion" {
-    const asserts_not_null = init(.true);
+    const asserts_not_null = init(true);
 
     try std.testing.expectEqual(
         OnOptionalError.AssertsNotNull,

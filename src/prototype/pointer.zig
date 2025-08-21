@@ -10,10 +10,12 @@ const testing = std.testing;
 const Prototype = @import("Prototype.zig");
 const WithinInterval = @import("aux/WithinInterval.zig");
 const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
-const OnTypeInfo = @import("aux/OnTypeInfo.zig");
 const FiltersActiveTag = @import("aux/FiltersActiveTag.zig");
 const EqualsBool = @import("aux/EqualsBool.zig");
 const OnOptional = @import("aux/OnOptional.zig");
+const OnType = @import("aux/OnType.zig");
+
+const Self = @This();
 
 /// Error set for `prototype.pointer`.
 const PointerError = error{
@@ -96,7 +98,7 @@ pub const Params = struct {
     /// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    child: OnTypeInfo.Params = .{},
+    child: OnType.Params = null,
     /// Asserts pointer size.
     ///
     /// See also:
@@ -124,13 +126,13 @@ pub const Params = struct {
 };
 
 pub fn init(params: Params) Prototype {
-    const child = OnTypeInfo.init(params.child);
+    const child = OnType.init(params.child);
     const size = FiltersSize.init(params.size);
     const is_const = EqualsBool.init(params.is_const);
     const is_volatile = EqualsBool.init(params.is_volatile);
     const sentinel = OnOptional.init(params.sentinel);
     return .{
-        .name = "Pointer",
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = has_type_info.eval(actual) catch |err|
@@ -259,7 +261,7 @@ test PointerError {
 
 test Params {
     const params: Params = .{
-        .child = .{},
+        .child = .true,
         .size = .{
             .one = null,
             .many = null,
@@ -276,7 +278,7 @@ test Params {
 
 test init {
     const pointer = init(.{
-        .child = .{},
+        .child = .true,
         .size = .{},
         .is_const = null,
         .is_volatile = null,
@@ -288,7 +290,7 @@ test init {
 
 test "passes pointer assertions" {
     const pointer = init(.{
-        .child = .{},
+        .child = .true,
         .size = .{
             .one = null,
             .many = null,
@@ -315,7 +317,7 @@ test "passes pointer assertions" {
 
 test "fails pointer size blacklist assertion" {
     const pointer = init(.{
-        .child = .{},
+        .child = .true,
         .size = .{
             .one = false,
             .many = null,
@@ -335,7 +337,7 @@ test "fails pointer size blacklist assertion" {
 
 test "fails pointer size whitelist assertion" {
     const pointer = init(.{
-        .child = .{},
+        .child = .true,
         .size = .{
             .one = null,
             .many = true,
@@ -354,7 +356,7 @@ test "fails pointer size whitelist assertion" {
 
 test "fails pointer is const assertion" {
     const pointer = init(.{
-        .child = .{},
+        .child = .true,
         .size = .{
             .one = null,
             .many = null,
@@ -373,7 +375,7 @@ test "fails pointer is const assertion" {
 
 test "fails pointer is not const assertion" {
     const pointer = init(.{
-        .child = .{},
+        .child = .true,
         .size = .{
             .one = null,
             .many = null,
@@ -392,7 +394,7 @@ test "fails pointer is not const assertion" {
 
 test "fails pointer is volatile assertion" {
     const pointer = init(.{
-        .child = .{},
+        .child = .true,
         .size = .{
             .one = null,
             .many = null,
@@ -412,7 +414,7 @@ test "fails pointer is volatile assertion" {
 
 test "fails pointer is not volatile assertion" {
     const pointer = init(.{
-        .child = .{},
+        .child = .true,
         .size = .{
             .one = null,
             .many = null,
@@ -432,7 +434,7 @@ test "fails pointer is not volatile assertion" {
 
 test "fails pointer sentinel is not null assertion" {
     const pointer = init(.{
-        .child = .{},
+        .child = .true,
         .size = .{
             .one = null,
             .many = null,
@@ -441,7 +443,7 @@ test "fails pointer sentinel is not null assertion" {
         },
         .is_const = null,
         .is_volatile = null,
-        .sentinel = .true,
+        .sentinel = true,
     });
     try std.testing.expectEqual(
         PointerError.AssertsNotNullSentinel,

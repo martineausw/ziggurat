@@ -1,4 +1,4 @@
-//! Auxiliary prototype *field*.
+//! Auxiliary prototype that checks a type for a field.
 //!
 //! Asserts an *actual* struct or union type value to have a field of type
 //! and optionally respect a type info whitelist and/or blacklist.
@@ -10,7 +10,9 @@ const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
 const FiltersTypeInfo = @import("FiltersTypeInfo.zig");
-const OnTypeInfo = @import("OnTypeInfo.zig");
+const OnType = @import("OnType.zig");
+
+const Self = @This();
 
 /// Error set for *field* prototype.
 const HasFieldError = error{
@@ -72,12 +74,12 @@ pub const Params = struct {
     /// See also:
     /// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
     /// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)
-    type: OnTypeInfo.Params,
+    type: OnType.Params,
 };
 
 pub fn init(params: Params) Prototype {
     return .{
-        .name = @typeName(@This()),
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = has_type_info.eval(actual) catch |err|
@@ -93,7 +95,7 @@ pub fn init(params: Params) Prototype {
                     return HasFieldError.AssertsHasField;
                 }
 
-                _ = try OnTypeInfo.init(params.type).eval(@FieldType(
+                _ = try OnType.init(params.type).eval(@FieldType(
                     actual,
                     params.name,
                 ));
@@ -141,9 +143,7 @@ test Params {
 
     const params: Params = .{
         .name = "field",
-        .type = .{
-            .float = .true,
-        },
+        .type = .true,
     };
 
     _ = params;
@@ -158,9 +158,7 @@ test init {
 
     const field: Prototype = init(.{
         .name = "field",
-        .type = .{
-            .float = .true,
-        },
+        .type = .true,
     });
 
     _ = field;
@@ -173,9 +171,7 @@ test "passes field assertions on struct" {
 
     const params: Params = .{
         .name = "field",
-        .type = .{
-            .bool = .true,
-        },
+        .type = .true
     };
 
     const HasField: Prototype = init(params);
@@ -193,9 +189,7 @@ test "passes field assertions on union" {
 
     const params: Params = .{
         .name = "field",
-        .type = .{
-            .bool = .true,
-        },
+        .type = .true,
     };
 
     const HasField: Prototype = init(params);
@@ -211,9 +205,7 @@ test "fails field assertion on struct" {
 
     const params: Params = .{
         .name = "field",
-        .type = .{
-            .bool = .true,
-        },
+        .type = .true,
     };
 
     const HasField: Prototype = init(params);

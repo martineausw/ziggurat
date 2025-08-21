@@ -9,7 +9,9 @@ const testing = std.testing;
 
 const Prototype = @import("Prototype.zig");
 const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
-const OnTypeInfo = @import("aux/OnTypeInfo.zig");
+const OnType = @import("aux/OnType.zig");
+
+const Self = @This();
 
 /// Error set for *optional* prototype.
 const OptionalError = error{
@@ -57,14 +59,14 @@ pub const Params = struct {
     /// See also:
     /// - [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info_switch)
-    child: OnTypeInfo.Params = .{},
+    child: OnType.Params = null,
 };
 
 pub fn init(params: Params) Prototype {
-    const child = OnTypeInfo.init(params.child);
+    const child = OnType.init(params.child);
 
     return .{
-        .name = "Optional",
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = has_type_info.eval(actual) catch |err|
@@ -76,7 +78,7 @@ pub fn init(params: Params) Prototype {
                         else => unreachable,
                     };
 
-                _ = try child.eval(@typeInfo(actual).optional.child);
+                    _ = try child.eval(@typeInfo(actual).optional.child);
 
                 return true;
             }
@@ -110,7 +112,7 @@ test OptionalError {
 
 test Params {
     const params: Params = .{
-        .child = .{},
+        .child = .true,
     };
 
     _ = params;
@@ -118,9 +120,8 @@ test Params {
 
 test init {
     const optional = init(.{
-        .child = .{
-            .bool = .true,
-        },
+        .child = .true
+        
     });
 
     _ = optional;
@@ -128,7 +129,7 @@ test init {
 
 test "passes optional assertions" {
     const optional = init(.{
-        .child = .{},
+        .child = .true,
     });
 
     try std.testing.expectEqual(true, optional.eval(?bool));

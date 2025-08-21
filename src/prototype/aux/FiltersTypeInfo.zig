@@ -1,4 +1,4 @@
-//! Auxiliary prototype *info*.
+//! Auxiliary prototype that filters for active type info.
 //!
 //! Asserts an *actual* type info active tag of a type value to respect
 //! a given blacklist and/or whitelist.
@@ -11,6 +11,8 @@ const Prototype = @import("../Prototype.zig");
 const FiltersActiveTag = @import("FiltersActiveTag.zig").Of(std.builtin.Type);
 
 const @"type" = @import("../type.zig");
+
+const Self = @This();
 
 /// Error set for *info* prototype.
 const InfoError = error{
@@ -50,7 +52,7 @@ pub const Params = FiltersActiveTag.Params;
 pub fn init(params: FiltersActiveTag.Params) Prototype {
     const filter_validator = FiltersActiveTag.init(params);
     return .{
-        .name = @typeName(@This()),
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = is_type_value.eval(actual) catch |err|

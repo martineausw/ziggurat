@@ -11,8 +11,9 @@ const WithinInterval = @import("aux/WithinInterval.zig");
 const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
 const FiltersActiveTag = @import("aux/FiltersActiveTag.zig");
 const EqualsBool = @import("aux/EqualsBool.zig");
-const OnOptional = @import("aux/OnOptional.zig");
-const OnTypeInfo = @import("aux/OnTypeInfo.zig");
+const OnType = @import("aux/OnType.zig");
+
+const Self = @This();
 
 /// Error set for *int* prototype.
 const FnError = error{
@@ -75,6 +76,8 @@ pub const has_type_info = FiltersTypeInfo.init(.{
 ///
 /// See also: [`std.builtin.Type.Fn`](#std.builtin.Type.Fn)
 const Param = struct {
+    const Self = @This();
+
     const ParamError = error{
         /// *actual* fn param is not generic.
         ///
@@ -127,15 +130,15 @@ const Param = struct {
         /// - [`std.builtin.Type.Fn`](#std.builtin.Type.Fn)
         /// - [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
         /// - [`ziggurat.prototype.aux.child`](#root.prototype.aux.child)
-        type: ?OnTypeInfo.Params = null,
+        type: OnType.Params = null,
     };
 
-    pub fn init(params: @This().Params) Prototype {
+    pub fn init(params: Param.Self.Params) Prototype {
         const is_generic = EqualsBool.init(params.is_generic);
         const is_noalias = EqualsBool.init(params.is_noalias);
-        const @"type" = OnOptional.init(if (params.type) |t| OnTypeInfo.init(t) else null);
+        const @"type" = OnType.init(params.type);
         return .{
-            .name = "Fn.Param",
+            .name = @typeName(Param.Self),
             .eval = struct {
                 fn eval(actual: anytype) anyerror!bool {
                     _ = is_generic.eval(actual.is_generic) catch |err|
@@ -156,12 +159,7 @@ const Param = struct {
                             else => @panic("unhandled error"),
                         };
 
-                    _ = @"type".eval(if (params.type) |_| actual.type.? else actual.type) catch |err|
-                        return switch (err) {
-                            OnOptional.Error.AssertsNotNull,
-                            => FnError.AssertsNotNullParamType,
-                            else => err,
-                        };
+                    _ = if (actual.type) |t| try @"type".eval(t); 
 
                     return true;
                 }
@@ -214,7 +212,7 @@ pub const Params = struct {
     /// - [`std.builtin.Type.Fn`](#std.builtin.Type.Fn)
     /// - [`ziggurat.prototype.aux.exists`](#root.prototype.aux.exists)
     /// - [`ziggurat.prototype.aux.child`](#root.prototype.aux.child)
-    return_type: FiltersTypeInfo.Params = .{},
+    return_type: OnType.Params = null,
 
     /// Asserts fn parameters.
     params: []const Param.Params = &.{},
@@ -224,10 +222,10 @@ pub fn init(params: Params) Prototype {
     const calling_convention = FiltersCallingConvention.init(params.calling_convention);
     const is_var_args = EqualsBool.init(params.is_var_args);
     const is_generic = EqualsBool.init(params.is_generic);
-    const return_type = FiltersTypeInfo.init(params.return_type);
+    const return_type = OnType.init(params.return_type);
 
     return .{
-        .name = "Fn",
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime has_type_info.eval(actual) catch |err|
@@ -266,14 +264,7 @@ pub fn init(params: Params) Prototype {
                         else => @panic("unhandled error"),
                     };
 
-                _ = return_type.eval(@typeInfo(actual).@"fn".return_type.?) catch |err|
-                    return switch (err) {
-                        FiltersTypeInfo.Error.AssertsBlacklistTypeInfo,
-                        => FnError.AssertsBlacklistReturnTypeInfo,
-                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
-                        => FnError.AssertsWhitelistReturnTypeInfo,
-                        else => @panic("unhandled error"),
-                    };
+                _ = try return_type.eval(@typeInfo(actual).@"fn".return_type.?);
 
                 inline for (params.params, 0..) |param, i| {
                     const param_validator = Param.init(param);
@@ -506,7 +497,7 @@ test "fails fn param is generic is true assertion" {
         .params = &.{.{
             .is_generic = true,
         }},
-        .return_type = .{},
+        .return_type = .true,
     });
 
     try std.testing.expectEqual(
@@ -523,7 +514,7 @@ test "fails fn param is generic is false assertion" {
         .params = &.{.{
             .is_generic = false,
         }},
-        .return_type = .{},
+        .return_type = .true,
     });
 
     try std.testing.expectEqual(
@@ -540,7 +531,7 @@ test "fails fn param is no alias is true assertion" {
         .params = &.{.{
             .is_noalias = true,
         }},
-        .return_type = .{},
+        .return_type = .true,
     });
 
     try std.testing.expectEqual(
@@ -557,7 +548,7 @@ test "fails fn param is no alias false assertion" {
         .params = &.{.{
             .is_noalias = false,
         }},
-        .return_type = .{},
+        .return_type = .true,
     });
 
     try std.testing.expectEqual(

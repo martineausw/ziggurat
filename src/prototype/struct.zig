@@ -14,6 +14,8 @@ const HasField = @import("aux/HasField.zig");
 const HasDecl = @import("aux/HasDecl.zig");
 const EqualsBool = @import("aux/EqualsBool.zig");
 
+const Self = @This();
+
 /// Error set for *struct* prototype.
 const StructError = error{
     /// *actual* is not a type value.
@@ -111,7 +113,7 @@ pub fn init(params: Params) Prototype {
     const layout = FiltersLayout.init(params.layout);
     const is_tuple = EqualsBool.init(params.is_tuple);
     return .{
-        .name = "Struct",
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime has_type_info.eval(actual) catch |err|
@@ -319,7 +321,7 @@ test "fails struct field assertion" {
             .auto = null,
         },
         .fields = &.{
-            .{ .name = "field", .type = .{ .bool = .true } },
+            .{ .name = "field", .type = .true },
         },
         .decls = &.{},
         .is_tuple = null,

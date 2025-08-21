@@ -1,4 +1,4 @@
-//! Auxiliary prototype *has_active_tag*.
+//! Auxiliary prototype that filters for active tag of a union or enum.
 //!
 //! Asserts an *actual* active tag of a union value or enum value to
 //! optionally respect a blacklist and/or whitelist of tags.
@@ -9,6 +9,8 @@
 const std = @import("std");
 const Prototype = @import("../Prototype.zig");
 const @"type" = @import("../type.zig");
+
+const Self = @This();
 
 /// Error set for filter.
 const HasActiveTagError = error{
@@ -62,7 +64,7 @@ pub fn Of(comptime T: type) type {
 
         pub fn init(params: Params) Prototype {
             return .{
-                .name = @typeName(@This()),
+                .name = @typeName(Self),
                 .eval = struct {
                     fn eval(actual: anytype) !bool {
                         _ = switch (@typeInfo(@TypeOf(actual))) {

@@ -10,7 +10,9 @@ const testing = std.testing;
 const Prototype = @import("Prototype.zig");
 const WithinInterval = @import("aux/WithinInterval.zig");
 const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
-const OnTypeInfo = @import("aux/OnTypeInfo.zig");
+const OnType = @import("aux/OnType.zig");
+
+const Self = @This();
 
 /// Error set for *vector* prototype.
 const VectorError = error{
@@ -55,7 +57,7 @@ pub const Params = struct {
     /// - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
     /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
     /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    child: OnTypeInfo.Params = .{},
+    child: OnType.Params = null,
     /// Asserts vector length interval.
     ///
     /// See also:
@@ -65,11 +67,11 @@ pub const Params = struct {
 };
 
 pub fn init(params: Params) Prototype {
-    const child = OnTypeInfo.init(params.child);
+    const child = OnType.init(params.child);
     const len = WithinInterval.init(params.len);
 
     return .{
-        .name = "Vector",
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = has_type_info.eval(actual) catch |err|
@@ -81,7 +83,9 @@ pub fn init(params: Params) Prototype {
                         else => @panic("unhandled error"),
                     };
 
-                _ = try child.eval(@typeInfo(actual).vector.child);
+                if (params.child) |prototype| {
+                    _ = try prototype.eval(@typeInfo(actual).vector.child);
+                }
 
                 _ = len.eval(@typeInfo(actual).vector.len) catch |err|
                     return switch (err) {
@@ -135,7 +139,7 @@ test VectorError {
 
 test Params {
     const params: Params = .{
-        .child = .{},
+        .child = .true,
         .len = .{
             .min = null,
             .max = null,
@@ -146,7 +150,7 @@ test Params {
 
 test init {
     const vector = init(.{
-        .child = .{},
+        .child = .true,
         .len = .{
             .min = null,
             .max = null,
@@ -158,7 +162,7 @@ test init {
 
 test "passes vector assertions" {
     const vector = init(.{
-        .child = .{},
+        .child = .true,
         .len = .{
             .min = null,
             .max = null,
@@ -170,7 +174,7 @@ test "passes vector assertions" {
 
 test "fails vector length interval assertions" {
     const vector = init(.{
-        .child = .{},
+        .child = null,
         .len = .{
             .min = 1,
             .max = 2,

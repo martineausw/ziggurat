@@ -7,6 +7,8 @@ const testing = std.testing;
 const Prototype = @import("../Prototype.zig");
 const FiltersTypeInfo = @import("FiltersTypeInfo.zig");
 
+const Self = @This();
+
 /// Error set for interval.
 const WithinIntervalError = error{
     /// *actual* is not a type value.
@@ -55,7 +57,7 @@ pub const Params = struct {
 
 pub fn init(params: Params) Prototype {
     return .{
-        .name = @typeName(@This()),
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = has_type_info.eval(@TypeOf(actual)) catch |err|

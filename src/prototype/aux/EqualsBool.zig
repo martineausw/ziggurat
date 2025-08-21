@@ -1,10 +1,12 @@
-//! Auxiliary prototype *toggle*.
+//! Auxiliary prototype that checks for boolean value equality.
 //!
 //! Asserts an *actual* boolean value to be either true or false.
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
 const FiltersTypeInfo = @import("FiltersTypeInfo.zig");
+
+const Self = @This();
 
 /// Error set for *toggle* prototype.
 const EqualsBoolError = error{
@@ -34,7 +36,7 @@ pub const Params = ?bool;
 
 pub fn init(params: Params) Prototype {
     return .{
-        .name = @typeName(@This()),
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = has_type_info.eval(@TypeOf(actual)) catch |err|

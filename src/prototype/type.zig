@@ -5,6 +5,8 @@ const std = @import("std");
 
 const Prototype = @import("Prototype.zig");
 
+const Self = @This();
+
 /// Error set for *type* prototype.
 const TypeError = error{
     /// *actual* is not a type value.
@@ -14,7 +16,7 @@ const TypeError = error{
 pub const Error = TypeError;
 
 pub const init: Prototype = .{
-    .name = "Type",
+    .name = @typeName(Self),
 
     .eval = struct {
         fn eval(actual: anytype) Error!bool {

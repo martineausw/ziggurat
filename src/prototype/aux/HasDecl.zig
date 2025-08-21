@@ -1,4 +1,4 @@
-//! Auxiliary prototype *HasDecl*.
+//! Auxiliary prototype that checks a type for a declaration.
 //!
 //! Asserts an *actual* struct, union, or enum type value to have a
 //! declaration.
@@ -11,6 +11,8 @@ const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
 const FiltersTypeInfo = @import("FiltersTypeInfo.zig");
+
+const Self = @This();
 
 /// Error set for *HasDecl* prototype.
 const HasDeclError = error{
@@ -51,7 +53,7 @@ pub const Params = struct {
 
 pub fn init(params: Params) Prototype {
     return .{
-        .name = @typeName(@This()),
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) HasDeclError!bool {
                 _ = comptime has_type_info.eval(actual) catch |err|

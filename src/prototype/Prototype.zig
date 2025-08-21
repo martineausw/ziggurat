@@ -85,7 +85,7 @@ pub const is_vector = Vector.init;
 
 test Array {
     _ = Array.Params{
-        .child = .{},
+        .child = .true,
         .len = .{
             .min = null,
             .max = null,
@@ -133,7 +133,7 @@ test Int {
 
 test Optional {
     _ = Optional.Params{
-        .child = .{},
+        .child = .true,
     };
     _ = Optional.Error;
     _ = Optional.init(.{});
@@ -141,7 +141,7 @@ test Optional {
 
 test Pointer {
     _ = Pointer.Params{
-        .child = .{},
+        .child = .true,
         .is_const = null,
         .is_volatile = null,
         .sentinel = null,
@@ -178,7 +178,7 @@ test Type {
 
 test Vector {
     _ = Vector.Params{
-        .child = .{},
+        .child = .true,
         .len = .{
             .min = null,
             .max = null,
@@ -194,9 +194,9 @@ pub const FiltersActiveTag = @import("aux/FiltersActiveTag.zig");
 pub const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
 pub const HasDecl = @import("aux/HasDecl.zig");
 pub const HasField = @import("aux/HasField.zig");
-pub const OnChild = @import("aux/OnChild.zig");
-pub const OnIndex = @import("aux/OnIndex.zig");
+pub const OnElements = @import("aux/OnElements.zig");
 pub const OnOptional = @import("aux/OnOptional.zig");
+pub const OnType = @import("aux/OnType.zig");
 pub const OnTypeInfo = @import("aux/OnTypeInfo.zig");
 pub const WithinInterval = @import("aux/WithinInterval.zig");
 
@@ -205,18 +205,14 @@ pub const filters = FiltersActiveTag.Of;
 pub const has_type_info = FiltersTypeInfo.init;
 pub const has_decl = HasDecl.init;
 pub const has_field = HasField.init;
-pub const on_child = OnChild.init;
-pub const on_index = OnIndex.init;
+pub const on_elements = OnElements.init;
 pub const on_optional = OnOptional.init;
+pub const on_type = OnType.init;
 pub const on_type_info = OnTypeInfo.init;
 pub const within_interval = WithinInterval.init;
 
-test OnIndex {
-    _ = OnIndex;
-}
-
-test OnChild {
-    _ = OnChild;
+test EqualsBool {
+    _ = EqualsBool.init(null);
 }
 
 test FiltersActiveTag {
@@ -259,6 +255,26 @@ test FiltersTypeInfo {
 
     _ = info_prototype;
     _ = FiltersTypeInfo.Error;
+}
+
+test HasDecl {
+    _ = HasDecl.init(.{ .name = "foo" });
+}
+
+test HasField {
+    _ = HasField.init(.{ .name = "foo", .type = .true });
+}
+
+test OnElements {
+    _ = OnElements.init(&.{ .true, .true });
+}
+
+test OnOptional {
+    _ = OnOptional.init(true);
+}
+
+test OnType {
+    _ = OnType.init(.true);
 }
 
 test OnTypeInfo {

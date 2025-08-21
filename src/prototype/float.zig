@@ -12,6 +12,8 @@ const Prototype = @import("Prototype.zig");
 const WithinInterval = @import("aux/WithinInterval.zig");
 const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
 
+const Self = @This();
+
 /// Error set for *float* prototype.
 const FloatError = error{
     /// *actual* is not a type value.
@@ -61,7 +63,7 @@ pub fn init(params: Params) Prototype {
     const bits = WithinInterval.init(params.bits);
 
     return .{
-        .name = "Float",
+        .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = comptime has_type_info.eval(actual) catch |err|
