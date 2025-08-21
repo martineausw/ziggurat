@@ -11,7 +11,7 @@
 const std = @import("std");
 
 const Prototype = @import("../Prototype.zig");
-const FiltersTypeInfo = @import("FiltersTypeInfo.zig");
+const FiltersTypeInfo = @import("../aux/FiltersTypeInfo.zig");
 
 const Self = @This();
 
@@ -48,14 +48,7 @@ pub const has_type_info = FiltersTypeInfo.init(.{
     .@"struct" = true,
 });
 
-/// Assertion parameter for *child*.
-/// 
-/// Asserts child prototype evaluation.
-/// 
-/// See also: `ziggurat.Prototype`
-pub const Params = []const Prototype;
-
-pub fn init(params: Params) Prototype {
+pub fn seq(prototypes: []const Prototype) Prototype {
     return .{
         .name = @typeName(Self),
         .eval = struct {
@@ -67,7 +60,7 @@ pub fn init(params: Params) Prototype {
                         else => @panic("unhandled error"),
                     };
                     
-                inline for (params, 0..) |prototype, i| {
+                inline for (prototypes, 0..) |prototype, i| {
                     _ = try prototype.eval(actual[i]);
                 }
 
@@ -97,17 +90,4 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test OnElementsError {
-}
 
-test Params {
-
-}
-
-test init {
-
-}
-
-test "passes on elements assertions" {
-
-}

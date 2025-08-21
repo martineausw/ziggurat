@@ -11,7 +11,7 @@ const FiltersTypeInfo = @import("../aux/FiltersTypeInfo.zig");
 const Self = @This();
 
 /// Boolean OR of prototypes' evaluation results.
-pub fn any(comptime prototypes: []const Prototype) Prototype {
+pub fn any(prototypes: []const Prototype) Prototype {
     return .{
         .name = @typeName(Self),
         .eval = struct {

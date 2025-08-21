@@ -194,7 +194,6 @@ pub const FiltersActiveTag = @import("aux/FiltersActiveTag.zig");
 pub const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
 pub const HasDecl = @import("aux/HasDecl.zig");
 pub const HasField = @import("aux/HasField.zig");
-pub const OnElements = @import("aux/OnElements.zig");
 pub const OnOptional = @import("aux/OnOptional.zig");
 pub const OnType = @import("aux/OnType.zig");
 pub const OnTypeInfo = @import("aux/OnTypeInfo.zig");
@@ -205,7 +204,6 @@ pub const filters = FiltersActiveTag.Of;
 pub const has_type_info = FiltersTypeInfo.init;
 pub const has_decl = HasDecl.init;
 pub const has_field = HasField.init;
-pub const on_elements = OnElements.init;
 pub const on_optional = OnOptional.init;
 pub const on_type = OnType.init;
 pub const on_type_info = OnTypeInfo.init;
@@ -265,10 +263,6 @@ test HasField {
     _ = HasField.init(.{ .name = "foo", .type = .true });
 }
 
-test OnElements {
-    _ = OnElements.init(&.{ .true, .true });
-}
-
 test OnOptional {
     _ = OnOptional.init(true);
 }
@@ -296,6 +290,7 @@ test WithinInterval {
 pub const all = @import("ops/all.zig").all;
 pub const any = @import("ops/any.zig").any;
 pub const not = @import("ops/not.zig").not;
+pub const seq = @import("ops/seq.zig").seq;
 
 test all {
     _ = all;
@@ -307,4 +302,8 @@ test any {
 
 test not {
     _ = not;
+}
+
+test seq {
+    _ = seq;
 }
