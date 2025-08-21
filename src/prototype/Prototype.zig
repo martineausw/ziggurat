@@ -293,18 +293,18 @@ test WithinInterval {
     _ = WithinInterval.Error;
 }
 
-pub const conjoin = @import("ops/conjoin.zig").conjoin;
-pub const disjoin = @import("ops/disjoin.zig").disjoin;
-pub const negate = @import("ops/negate.zig").negate;
+pub const all = @import("ops/all.zig").all;
+pub const any = @import("ops/any.zig").any;
+pub const not = @import("ops/not.zig").not;
 
-test conjoin {
-    _ = conjoin;
+test all {
+    _ = all;
 }
 
-test disjoin {
-    _ = disjoin;
+test any {
+    _ = any;
 }
 
-test negate {
-    _ = negate;
+test not {
+    _ = not;
 }
