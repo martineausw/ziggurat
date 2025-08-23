@@ -6,6 +6,60 @@ Library for defining type constraints and assertions.
 
 Inspired off of [this brainstorming thread](https://ziggit.dev/t/implementing-generic-concepts-on-function-declarations/1490).
 
+```zig
+pub fn wrapIndex(
+    data: anytype,
+    index: i128,
+) ziggurat.sign(.any(&.{
+    .is_array(.{}),
+    .is_vector(.{}),
+    .is_pointer(.{ .size = .{ .slice = true } }),
+}))(@TypeOf(data))(usize) {
+    return if (index < 0)
+        getLen(data) - @as(usize, @intCast(@abs(index)))
+    else
+        @as(usize, @intCast(index));
+}
+
+pub fn at(
+    data: anytype,
+    index: i128,
+) ziggurat.sign(.any(&.{
+    .is_array(.{}),
+    .is_vector(.{}),
+    .is_pointer(.{ .size = .{
+        .slice = true,
+        .many = true,
+    } }),
+    .is_pointer(.{ .child = .any(&.{
+        .is_array(.{}),
+        .is_vector(.{}),
+    }), .size = .{ .one = true } }),
+}))(@TypeOf(data))(switch (@typeInfo(@TypeOf(data))) {
+    inline .array, .vector => |info| info.child,
+
+    .pointer => |info| switch (info.size) {
+        .one => meta.Child(info.child),
+        .slice => info.child,
+        else => unreachable,
+    },
+
+    else => unreachable,
+}) {
+    return switch (@typeInfo(@TypeOf(data))) {
+        .pointer => |info| switch (info.size) {
+            .one => data.*[wrapIndex(data.*, index)],
+            .slice => data[wrapIndex(data, index)],
+            else => unreachable,
+        },
+
+        .array, .vector => data[wrapIndex(data, index)],
+
+        else => unreachable,
+    };
+}
+```
+
 ## About
 
 The goal of ziggurat is to enable developers to comprehensibly define arbitrarily complex type constraints and assertions.
