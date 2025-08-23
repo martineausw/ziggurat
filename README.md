@@ -114,36 +114,37 @@ const odd_int: Prototype = .{
 
 Intended to be used in _comptime_:
 
--   array - asserts an array type value with length interval, child type info, and sentinel existence assertions.
--   bool - asserts a boolean type value.
--   float - asserts a float type value with a bit interval assertion.
--   int - asserts an integer type value with bit interval and signedness filter assertions.
--   optional - asserts an optional type value with a child type info filter assertion.
--   pointer - asserts a pointer type value with child type info filter, size filter, const qualifier presence, volatile qualifier presence, and sentinel existence assertions.
--   struct - asserts a struct type value with layout filter, field set, declaration set, and tuple type assertions.
--   type - asserts a type value.
--   vector - asserts a vector type value with child type info filter and length interval assertions.
+-   is_array - asserts an array type value with length interval, child type info, and sentinel existence assertions.
+-   is_bool - asserts a boolean type value.
+-   is_float - asserts a float type value with a bit interval assertion.
+-   is_int - asserts an integer type value with bit interval and signedness filter assertions.
+-   is_optional - asserts an optional type value with a child type info filter assertion.
+-   is_pointer - asserts a pointer type value with child type info filter, size filter, const qualifier presence, volatile qualifier presence, and sentinel existence assertions.
+-   is_struct - asserts a struct type value with layout filter, field set, declaration set, and tuple type assertions.
+-   is_type - asserts a type value.
+-   is_vector - asserts a vector type value with child type info filter and length interval assertions.
 
 #### Auxiliary
 
 Intermediate and utility prototypes:
 
--   child - asserts on type values with a child type.
--   decl - asserts a type value contains a declaration.
--   exists - asserts an optional value is null or not null
--   field - asserts a type value contains a field of a parametric type.
--   filter - asserts a blacklist and/or whitelist of possible active tags of a union or enum.
--   info - asserts a type value blacklist and/or whitelist of potential type info tags.
--   interval - asserts a number value is within an inclusive range.
--   toggle - asserts a boolean value is either true or false.
+-   equals_bool
+-   has_decl(s)
+-   has_field(s)
+-   has_tag
+-   has_type_info
+-   has_value
+-   on_type
+-   within_interval
 
 #### Operator
 
 Boolean operations for prototype evaluation results
 
--   conjoin - asserts all prototypes evaluate to true.
--   disjoin - asserts at least one prototype evaluates to true.
--   negate - asserts a prototype evaluates to false without an error.
+-   all - asserts all prototypes evaluate to true.
+-   any - asserts at least one prototype evaluates to true.
+-   not - asserts a prototype evaluates to false without an error.
+-   seq - applies indexable prototypes to respective indices of provided argument.
 
 ### Sign
 
