@@ -29,7 +29,6 @@ pub fn at(
     .is_vector(.{}),
     .is_pointer(.{ .size = .{
         .slice = true,
-        .many = true,
     } }),
     .is_pointer(.{ .child = .any(&.{
         .is_array(.{}),
