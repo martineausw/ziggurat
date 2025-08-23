@@ -1,34 +1,16 @@
-//! Prototype *bool*.
-//!
-//! Asserts *actual* is a bool type value.
 const std = @import("std");
-
-const Prototype = @import("Prototype.zig");
-const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
+const testing = std.testing;
 
 const Self = @This();
 
-const BoolError = error{
-    /// *actual* is not a type value.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    AssertsTypeValue,
-    /// *actual* type value requires bool type info.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    AssertsWhitelistTypeInfo,
-};
+const Prototype = @import("Prototype.zig");
+const HasTypeInfo = @import("aux/HasTypeInfo.zig");
 
-pub const Error = BoolError;
+const BoolError = error{};
 
-/// Type value assertion for *bool* prototype evaluation argument.
-///
-/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-pub const has_type_info = FiltersTypeInfo.init(.{
+pub const Error = BoolError || HasTypeInfo.Error;
+
+const has_type_info = HasTypeInfo.init(.{
     .bool = true,
 });
 
@@ -36,16 +18,7 @@ pub const init: Prototype = .{
     .name = @typeName(Self),
     .eval = struct {
         fn eval(actual: anytype) Error!bool {
-            _ = comptime has_type_info.eval(
-                actual,
-            ) catch |err|
-                return switch (err) {
-                    FiltersTypeInfo.Error.AssertsTypeValue,
-                    => BoolError.AssertsTypeValue,
-                    FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
-                    => BoolError.AssertsWhitelistTypeInfo,
-                    else => @panic("unhandled error"),
-                };
+            _ = try has_type_info.eval(actual);
 
             return true;
         }
@@ -57,34 +30,15 @@ pub const init: Prototype = .{
             actual: anytype,
         ) void {
             switch (err) {
-                BoolError.AssertsTypeValue,
-                BoolError.AssertsWhitelistTypeInfo,
+                Error.AssertsTypeValue,
+                Error.AssertsActiveTypeInfo,
+                Error.AssertsInactiveTypeInfo,
                 => has_type_info.onError.?(err, prototype, actual),
-
-                else => @panic("unhandled error"),
             }
         }
     }.onError,
 };
 
-test BoolError {
-    _ = BoolError.AssertsTypeValue catch void;
-}
-
-test init {
-    const @"bool": Prototype = init;
-
-    _ = @"bool";
-}
-
-test "passes bool assertions" {
-    const @"bool" = init;
-
-    try std.testing.expectEqual(true, @"bool".eval(bool));
-}
-
-test "fails type value assertion" {
-    const @"bool" = init;
-
-    try std.testing.expectEqual(BoolError.AssertsTypeValue, comptime @"bool".eval(true));
+test "is bool" {
+    try testing.expectEqual(true, init.eval(bool));
 }

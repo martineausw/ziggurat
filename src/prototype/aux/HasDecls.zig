@@ -2,18 +2,13 @@ const std = @import("std");
 const testing = std.testing;
 
 const Prototype = @import("../Prototype.zig");
+const HasDecl = @import("HasDecl.zig");
 const HasTypeInfo = @import("HasTypeInfo.zig");
 
 const Self = @This();
 
-const HasDeclError = error{
-    AssertsHasDecl,
-};
-
-pub const Error = HasDeclError || HasTypeInfo.Error;
-pub const Params = struct {
-    name: [:0]const u8,
-};
+pub const Error = HasDecl.Error || HasTypeInfo.Error;
+pub const Params = []const HasDecl.Params;
 
 pub fn init(params: Params) Prototype {
     const has_type_info = HasTypeInfo.init(.{
@@ -25,11 +20,12 @@ pub fn init(params: Params) Prototype {
     return .{
         .name = @typeName(Self),
         .eval = struct {
-            fn eval(actual: anytype) HasDeclError!bool {
+            fn eval(actual: anytype) Error!bool {
                 _ = try has_type_info.eval(actual);
 
-                if (!@hasDecl(actual, params.name)) {
-                    return Error.AssertsHasDecl;
+                inline for (params) |decl| {
+                    const has_decl = HasDecl.init(decl);
+                    _ = try has_decl.eval(actual);
                 }
 
                 return true;
@@ -48,87 +44,67 @@ pub fn init(params: Params) Prototype {
                     => has_type_info.onError.?(err, prototype, actual),
 
                     Error.AssertsHasDecl,
-                    => @compileError(std.fmt.comptimePrint(
-                        "{s}.{s}: {s}",
-                        .{
-                            prototype.name,
-                            @errorName(err),
-                            params.name,
-                        },
-                    )),
+                    => {
+                        const has_decl = HasDecl.init(params[
+                            inline for (params.decls, 0..) |decl, i| blk: {
+                                const has_decl = HasDecl.init(decl);
+                                has_decl.eval(actual) catch
+                                    break :blk i;
+                            }
+                        ]);
+
+                        has_decl.onError.?(
+                            try has_decl.eval(actual),
+                            prototype,
+                            actual,
+                        );
+                    },
                 }
             }
         }.onError,
     };
 }
 
-test "has decl" {
+test "has decls" {
     const Foo = struct {
         pub const a: type = void;
         pub const b: bool = false;
         pub const x: usize = 0;
-        pub const y: f128 = 1;
+        pub const y: f128 = 0.0;
     };
 
     const Bar = union {
         pub const a: type = void;
         pub const b: bool = false;
         pub const x: usize = 0;
-        pub const y: f128 = 1;
+        pub const y: f128 = 0.0;
     };
 
     const Zig = enum {
         pub const a: type = void;
         pub const b: bool = false;
         pub const x: usize = 0;
-        pub const y: f128 = 1;
+        pub const y: f128 = 0.0;
     };
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(&.{
         .{ .name = "a" },
-    ).eval(Foo));
-
-    try testing.expectEqual(true, try init(
         .{ .name = "b" },
-    ).eval(Foo));
-
-    try testing.expectEqual(true, try init(
         .{ .name = "x" },
-    ).eval(Foo));
-
-    try testing.expectEqual(true, try init(
         .{ .name = "y" },
-    ).eval(Foo));
+    }).eval(Foo));
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(&.{
         .{ .name = "a" },
-    ).eval(Bar));
-
-    try testing.expectEqual(true, try init(
         .{ .name = "b" },
-    ).eval(Bar));
-
-    try testing.expectEqual(true, try init(
         .{ .name = "x" },
-    ).eval(Bar));
-
-    try testing.expectEqual(true, try init(
         .{ .name = "y" },
-    ).eval(Bar));
+    }).eval(Bar));
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(&.{
         .{ .name = "a" },
-    ).eval(Zig));
-
-    try testing.expectEqual(true, try init(
         .{ .name = "b" },
-    ).eval(Zig));
-
-    try testing.expectEqual(true, try init(
         .{ .name = "x" },
-    ).eval(Zig));
-
-    try testing.expectEqual(true, try init(
         .{ .name = "y" },
-    ).eval(Zig));
+    }).eval(Zig));
 }

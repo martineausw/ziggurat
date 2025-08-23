@@ -1,65 +1,26 @@
-//! Auxiliary prototype **.
-//! 
-//! Asserts an *actual* array, pointer, optional, or vector child type 
-//! value at a given index to pass evaluation of given prototype.
-//! 
-//! See also: 
-//! - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
-//! - [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
-//! - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
-//! - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
 const std = @import("std");
-
-const Prototype = @import("../Prototype.zig");
-const FiltersTypeInfo = @import("../aux/FiltersTypeInfo.zig");
 
 const Self = @This();
 
-/// Error set for *at* prototype.
-const OnElementsError = error{
-    /// *actual* is not a type value.
-    /// 
-    /// See also: 
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    AssertsTypeValue,
-    /// *actual* requires array, pointer, vector, or struct type info.
-    /// 
-    /// See also: 
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    AssertsWhitelistTypeInfo
-};
+const Prototype = @import("../Prototype.zig");
+const HasTypeInfo = @import("../aux/HasTypeInfo.zig");
 
-pub const Error = OnElementsError;
-
-/// Type info assertions for *at* prototype evaluation argument.
-/// 
-/// See also: 
-/// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-/// - [`std.builtin.Type.Array`](#std.builtin.Type.Array)
-/// - [`std.builtin.Type.Pointer`](#std.builtin.Type.Pointer)
-/// - [`std.builtin.Type.Vector`](#std.builtin.Type.Vector)
-/// - [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
-pub const has_type_info = FiltersTypeInfo.init(.{
-    .array = true,
-    .pointer = true,
-    .vector = true,
-    .@"struct" = true,
-});
+pub const Error = HasTypeInfo.Error;
 
 pub fn seq(prototypes: []const Prototype) Prototype {
+    const has_type_info = HasTypeInfo.init(.{
+        .array = true,
+        .pointer = true,
+        .vector = true,
+        .@"struct" = true,
+    });
+
     return .{
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = comptime has_type_info.eval(@TypeOf(actual)) catch |err|
-                    return switch (err) {
-                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
-                        => OnElementsError.AssertsWhitelistTypeInfo,
-                        else => @panic("unhandled error"),
-                    };
-                    
+                _ = try has_type_info.eval(@TypeOf(actual));
+
                 inline for (prototypes, 0..) |prototype, i| {
                     _ = try prototype.eval(actual[i]);
                 }
@@ -74,7 +35,7 @@ pub fn seq(prototypes: []const Prototype) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    OnElementsError.AssertsWhitelistTypeInfo,
+                    Error.AssertsActiveTypeInfo,
                     => has_type_info.onError.?(err, prototype, actual),
 
                     else => @compileError(
@@ -89,5 +50,3 @@ pub fn seq(prototypes: []const Prototype) Prototype {
         }.onError,
     };
 }
-
-

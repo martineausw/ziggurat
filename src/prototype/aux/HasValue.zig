@@ -6,19 +6,18 @@ const Self = @This();
 const Prototype = @import("../Prototype.zig");
 const HasTypeInfo = @import("HasTypeInfo.zig");
 
-const EqualsBoolError = error{
-    AssertsTrue,
-    AssertsFalse,
+const HasValue = error{
+    AssertsNotNull,
+    AssertsNull,
 };
 
-pub const Error = EqualsBoolError || HasTypeInfo.Error;
+pub const Error = HasValue || HasTypeInfo.Error;
 pub const Params = ?bool;
 
 pub fn init(params: Params) Prototype {
     const has_type_info = HasTypeInfo.init(.{
-        .bool = true,
+        .optional = true,
     });
-
     return .{
         .name = @typeName(Self),
         .eval = struct {
@@ -26,14 +25,12 @@ pub fn init(params: Params) Prototype {
                 _ = try has_type_info.eval(@TypeOf(actual));
 
                 if (params) |param| {
-                    if (param) {
-                        if (!actual) {
-                            return EqualsBoolError.AssertsTrue;
-                        }
+                    if (actual) |_| {
+                        if (param) return true;
+                        return HasValue.AssertsNull;
                     } else {
-                        if (actual) {
-                            return EqualsBoolError.AssertsFalse;
-                        }
+                        if (!param) return true;
+                        return HasValue.AssertsNotNull;
                     }
                 }
 
@@ -41,24 +38,20 @@ pub fn init(params: Params) Prototype {
             }
         }.eval,
         .onError = struct {
-            fn onError(
-                err: anyerror,
-                prototype: Prototype,
-                actual: anytype,
-            ) void {
+            fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
                     Error.AssertsTypeValue,
                     Error.AssertsActiveTypeInfo,
                     Error.AssertsInactiveTypeInfo,
                     => has_type_info.onError.?(err, prototype, actual),
 
-                    Error.AssertsTrue,
-                    Error.AssertsFalse,
+                    Error.AssertsNull,
+                    Error.AssertsNotNull,
                     => @compileError(
-                        std.fmt.comptimePrint("{s}.{s}: {s}", .{
+                        std.fmt.comptimePrint("{s}.{s}: {any}", .{
                             prototype.name,
                             @errorName(err),
-                            if (actual) "true" else "false",
+                            actual,
                         }),
                     ),
                 }
@@ -67,8 +60,8 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test "equals bool" {
-    try testing.expectEqual(true, init(null).eval(false));
-    try testing.expectEqual(true, init(null).eval(true));
-    try testing.expectEqual(true, init(null).eval(false));
+test "has value" {
+    try testing.expectEqual(true, init(null).eval(@as(?bool, null)));
+    try testing.expectEqual(true, init(null).eval(@as(?bool, true)));
+    try testing.expectEqual(true, init(null).eval(@as(?bool, false)));
 }

@@ -1,4 +1,3 @@
-//! 0.14.1 microlibrary to introduce type constraints.
 const std = @import("std");
 
 pub const Prototype = @import("prototype/Prototype.zig");

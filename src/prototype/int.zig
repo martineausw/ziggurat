@@ -1,105 +1,43 @@
-//! Prototype *int*.
-//!
-//! Asserts *actual* is an integer type value with parametric bits
-//! and signedness assertions.
-//!
-//! See also: [`std.builtin.Type.Int`](#std.builtin.Type.Int)
 const std = @import("std");
 const testing = std.testing;
 
-const Prototype = @import("Prototype.zig");
-const WithinInterval = @import("aux/WithinInterval.zig");
-const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
-const FiltersActiveTag = @import("aux/FiltersActiveTag.zig");
-
 const Self = @This();
 
-/// Error set for *int* prototype.
+const Prototype = @import("Prototype.zig");
+const WithinInterval = @import("aux/WithinInterval.zig");
+const HasTypeInfo = @import("aux/HasTypeInfo.zig");
+const HasSignedness = @import("aux/HasTag.zig").Of(std.builtin.Signedness);
+
 const IntError = error{
-    /// *actual* is not a type value.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    AssertsTypeValue,
-    /// *actual* type value requires int type info.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    AssertsWhitelistTypeInfo,
-    /// *actual* int bits value is less than minimum.
-    ///
-    /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMinBits,
-    /// *actual* int bits value is greater than maximum.
-    ///
-    /// See also: [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     AssertsMaxBits,
-    /// *actual* int signedness has active tag that belongs to blacklist.
-    ///
-    /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    AssertsBlacklistSignedness,
-    /// *actual* int signedness has active tag that does not belong to whitelist.
-    ///
-    /// See also: [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    AssertsWhitelistSignedness,
+    AssertsInactiveSignedness,
+    AssertsActiveSignedness,
 };
 
-pub const Error = IntError;
-
-/// Type value assertion for *int* prototype evaluation argument.
-///
-/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-pub const has_type_info = FiltersTypeInfo.init(.{
-    .int = true,
-});
-
-/// *Signedness* prototype.
-///
-/// See also:
-/// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-const FiltersSignedness = FiltersActiveTag.Of(std.builtin.Signedness);
-
-/// Assertion parameters for *int* prototype.
-///
-/// See also: [`std.builtin.Type.Int`](#std.builtin.Type.Int)
+pub const Error = IntError || HasTypeInfo.Error;
 pub const Params = struct {
-    /// Asserts int bits interval.
-    ///
-    /// See also:
-    /// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
-    /// - [`ziggurat.prototype.aux.interval`](#root.prototype.aux.interval)
     bits: WithinInterval.Params = .{},
-    /// Asserts int signedness.
-    ///
-    /// See also:
-    /// - [`std.builtin.Type.Int`](#std.builtin.Type.Int)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    signedness: FiltersSignedness.Params = .{},
+    signedness: HasSignedness.Params = .{},
 };
 
 pub fn init(params: Params) Prototype {
+    const has_type_info = HasTypeInfo.init(.{
+        .int = true,
+    });
     const bits = WithinInterval.init(params.bits);
-    const signedness = FiltersSignedness.init(params.signedness);
+    const signedness = HasSignedness.init(params.signedness);
 
     return .{
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = comptime has_type_info.eval(actual) catch |err|
-                    return switch (err) {
-                        FiltersTypeInfo.Error.AssertsTypeValue,
-                        => IntError.AssertsTypeValue,
-                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
-                        => IntError.AssertsWhitelistTypeInfo,
-                        else => @panic("unhandled error"),
-                    };
+                _ = try has_type_info.eval(actual);
 
                 _ = bits.eval(@typeInfo(actual).int.bits) catch |err|
                     return switch (err) {
-                        WithinInterval.Error.AssertsMin => IntError.AssertsMinBits,
-                        WithinInterval.Error.AssertsMax => IntError.AssertsMaxBits,
+                        WithinInterval.Error.AssertsMin => Error.AssertsMinBits,
+                        WithinInterval.Error.AssertsMax => Error.AssertsMaxBits,
                         else => @panic("unhandled error"),
                     };
 
@@ -107,8 +45,8 @@ pub fn init(params: Params) Prototype {
                     @typeInfo(actual).int.signedness,
                 ) catch |err|
                     return switch (err) {
-                        FiltersSignedness.Error.AssertsBlacklist => IntError.AssertsBlacklistSignedness,
-                        FiltersSignedness.Error.AssertsWhitelist => IntError.AssertsWhitelistSignedness,
+                        HasSignedness.Error.AssertsInactive => Error.AssertsInactiveSignedness,
+                        HasSignedness.Error.AssertsActive => Error.AssertsActiveSignedness,
                         else => @panic("unhandled error"),
                     };
 
@@ -118,137 +56,44 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    IntError.AssertsTypeValue,
-                    IntError.AssertsWhitelistTypeInfo,
+                    Error.AssertsTypeValue,
+                    Error.AssertsActiveTypeInfo,
                     => has_type_info.onError.?(
                         err,
                         prototype,
                         actual,
                     ),
 
-                    IntError.AssertsMinBits,
-                    IntError.AssertsMaxBits,
+                    Error.AssertsMinBits,
+                    Error.AssertsMaxBits,
                     => bits.onError.?(
-                        err,
+                        try bits.eval(@typeInfo(actual).int.bits),
                         prototype,
                         @typeInfo(actual).int.bits,
                     ),
 
-                    IntError.AssertsBlacklistSignedness,
-                    IntError.AssertsWhitelistSignedness,
+                    Error.AssertsInactiveSignedness,
+                    Error.AssertsActiveSignedness,
                     => signedness.onError.?(
-                        err,
+                        try signedness.eval(@typeInfo(actual).int.signedness),
                         prototype,
                         @typeInfo(actual).int.signedness,
                     ),
-
-                    else => @panic("unhandled error"),
                 }
             }
         }.onError,
     };
 }
 
-test IntError {
-    _ = IntError.AssertsTypeValue catch void;
-    _ = IntError.AssertsMinBits catch void;
-    _ = IntError.AssertsMaxBits catch void;
-    _ = IntError.AssertsBlacklistSignedness catch void;
-    _ = IntError.AssertsWhitelistSignedness catch void;
-}
+test "is int" {
+    @setEvalBranchQuota(3000);
+    inline for (0..128) |bits| {
+        try testing.expectEqual(true, init(.{}).eval(std.meta.Int(.signed, bits)));
+    }
 
-test Params {
-    const params: Params = .{
-        .bits = .{
-            .min = null,
-            .max = null,
-        },
-        .signedness = .{
-            .signed = null,
-            .unsigned = null,
-        },
-    };
+    inline for (0..128) |bits| {
+        try testing.expectEqual(true, init(.{}).eval(std.meta.Int(.unsigned, bits)));
+    }
 
-    _ = params;
-}
-
-test init {
-    const int: Prototype = init(.{
-        .bits = .{
-            .min = null,
-            .max = null,
-        },
-        .signedness = .{
-            .signed = null,
-            .unsigned = null,
-        },
-    });
-
-    _ = int;
-}
-
-test "passes int assertions" {
-    const int = init(.{
-        .bits = .{
-            .min = null,
-            .max = null,
-        },
-        .signedness = .{},
-    });
-
-    try std.testing.expectEqual(true, int.eval(i128));
-    try std.testing.expectEqual(true, int.eval(usize));
-}
-
-test "fails type value assertion" {
-    const int = init(.{
-        .bits = .{
-            .min = null,
-            .max = null,
-        },
-        .signedness = .{},
-    });
-
-    try std.testing.expectEqual(
-        IntError.AssertsTypeValue,
-        comptime int.eval(@as(i128, 0)),
-    );
-}
-
-test "fails int bits interval assertions" {
-    const int = init(.{
-        .bits = .{
-            .min = 32,
-            .max = 64,
-        },
-        .signedness = .{},
-    });
-
-    try std.testing.expectEqual(IntError.AssertsMinBits, comptime int.eval(i16));
-    try std.testing.expectEqual(IntError.AssertsMaxBits, comptime int.eval(i128));
-}
-
-test "fails int signedness blacklist assertion" {
-    const int = init(.{ .bits = .{
-        .min = null,
-        .max = null,
-    }, .signedness = .{
-        .signed = false,
-    } });
-
-    try std.testing.expectEqual(IntError.AssertsBlacklistSignedness, comptime int.eval(i128));
-}
-
-test "fails int signedness whitelist assertion" {
-    const int = init(.{
-        .bits = .{
-            .min = null,
-            .max = null,
-        },
-        .signedness = .{
-            .unsigned = true,
-        },
-    });
-
-    try std.testing.expectEqual(IntError.AssertsWhitelistSignedness, comptime int.eval(i128));
+    try testing.expectEqual(true, init(.{}).eval(usize));
 }

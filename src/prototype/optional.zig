@@ -1,84 +1,38 @@
-//! Prototype *optional*.
-//!
-//! Asserts *actual* is an optional type value with a parametric
-//! child assertion.
-//!
-//! See also: [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
 const std = @import("std");
 const testing = std.testing;
 
-const Prototype = @import("Prototype.zig");
-const FiltersTypeInfo = @import("aux/FiltersTypeInfo.zig");
-const OnType = @import("aux/OnType.zig");
-
 const Self = @This();
 
-/// Error set for *optional* prototype.
+const Prototype = @import("Prototype.zig");
+const HasTypeInfo = @import("aux/HasTypeInfo.zig");
+const OnType = @import("aux/OnType.zig");
+
 const OptionalError = error{
-    /// *actual* is not a type value.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    AssertsTypeValue,
-    /// *actual* type value requires optional type info.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    AssertsWhitelistTypeInfo,
-    /// *actual* optional child type info has active tag that belongs to blacklist.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info_switch)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    AssertsBlacklistChildTypeInfo,
-    /// *actual* optional child type info has active tag that does not belong to whitelist.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info_switch)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    AssertsWhitelistChildTypeInfo,
+    AssertsOnTypeChild,
 };
 
-pub const Error = OptionalError;
-
-/// Type value assertion for *optional* prototype evaluation argument.
-///
-/// See also: [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-pub const has_type_info = FiltersTypeInfo.init(.{
-    .optional = true,
-});
-
-/// Assertion parameters for *optional* prototype.
-///
-/// See also: [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
+pub const Error = OptionalError || HasTypeInfo.Error;
 pub const Params = struct {
-    /// Asserts optional child type info.
-    ///
-    /// See also:
-    /// - [`std.builtin.Type.Optional`](#std.builtin.Type.Optional)
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info_switch)
     child: OnType.Params = null,
 };
 
 pub fn init(params: Params) Prototype {
+    const has_type_info = HasTypeInfo.init(.{
+        .optional = true,
+    });
     const child = OnType.init(params.child);
 
     return .{
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = has_type_info.eval(actual) catch |err|
+                _ = try has_type_info.eval(actual);
+                _ = child.eval(@typeInfo(actual).optional.child) catch |err|
                     return switch (err) {
-                        FiltersTypeInfo.Error.AssertsTypeValue,
-                        => OptionalError.AssertsTypeValue,
-                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
-                        => OptionalError.AssertsWhitelistTypeInfo,
+                        OnType.Error.AssertsOnType,
+                        => Error.AssertsOnTypeChild,
                         else => unreachable,
                     };
-
-                    _ = try child.eval(@typeInfo(actual).optional.child);
 
                 return true;
             }
@@ -86,16 +40,16 @@ pub fn init(params: Params) Prototype {
         .onError = struct {
             fn onError(err: anyerror, prototype: Prototype, actual: anytype) void {
                 switch (err) {
-                    OptionalError.AssertsTypeValue,
-                    OptionalError.AssertsWhitelistTypeInfo,
+                    Error.AssertsTypeValue,
+                    Error.AssertsActiveTypeInfo,
                     => has_type_info.onError.?(
                         err,
                         prototype,
                         actual,
                     ),
 
-                    else => child.onError.?(
-                        err,
+                    Error.AssertsOnTypeChild => child.onError.?(
+                        try child.eval(@typeInfo(actual).optional.child),
                         prototype,
                         @typeInfo(actual).optional.child,
                     ),
@@ -105,32 +59,17 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test OptionalError {
-    _ = OptionalError.AssertsTypeValue catch void;
-    _ = OptionalError.AssertsWhitelistTypeInfo catch void;
-}
-
-test Params {
-    const params: Params = .{
-        .child = .true,
-    };
-
-    _ = params;
-}
-
-test init {
-    const optional = init(.{
-        .child = .true
-        
-    });
-
-    _ = optional;
-}
-
-test "passes optional assertions" {
-    const optional = init(.{
-        .child = .true,
-    });
-
-    try std.testing.expectEqual(true, optional.eval(?bool));
+test "is optional" {
+    try testing.expectEqual(true, init(.{}).eval(?void));
+    try testing.expectEqual(true, init(.{}).eval(?bool));
+    try testing.expectEqual(true, init(.{}).eval(?@TypeOf(undefined)));
+    try testing.expectEqual(true, init(.{}).eval(?fn () void));
+    try testing.expectEqual(true, init(.{}).eval(?[]const struct {}));
+    try testing.expectEqual(true, init(.{}).eval(?*const union {}));
+    try testing.expectEqual(true, init(.{}).eval(?[*]enum {}));
+    try testing.expectEqual(true, init(.{}).eval(?@Vector(3, f128)));
+    try testing.expectEqual(true, init(.{}).eval(?[3]usize));
+    try testing.expectEqual(true, init(.{}).eval(?f128));
+    try testing.expectEqual(true, init(.{}).eval(?i128));
+    try testing.expectEqual(true, init(.{}).eval(?usize));
 }

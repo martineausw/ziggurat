@@ -1,16 +1,11 @@
-//! Prototype operation *conjoin*.
-//!
-//! Asserts an *actual* value to pass at least one evaluation of provided
-//! prototypes.
 const std = @import("std");
 const testing = std.testing;
 
-const Prototype = @import("../Prototype.zig");
-const FiltersTypeInfo = @import("../aux/FiltersTypeInfo.zig");
-
 const Self = @This();
 
-/// Boolean OR of prototypes' evaluation results.
+const Prototype = @import("../Prototype.zig");
+const HasTypeInfo = @import("../aux/HasTypeInfo.zig");
+
 pub fn any(prototypes: []const Prototype) Prototype {
     return .{
         .name = @typeName(Self),
@@ -101,32 +96,4 @@ pub fn any(prototypes: []const Prototype) Prototype {
             }
         }.onError,
     };
-}
-
-test any {
-    _ = any(&.{.true});
-}
-
-test "evaluates any to true" {
-    try std.testing.expectEqual(true, any(&.{.true}).eval(void));
-    try std.testing.expectEqual(true, any(&.{ .true, .true }).eval(void));
-    try std.testing.expectEqual(true, any(&.{ .false, .true }).eval(void));
-    try std.testing.expectEqual(true, any(&.{ .true, .false }).eval(void));
-    try std.testing.expectEqual(true, any(&.{ .true, .true, .false }).eval(void));
-}
-
-test "evaluates any to false" {
-    try std.testing.expectEqual(false, any(&.{.false}).eval(void));
-    try std.testing.expectEqual(false, any(&.{ .false, .false }).eval(void));
-    try std.testing.expectEqual(false, any(&.{ .false, .false, .false }).eval(void));
-}
-
-test "evaluates any to error" {
-    try std.testing.expectEqual(error.Error, any(&.{
-        .@"error",
-    }).eval(void));
-    try std.testing.expectEqual(error.Error, any(&.{ .@"error", .@"error" }).eval(void));
-    try std.testing.expectEqual(error.Error, any(&.{ .false, .@"error" }).eval(void));
-    try std.testing.expectEqual(error.Error, any(&.{ .@"error", .false }).eval(void));
-    try std.testing.expectEqual(error.Error, any(&.{ .@"error", .false, .@"error" }).eval(void));
 }

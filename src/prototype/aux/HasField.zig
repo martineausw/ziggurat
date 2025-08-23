@@ -1,104 +1,48 @@
-//! Auxiliary prototype that checks a type for a field.
-//!
-//! Asserts an *actual* struct or union type value to have a field of type
-//! and optionally respect a type info whitelist and/or blacklist.
-//!
-//! See also:
-//! - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
-//! - [`std.builtin.Type.Union`](#std.builtin.Type.Union)
 const std = @import("std");
+const testing = std.testing;
 
 const Prototype = @import("../Prototype.zig");
-const FiltersTypeInfo = @import("FiltersTypeInfo.zig");
+const HasTypeInfo = @import("HasTypeInfo.zig");
 const OnType = @import("OnType.zig");
 
 const Self = @This();
 
-/// Error set for *field* prototype.
 const HasFieldError = error{
-    /// `actual` is not a type value.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.type`](#root.prototype.type)
-    AssertsTypeValue,
-    /// `actual` requires struct or union type info.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    AssertsWhitelistTypeInfo,
-    /// `actual` is missing field.
     AssertsHasField,
-    /// `actual` has field with type info that belongs to blacklist.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    AssertsBlacklistFieldTypeInfo,
-    /// `actual` has field with type info that does not belong to whitelist.
-    ///
-    /// See also:
-    /// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-    /// - [`ziggurat.prototype.aux.filter`](#root.prototype.aux.filter)
-    AssertsWhitelistFieldTypeInfo,
+    AssertsOnTypeField,
 };
 
-pub const Error = HasFieldError;
-
-/// Type info assertions for *field* prototype evaluation argument.
-///
-/// See also:
-/// - [`ziggurat.prototype.aux.info`](#root.prototype.aux.info)
-/// - [`std.builtin.Type.Struct`](#std.builtin.Type.Struct)
-/// - [`std.builtin.Type.Union`](#std.builtin.Type.Union)
-pub const has_type_info = FiltersTypeInfo.init(.{
-    .@"struct" = true,
-    .@"union" = true,
-});
-
-/// Parameters used for prototype evaluation.
-///
-/// See also:
-/// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
-/// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)
+pub const Error = HasFieldError || HasTypeInfo.Error;
 pub const Params = struct {
-    /// Asserts struct field.
-    ///
-    /// See also:
-    /// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
-    /// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)
     name: [:0]const u8,
-    /// Asserts struct field type.
-    ///
-    /// See also:
-    /// - [`std.builtin.Type.StructField`](#std.builtin.Type.StructField)
-    /// - [`std.builtin.Type.UnionField`](#std.builtin.Type.UnionField)
-    type: OnType.Params,
+    type: OnType.Params = null,
 };
 
 pub fn init(params: Params) Prototype {
+    const has_type_info = HasTypeInfo.init(.{
+        .@"struct" = true,
+        .@"union" = true,
+    });
+    const on_type = OnType.init(params.type);
     return .{
         .name = @typeName(Self),
         .eval = struct {
-            fn eval(actual: anytype) Error!bool {
-                _ = has_type_info.eval(actual) catch |err|
-                    return switch (err) {
-                        FiltersTypeInfo.Error.AssertsTypeValue,
-                        => HasFieldError.AssertsTypeValue,
-                        FiltersTypeInfo.Error.AssertsWhitelistTypeInfo,
-                        => HasFieldError.AssertsWhitelistTypeInfo,
-                        else => @panic("unhandled error"),
-                    };
+            fn eval(actual: anytype) anyerror!bool {
+                _ = try has_type_info.eval(actual);
 
                 if (!@hasField(actual, params.name)) {
                     return HasFieldError.AssertsHasField;
                 }
 
-                _ = try OnType.init(params.type).eval(@FieldType(
+                _ = on_type.eval(@FieldType(
                     actual,
                     params.name,
-                ));
+                )) catch |err|
+                    return switch (err) {
+                        OnType.Error.AssertsOnType,
+                        => Error.AssertsOnTypeField,
+                        else => unreachable,
+                    };
 
                 return true;
             }
@@ -110,18 +54,21 @@ pub fn init(params: Params) Prototype {
                 actual: anytype,
             ) void {
                 switch (err) {
-                    HasFieldError.AssertsTypeValue,
-                    HasFieldError.AssertsWhitelistTypeInfo,
+                    Error.AssertsTypeValue,
+                    Error.AssertsActiveTypeInfo,
+                    Error.AssertsInactiveTypeInfo,
                     => has_type_info.onError.?(err, prototype, actual),
 
-                    else => @compileError(std.fmt.comptimePrint(
-                        "{s}.{s}: {s}: ",
-                        .{
-                            prototype.name,
-                            @errorName(err),
-                            params.name,
-                            @FieldType(actual, params.name),
-                        },
+                    Error.AssertsOnTypeField,
+                    => on_type.onError.?(
+                        try on_type.eval(@FieldType(actual, params.name)),
+                        prototype,
+                        @FieldType(actual, params.name),
+                    ),
+
+                    Error.AssertsHasField => @compileError(std.fmt.comptimePrint(
+                        "{s}.{s}: {s}",
+                        .{ prototype.name, @errorName(err), params.name },
                     )),
                 }
             }
@@ -129,89 +76,50 @@ pub fn init(params: Params) Prototype {
     };
 }
 
-test HasFieldError {
-    _ = HasFieldError.AssertsTypeValue catch void;
-    _ = HasFieldError.AssertsHasField catch void;
-}
-
-test Params {
-    const T = struct {
-        field: f128,
+test "has field" {
+    const Foo = struct {
+        a: type,
+        b: bool,
+        x: usize,
+        y: f128,
     };
 
-    _ = T;
-
-    const params: Params = .{
-        .name = "field",
-        .type = .true,
+    const Bar = union {
+        a: type,
+        b: bool,
+        x: usize,
+        y: f128,
     };
 
-    _ = params;
-}
+    try testing.expectEqual(true, try init(
+        .{ .name = "a", .type = .is_type },
+    ).eval(Foo));
 
-test init {
-    const T = struct {
-        field: f128,
-    };
+    try testing.expectEqual(true, try init(
+        .{ .name = "b", .type = .is_bool },
+    ).eval(Foo));
 
-    _ = T;
+    try testing.expectEqual(true, try init(
+        .{ .name = "x", .type = .is_int(.{}) },
+    ).eval(Foo));
 
-    const field: Prototype = init(.{
-        .name = "field",
-        .type = .true,
-    });
+    try testing.expectEqual(true, try init(
+        .{ .name = "y", .type = .is_float(.{}) },
+    ).eval(Foo));
 
-    _ = field;
-}
+    try testing.expectEqual(true, try init(
+        .{ .name = "a", .type = .is_type },
+    ).eval(Bar));
 
-test "passes field assertions on struct" {
-    const T = struct {
-        field: bool,
-    };
+    try testing.expectEqual(true, try init(
+        .{ .name = "b", .type = .is_bool },
+    ).eval(Bar));
 
-    const params: Params = .{
-        .name = "field",
-        .type = .true
-    };
+    try testing.expectEqual(true, try init(
+        .{ .name = "x", .type = .is_int(.{}) },
+    ).eval(Bar));
 
-    const HasField: Prototype = init(params);
-
-    try std.testing.expectEqual(
-        true,
-        HasField.eval(T),
-    );
-}
-
-test "passes field assertions on union" {
-    const T = union {
-        field: bool,
-    };
-
-    const params: Params = .{
-        .name = "field",
-        .type = .true,
-    };
-
-    const HasField: Prototype = init(params);
-
-    try std.testing.expectEqual(
-        true,
-        HasField.eval(T),
-    );
-}
-
-test "fails field assertion on struct" {
-    const T = struct {};
-
-    const params: Params = .{
-        .name = "field",
-        .type = .true,
-    };
-
-    const HasField: Prototype = init(params);
-
-    try std.testing.expectEqual(
-        HasFieldError.AssertsHasField,
-        HasField.eval(T),
-    );
+    try testing.expectEqual(true, try init(
+        .{ .name = "y", .type = .is_float(.{}) },
+    ).eval(Bar));
 }
