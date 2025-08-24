@@ -101,7 +101,7 @@ pub fn init(params: Params) Prototype {
                         @typeInfo(actual).array.sentinel(),
                     ),
 
-                    Error.OnType => child.onError.?(
+                    Error.AssertsOnTypeChild => child.onError.?(
                         try child.eval(@typeInfo(actual).array.child),
                         prototype,
                         @typeInfo(actual).array.child,
