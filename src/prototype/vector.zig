@@ -31,14 +31,13 @@ pub fn init(params: Params) Prototype {
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try has_type_info.eval(actual);
+                _ = try @call(.always_inline, has_type_info.eval, .{actual});
 
-                _ = child.eval(@typeInfo(actual).vector.child) catch |err|
-                    return switch (err) {
-                        OnType.Error.AssertsOnType,
-                        => Error.AssertsOnTypeChild,
-                        else => unreachable,
-                    };
+                if (child.eval(@typeInfo(actual).vector.child)) |result| {
+                    if (!result) return false;
+                } else |err| return switch (err) {
+                    else => Error.AssertsOnTypeChild,
+                };
 
                 _ = len.eval(@typeInfo(actual).vector.len) catch |err|
                     return switch (err) {
@@ -87,4 +86,31 @@ test "is vector" {
     try std.testing.expectEqual(true, init(.{}).eval(@Vector(3, f128)));
     try std.testing.expectEqual(true, init(.{}).eval(@Vector(0, u8)));
     try std.testing.expectEqual(true, init(.{}).eval(@Vector(8, bool)));
+}
+
+test "fails is vector" {
+    try std.testing.expectEqual(
+        false,
+        init(
+            .{ .child = .false },
+        ).eval(@Vector(3, f128)),
+    );
+    try std.testing.expectEqual(
+        Error.AssertsOnTypeChild,
+        init(
+            .{ .child = .is_bool },
+        ).eval(@Vector(3, f128)),
+    );
+    try std.testing.expectEqual(
+        Error.AssertsMinLen,
+        init(
+            .{ .len = .{ .min = 1 } },
+        ).eval(@Vector(0, u8)),
+    );
+    try std.testing.expectEqual(
+        Error.AssertsMaxLen,
+        init(
+            .{ .len = .{ .max = 0 } },
+        ).eval(@Vector(1, bool)),
+    );
 }

@@ -26,7 +26,7 @@ pub fn init(params: Params) Prototype {
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) HasDeclError!bool {
-                _ = try has_type_info.eval(actual);
+                _ = try @call(.always_inline, has_type_info.eval, .{actual});
 
                 if (!@hasDecl(actual, params.name)) {
                     return Error.AssertsHasDecl;
@@ -64,71 +64,127 @@ pub fn init(params: Params) Prototype {
 
 test "has decl" {
     const Foo = struct {
-        pub const a: type = void;
-        pub const b: bool = false;
+        const a: type = void;
+        const b: bool = false;
         pub const x: usize = 0;
         pub const y: f128 = 1;
     };
 
     const Bar = union {
-        pub const a: type = void;
-        pub const b: bool = false;
+        const a: type = void;
+        const b: bool = false;
         pub const x: usize = 0;
         pub const y: f128 = 1;
     };
 
     const Zig = enum {
-        pub const a: type = void;
-        pub const b: bool = false;
+        const a: type = void;
+        const b: bool = false;
         pub const x: usize = 0;
         pub const y: f128 = 1;
     };
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(
         .{ .name = "a" },
     ).eval(Foo));
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(
         .{ .name = "b" },
     ).eval(Foo));
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(
         .{ .name = "x" },
     ).eval(Foo));
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(
         .{ .name = "y" },
     ).eval(Foo));
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(
         .{ .name = "a" },
     ).eval(Bar));
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(
         .{ .name = "b" },
     ).eval(Bar));
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(
         .{ .name = "x" },
     ).eval(Bar));
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(
         .{ .name = "y" },
     ).eval(Bar));
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(
         .{ .name = "a" },
     ).eval(Zig));
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(
         .{ .name = "b" },
     ).eval(Zig));
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(
         .{ .name = "x" },
     ).eval(Zig));
 
-    try testing.expectEqual(true, try init(
+    try testing.expectEqual(true, init(
+        .{ .name = "y" },
+    ).eval(Zig));
+}
+
+test "fails has decl" {
+    const Foo = struct {};
+
+    const Bar = union {};
+
+    const Zig = enum {};
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(
+        .{ .name = "a" },
+    ).eval(Foo));
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(
+        .{ .name = "b" },
+    ).eval(Foo));
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(
+        .{ .name = "x" },
+    ).eval(Foo));
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(
+        .{ .name = "y" },
+    ).eval(Foo));
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(
+        .{ .name = "a" },
+    ).eval(Bar));
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(
+        .{ .name = "b" },
+    ).eval(Bar));
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(
+        .{ .name = "x" },
+    ).eval(Bar));
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(
+        .{ .name = "y" },
+    ).eval(Bar));
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(
+        .{ .name = "a" },
+    ).eval(Zig));
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(
+        .{ .name = "b" },
+    ).eval(Zig));
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(
+        .{ .name = "x" },
+    ).eval(Zig));
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(
         .{ .name = "y" },
     ).eval(Zig));
 }

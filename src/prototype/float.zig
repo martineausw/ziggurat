@@ -31,7 +31,7 @@ pub fn init(params: Params) Prototype {
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try has_type_info.eval(actual);
+                _ = try @call(.always_inline, has_type_info.eval, .{actual});
 
                 _ = bits.eval(@typeInfo(actual).float.bits) catch |err|
                     return switch (err) {
@@ -71,8 +71,18 @@ pub fn init(params: Params) Prototype {
 }
 
 test "is float" {
-    try testing.expectEqual(true, try init(.{}).eval(f16));
-    try testing.expectEqual(true, try init(.{}).eval(f32));
-    try testing.expectEqual(true, try init(.{}).eval(f64));
-    try testing.expectEqual(true, try init(.{}).eval(f128));
+    try testing.expectEqual(true, init(.{}).eval(f16));
+    try testing.expectEqual(true, init(.{}).eval(f32));
+    try testing.expectEqual(true, init(.{}).eval(f64));
+    try testing.expectEqual(true, init(.{}).eval(f128));
+}
+
+test "fails is float" {
+    try testing.expectEqual(Error.AssertsMinBits, init(.{ .bits = .{ .min = 64 } }).eval(f32));
+    try testing.expectEqual(Error.AssertsMaxBits, init(.{ .bits = .{ .max = 16 } }).eval(f32));
+}
+
+test "fails validation" {
+    try testing.expectEqual(Error.AssertsTypeValue, init(.{}).eval(@as(f32, 0)));
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(.{}).eval(i128));
 }

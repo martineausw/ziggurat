@@ -23,7 +23,7 @@ pub fn init(params: Params) Prototype {
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try has_type_info.eval(@TypeOf(actual));
+                _ = try @call(.always_inline, has_type_info.eval, .{@TypeOf(actual)});
 
                 if (params) |param| {
                     if (param) {
@@ -68,7 +68,18 @@ pub fn init(params: Params) Prototype {
 }
 
 test "equals bool" {
-    try testing.expectEqual(true, init(null).eval(false));
     try testing.expectEqual(true, init(null).eval(true));
     try testing.expectEqual(true, init(null).eval(false));
+
+    try testing.expectEqual(true, init(false).eval(false));
+    try testing.expectEqual(true, init(true).eval(true));
+}
+
+test "fails equals bool" {
+    try testing.expectEqual(Error.AssertsFalse, init(false).eval(true));
+    try testing.expectEqual(Error.AssertsTrue, init(true).eval(false));
+}
+
+test "fails validation" {
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(null).eval(bool));
 }

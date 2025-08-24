@@ -82,9 +82,42 @@ pub fn init(params: Params) Prototype {
 }
 
 test "within interval" {
-    try testing.expectEqual(true, init(.{}).eval(@as(usize, 0)));
-    try testing.expectEqual(true, init(.{}).eval(@as(i128, 0)));
-    try testing.expectEqual(true, init(.{}).eval(@as(f128, 0)));
-    try testing.expectEqual(true, init(.{}).eval(@as(comptime_int, 0)));
-    try testing.expectEqual(true, init(.{}).eval(@as(comptime_float, 0)));
+    try testing.expectEqual(true, init(.{
+        .min = std.math.minInt(usize),
+        .max = std.math.maxInt(usize),
+        .tolerance = 0,
+    }).eval(@as(usize, 0)));
+
+    try testing.expectEqual(true, init(.{
+        .min = std.math.minInt(i128),
+        .max = std.math.maxInt(i128),
+        .tolerance = 0,
+    }).eval(@as(i128, 0)));
+
+    try testing.expectEqual(true, init(.{
+        .min = std.math.floatMin(f128),
+        .max = std.math.floatMax(f128),
+        .tolerance = std.math.floatEps(f128),
+    }).eval(@as(f128, 0)));
+
+    try testing.expectEqual(true, init(.{
+        .min = 0,
+        .max = 0,
+        .tolerance = 0,
+    }).eval(@as(comptime_int, 0)));
+
+    try testing.expectEqual(true, init(.{
+        .min = 0,
+        .max = 0,
+        .tolerance = 0,
+    }).eval(@as(comptime_float, 0)));
+}
+
+test "fails within interval" {
+    try testing.expectEqual(Error.AssertsMin, init(.{ .min = 1 }).eval(@as(usize, 0)));
+    try testing.expectEqual(Error.AssertsMax, init(.{ .max = -1 }).eval(@as(i128, 0)));
+}
+
+test "fails validation" {
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(.{}).eval(usize));
 }

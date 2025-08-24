@@ -65,3 +65,12 @@ test "has value" {
     try testing.expectEqual(true, init(null).eval(@as(?bool, true)));
     try testing.expectEqual(true, init(null).eval(@as(?bool, false)));
 }
+
+test "fails has value" {
+    try testing.expectEqual(Error.AssertsNotNull, init(true).eval(@as(?usize, null)));
+    try testing.expectEqual(Error.AssertsNull, init(false).eval(@as(?usize, 0)));
+}
+
+test "fails validation" {
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(null).eval(*const u8));
+}

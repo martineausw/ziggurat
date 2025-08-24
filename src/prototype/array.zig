@@ -36,13 +36,13 @@ pub fn init(params: Params) Prototype {
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try has_type_info.eval(actual);
+                _ = try @call(.always_inline, has_type_info.eval, .{actual});
 
-                _ = child.eval(@typeInfo(actual).array.child) catch |err|
-                    return switch (err) {
-                        OnType.Error.AssertsOnType => Error.AssertsOnTypeChild,
-                        else => unreachable,
-                    };
+                if (child.eval(@typeInfo(actual).array.child)) |result| {
+                    if (!result) return false;
+                } else |err| return switch (err) {
+                    else => Error.AssertsOnTypeChild,
+                };
 
                 _ = len.eval(
                     @typeInfo(actual).array.len,
@@ -115,4 +115,35 @@ pub fn init(params: Params) Prototype {
 test "is array" {
     try testing.expectEqual(true, init(.{}).eval([128]f128));
     try testing.expectEqual(true, init(.{}).eval([100:0]f128));
+}
+
+test "fails is array" {
+    try testing.expectEqual(
+        Error.AssertsOnTypeChild,
+        init(.{ .child = .is_int(.{}) }).eval([0]bool),
+    );
+    try testing.expectEqual(
+        Error.AssertsMinLen,
+        init(.{ .len = .{ .min = 1 } }).eval([0]usize),
+    );
+    try testing.expectEqual(
+        Error.AssertsMaxLen,
+        init(.{ .len = .{ .max = 0 } }).eval([1]usize),
+    );
+    try testing.expectEqual(
+        Error.AssertsNullSentinel,
+        init(.{ .sentinel = false }).eval([10:0]u8),
+    );
+    try testing.expectEqual(
+        Error.AssertsNotNullSentinel,
+        init(.{ .sentinel = true }).eval([10]u8),
+    );
+}
+
+test "fails validation" {
+    try testing.expectEqual(Error.AssertsTypeValue, init(.{}).eval([_]usize{ 1, 2, 3 }));
+
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(.{}).eval([]f128));
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(.{}).eval([*]f128));
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(.{}).eval(*const u8));
 }

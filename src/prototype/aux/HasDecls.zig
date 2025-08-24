@@ -21,11 +21,12 @@ pub fn init(params: Params) Prototype {
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try has_type_info.eval(actual);
+                _ = try @call(.always_inline, has_type_info.eval, .{actual});
 
                 inline for (params) |decl| {
-                    const has_decl = HasDecl.init(decl);
-                    _ = try has_decl.eval(actual);
+                    if (!@hasDecl(actual, decl.name)) {
+                        return Error.AssertsHasDecl;
+                    }
                 }
 
                 return true;
@@ -47,9 +48,9 @@ pub fn init(params: Params) Prototype {
                     => {
                         const has_decl = HasDecl.init(params[
                             inline for (params.decls, 0..) |decl, i| blk: {
-                                const has_decl = HasDecl.init(decl);
-                                has_decl.eval(actual) catch
+                                if (!@hasDecl(actual, decl.name)) {
                                     break :blk i;
+                                }
                             }
                         ]);
 
@@ -67,7 +68,7 @@ pub fn init(params: Params) Prototype {
 
 test "has decls" {
     const Foo = struct {
-        pub const a: type = void;
+        const a: type = void;
         pub const b: bool = false;
         pub const x: usize = 0;
         pub const y: f128 = 0.0;
@@ -107,4 +108,40 @@ test "has decls" {
         .{ .name = "x" },
         .{ .name = "y" },
     }).eval(Zig));
+}
+
+test "fails has decls" {
+    const Foo = struct {};
+    const Bar = union {};
+    const Zig = enum {};
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(&.{
+        .{ .name = "a" },
+        .{ .name = "b" },
+        .{ .name = "x" },
+        .{ .name = "y" },
+    }).eval(Foo));
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(&.{
+        .{ .name = "a" },
+        .{ .name = "b" },
+        .{ .name = "x" },
+        .{ .name = "y" },
+    }).eval(Bar));
+
+    try testing.expectEqual(Error.AssertsHasDecl, init(&.{
+        .{ .name = "a" },
+        .{ .name = "b" },
+        .{ .name = "x" },
+        .{ .name = "y" },
+    }).eval(Zig));
+}
+
+test "fails validation" {
+    try testing.expectEqual(Error.AssertsTypeValue, init(&.{}).eval(@as(struct {}, .{})));
+
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(&.{}).eval(bool));
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(&.{}).eval(usize));
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(&.{}).eval(i128));
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(&.{}).eval(f128));
 }

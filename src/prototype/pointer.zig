@@ -47,15 +47,16 @@ pub fn init(params: Params) Prototype {
             fn eval(actual: anytype) Error!bool {
                 _ = try has_type_info.eval(actual);
 
-                _ = child.eval(@typeInfo(actual).pointer.child) catch |err|
-                    return switch (err) {
-                        OnType.Error.AssertsOnType,
-                        => Error.AssertsOnTypeChild,
-                        else => unreachable,
-                    };
+                if (child.eval(@typeInfo(actual).pointer.child)) |result| {
+                    if (!result) return false;
+                } else |err| return switch (err) {
+                    else => Error.AssertsOnTypeChild,
+                };
 
-                _ = comptime size.eval(
-                    @typeInfo(actual).pointer.size,
+                _ = @call(
+                    .always_inline,
+                    size.eval,
+                    .{@typeInfo(actual).pointer.size},
                 ) catch |err|
                     return switch (err) {
                         HasSize.Error.AssertsInactive,
@@ -173,4 +174,17 @@ test "is pointer" {
     try testing.expectEqual(true, init(.{}).eval([*]const enum {}));
     try testing.expectEqual(true, init(.{}).eval([*]volatile enum {}));
     try testing.expectEqual(true, init(.{}).eval([*]const volatile enum {}));
+}
+
+test "failse is pointer" {
+    try testing.expectEqual(false, init(.{ .child = .false }).eval([]const volatile struct {}));
+    try testing.expectEqual(Error.AssertsOnTypeChild, init(.{ .child = .@"error" }).eval([:0]const volatile u8));
+    try testing.expectEqual(Error.AssertsInactiveSize, init(.{ .size = .{ .slice = false } }).eval([]struct {}));
+    try testing.expectEqual(Error.AssertsActiveSize, init(.{ .size = .{ .slice = true } }).eval(*union {}));
+    try testing.expectEqual(Error.AssertsFalseIsConst, init(.{ .is_const = false }).eval([]const struct {}));
+    try testing.expectEqual(Error.AssertsTrueIsConst, init(.{ .is_const = true }).eval([:0]volatile u8));
+    try testing.expectEqual(Error.AssertsFalseIsVolatile, init(.{ .is_volatile = false }).eval([]volatile struct {}));
+    try testing.expectEqual(Error.AssertsTrueIsVolatile, init(.{ .is_volatile = true }).eval([:0]const u8));
+    try testing.expectEqual(Error.AssertsNullSentinel, init(.{ .sentinel = false }).eval([:0]u8));
+    try testing.expectEqual(Error.AssertsNotNullSentinel, init(.{ .sentinel = true }).eval(*const union {}));
 }

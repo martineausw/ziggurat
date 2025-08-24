@@ -19,7 +19,7 @@ pub fn init(params: Params) Prototype {
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) anyerror!bool {
-                _ = try has_type_info.eval(actual);
+                _ = try @call(.always_inline, has_type_info.eval, .{actual});
 
                 inline for (params) |param_field| {
                     const field_validator = HasField.init(param_field);
@@ -79,17 +79,56 @@ test "has fields" {
         y: f128,
     };
 
-    try testing.expectEqual(true, try init(&.{
+    try testing.expectEqual(true, init(&.{
         .{ .name = "a", .type = .is_type },
         .{ .name = "b", .type = .is_bool },
         .{ .name = "x", .type = .is_int(.{}) },
         .{ .name = "y", .type = .is_float(.{}) },
     }).eval(Foo));
 
-    try testing.expectEqual(true, try init(&.{
+    try testing.expectEqual(true, init(&.{
         .{ .name = "a", .type = .is_type },
         .{ .name = "b", .type = .is_bool },
         .{ .name = "x", .type = .is_int(.{}) },
         .{ .name = "y", .type = .is_float(.{}) },
     }).eval(Bar));
+}
+
+test "fails has fields" {
+    const Foo = struct {
+        a: usize,
+        b: i128,
+    };
+
+    const Bar = union {
+        a: usize,
+        b: i128,
+    };
+
+    try testing.expectEqual(Error.AssertsOnTypeField, init(&.{
+        .{ .name = "a", .type = .is_bool },
+        .{ .name = "b", .type = .is_bool },
+    }).eval(Foo));
+
+    try testing.expectEqual(Error.AssertsOnTypeField, init(&.{
+        .{ .name = "a", .type = .is_bool },
+        .{ .name = "b", .type = .is_bool },
+    }).eval(Bar));
+
+    try testing.expectEqual(Error.AssertsHasField, init(&.{
+        .{ .name = "x" },
+    }).eval(Foo));
+
+    try testing.expectEqual(Error.AssertsHasField, init(&.{
+        .{ .name = "x" },
+    }).eval(Bar));
+}
+
+test "fails validation" {
+    try testing.expectEqual(Error.AssertsTypeValue, init(&.{}).eval(@as(struct {}, .{})));
+
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(&.{}).eval(bool));
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(&.{}).eval(usize));
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(&.{}).eval(i128));
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(&.{}).eval(f128));
 }

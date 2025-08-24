@@ -66,12 +66,11 @@ const Param = struct {
                             else => unreachable,
                         };
 
-                    _ = try @"type".eval(actual.type) catch |err|
-                        return switch (err) {
-                            OnType.Error.AssertsOnType,
-                            => Param.Error.AssertsOnTypeParamType,
-                            else => unreachable,
-                        };
+                    if (@"type".eval(actual.type)) |result| {
+                        if (!result) return false;
+                    } else |err| return switch (err) {
+                        else => Param.Error.AssertsOnTypeParamType,
+                    };
 
                     return true;
                 }
@@ -130,9 +129,9 @@ pub fn init(params: Params) Prototype {
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try has_type_info.eval(actual);
+                _ = try @call(.always_inline, has_type_info.eval, .{actual});
 
-                _ = comptime calling_convention.eval(@typeInfo(actual).@"fn".calling_convention) catch |err|
+                _ = @call(.always_inline, calling_convention.eval, .{@typeInfo(actual).@"fn".calling_convention}) catch |err|
                     return switch (err) {
                         FiltersCallingConvention.Error.AssertsActive,
                         => Error.AssertsActiveCallingConvention,
@@ -161,9 +160,7 @@ pub fn init(params: Params) Prototype {
 
                 _ = return_type.eval(@typeInfo(actual).@"fn".return_type.?) catch |err|
                     return switch (err) {
-                        OnType.Error.AssertsOnType,
-                        => Error.AssertsOnTypeReturnType,
-                        else => unreachable,
+                        else => Error.AssertsOnTypeReturnType,
                     };
 
                 inline for (params.params, 0..) |param, i| {
@@ -243,4 +240,62 @@ pub fn init(params: Params) Prototype {
 test "is fn" {
     try testing.expectEqual(true, init(.{}).eval(fn () void));
     try testing.expectEqual(true, init(.{}).eval(fn () callconv(.@"inline") void));
+}
+
+test "fails is fn" {
+    try testing.expectEqual(
+        Error.AssertsActiveCallingConvention,
+        init(.{ .calling_convention = .{ .@"inline" = true } }).eval(fn () void),
+    );
+    try testing.expectEqual(
+        Error.AssertsInactiveCallingConvention,
+        init(.{ .calling_convention = .{ .@"inline" = false } }).eval(fn () callconv(.@"inline") void),
+    );
+    try testing.expectEqual(
+        Error.AssertsTrueIsGeneric,
+        init(.{ .is_generic = true }).eval(fn () void),
+    );
+    try testing.expectEqual(
+        Error.AssertsFalseIsGeneric,
+        init(.{ .is_generic = false }).eval(fn (comptime T: type) void),
+    );
+    try testing.expectEqual(
+        Error.AssertsTrueIsVarArgs,
+        init(.{ .is_var_args = true }).eval(fn () void),
+    );
+
+    try testing.expectEqual(
+        Error.AssertsFalseIsVarArgs,
+        init(.{ .is_var_args = false }).eval(@Type(.{ .@"fn" = .{
+            .calling_convention = .{ .aarch64_aapcs_win = .{} },
+            .is_generic = false,
+            .is_var_args = true,
+            .params = &.{},
+            .return_type = void,
+        } })),
+    );
+    try testing.expectEqual(
+        Error.AssertsOnTypeReturnType,
+        init(.{ .return_type = .@"error" }).eval(fn () void),
+    );
+    try testing.expectEqual(
+        Error.AssertsTrueParamIsGeneric,
+        init(.{ .params = &.{.{ .is_generic = true }} }).eval(fn (bool) void),
+    );
+    try testing.expectEqual(
+        Error.AssertsFalseParamIsGeneric,
+        init(.{ .params = &.{.{ .is_generic = false }} }).eval(fn (anytype) void),
+    );
+    try testing.expectEqual(
+        Error.AssertsTrueParamIsNoAlias,
+        init(.{ .params = &.{.{ .is_noalias = true }} }).eval(fn ([]const u8) void),
+    );
+    try testing.expectEqual(
+        Error.AssertsFalseParamIsNoAlias,
+        init(.{ .params = &.{.{ .is_noalias = false }} }).eval(fn (noalias []const u8) void),
+    );
+    try testing.expectEqual(
+        Error.AssertsOnTypeParamType,
+        init(.{ .params = &.{.{ .type = .@"error" }} }).eval(fn (bool) void),
+    );
 }

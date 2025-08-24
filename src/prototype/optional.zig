@@ -27,12 +27,13 @@ pub fn init(params: Params) Prototype {
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
                 _ = try has_type_info.eval(actual);
-                _ = child.eval(@typeInfo(actual).optional.child) catch |err|
+                if (child.eval(@typeInfo(actual).optional.child)) |result| {
+                    if (!result) return false;
+                } else |err| {
                     return switch (err) {
-                        OnType.Error.AssertsOnType,
-                        => Error.AssertsOnTypeChild,
-                        else => unreachable,
+                        else => Error.AssertsOnTypeChild,
                     };
+                }
 
                 return true;
             }
@@ -72,4 +73,32 @@ test "is optional" {
     try testing.expectEqual(true, init(.{}).eval(?f128));
     try testing.expectEqual(true, init(.{}).eval(?i128));
     try testing.expectEqual(true, init(.{}).eval(?usize));
+}
+
+test "fails is optional" {
+    try testing.expectEqual(false, init(.{ .child = .false }).eval(?void));
+    try testing.expectEqual(false, init(.{ .child = .false }).eval(?bool));
+    try testing.expectEqual(false, init(.{ .child = .false }).eval(?@TypeOf(undefined)));
+    try testing.expectEqual(false, init(.{ .child = .false }).eval(?fn () void));
+    try testing.expectEqual(false, init(.{ .child = .false }).eval(?[]const struct {}));
+    try testing.expectEqual(false, init(.{ .child = .false }).eval(?*const union {}));
+    try testing.expectEqual(false, init(.{ .child = .false }).eval(?[*]enum {}));
+    try testing.expectEqual(false, init(.{ .child = .false }).eval(?@Vector(3, f128)));
+    try testing.expectEqual(false, init(.{ .child = .false }).eval(?[3]usize));
+    try testing.expectEqual(false, init(.{ .child = .false }).eval(?f128));
+    try testing.expectEqual(false, init(.{ .child = .false }).eval(?i128));
+    try testing.expectEqual(false, init(.{ .child = .false }).eval(?usize));
+
+    try testing.expectEqual(Error.AssertsOnTypeChild, init(.{ .child = .@"error" }).eval(?void));
+    try testing.expectEqual(Error.AssertsOnTypeChild, init(.{ .child = .@"error" }).eval(?bool));
+    try testing.expectEqual(Error.AssertsOnTypeChild, init(.{ .child = .@"error" }).eval(?@TypeOf(undefined)));
+    try testing.expectEqual(Error.AssertsOnTypeChild, init(.{ .child = .@"error" }).eval(?fn () void));
+    try testing.expectEqual(Error.AssertsOnTypeChild, init(.{ .child = .@"error" }).eval(?[]const struct {}));
+    try testing.expectEqual(Error.AssertsOnTypeChild, init(.{ .child = .@"error" }).eval(?*const union {}));
+    try testing.expectEqual(Error.AssertsOnTypeChild, init(.{ .child = .@"error" }).eval(?[*]enum {}));
+    try testing.expectEqual(Error.AssertsOnTypeChild, init(.{ .child = .@"error" }).eval(?@Vector(3, f128)));
+    try testing.expectEqual(Error.AssertsOnTypeChild, init(.{ .child = .@"error" }).eval(?[3]usize));
+    try testing.expectEqual(Error.AssertsOnTypeChild, init(.{ .child = .@"error" }).eval(?f128));
+    try testing.expectEqual(Error.AssertsOnTypeChild, init(.{ .child = .@"error" }).eval(?i128));
+    try testing.expectEqual(Error.AssertsOnTypeChild, init(.{ .child = .@"error" }).eval(?usize));
 }

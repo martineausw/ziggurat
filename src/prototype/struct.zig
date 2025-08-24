@@ -37,9 +37,13 @@ pub fn init(params: Params) Prototype {
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try has_type_info.eval(actual);
+                _ = try @call(.always_inline, has_type_info.eval, .{actual});
 
-                _ = comptime layout.eval(@typeInfo(actual).@"struct".layout) catch |err|
+                _ = @call(
+                    .always_inline,
+                    layout.eval,
+                    .{@typeInfo(actual).@"struct".layout},
+                ) catch |err|
                     return switch (err) {
                         HasLayout.Error.AssertsInactive,
                         => StructError.AssertsInactiveLayout,
@@ -111,4 +115,43 @@ test "is struct" {
     try testing.expectEqual(true, init(.{}).eval(struct {}));
     try testing.expectEqual(true, init(.{}).eval(extern struct {}));
     try testing.expectEqual(true, init(.{}).eval(packed struct {}));
+}
+
+test "fails is struct" {
+    try testing.expectEqual(
+        Error.AssertsActiveLayout,
+        init(.{ .layout = .{ .@"packed" = true } }).eval(struct {}),
+    );
+    try testing.expectEqual(
+        Error.AssertsInactiveLayout,
+        init(.{ .layout = .{ .@"extern" = false } }).eval(extern struct {}),
+    );
+    try testing.expectEqual(
+        Error.AssertsHasField,
+        init(.{ .fields = &.{
+            .{ .name = "a" },
+        } }).eval(struct {}),
+    );
+    try testing.expectEqual(
+        Error.AssertsHasDecl,
+        init(.{ .decls = &.{
+            .{ .name = "a" },
+        } }).eval(struct {}),
+    );
+    try testing.expectEqual(
+        Error.AssertsOnTypeField,
+        init(.{ .fields = &.{
+            .{ .name = "a", .type = .is_bool },
+        } }).eval(
+            struct { a: i128 },
+        ),
+    );
+    try testing.expectEqual(
+        Error.AssertsTrueIsTuple,
+        init(.{ .is_tuple = true }).eval(struct {}),
+    );
+    try testing.expectEqual(
+        Error.AssertsFalseIsTuple,
+        init(.{ .is_tuple = false }).eval(struct { bool, bool }),
+    );
 }

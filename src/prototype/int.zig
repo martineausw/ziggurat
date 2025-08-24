@@ -32,7 +32,7 @@ pub fn init(params: Params) Prototype {
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
-                _ = try has_type_info.eval(actual);
+                _ = try @call(.always_inline, has_type_info.eval, .{actual});
 
                 _ = bits.eval(@typeInfo(actual).int.bits) catch |err|
                     return switch (err) {
@@ -41,9 +41,7 @@ pub fn init(params: Params) Prototype {
                         else => @panic("unhandled error"),
                     };
 
-                _ = comptime signedness.eval(
-                    @typeInfo(actual).int.signedness,
-                ) catch |err|
+                _ = @call(.always_inline, signedness.eval, .{@typeInfo(actual).int.signedness}) catch |err|
                     return switch (err) {
                         HasSignedness.Error.AssertsInactive => Error.AssertsInactiveSignedness,
                         HasSignedness.Error.AssertsActive => Error.AssertsActiveSignedness,
@@ -96,4 +94,16 @@ test "is int" {
     }
 
     try testing.expectEqual(true, init(.{}).eval(usize));
+}
+
+test "fails is int" {
+    try testing.expectEqual(Error.AssertsMinBits, init(.{ .bits = .{ .min = 64 } }).eval(i32));
+    try testing.expectEqual(Error.AssertsMaxBits, init(.{ .bits = .{ .max = 16 } }).eval(i32));
+    try testing.expectEqual(Error.AssertsActiveSignedness, init(.{ .signedness = .{ .unsigned = true } }).eval(i32));
+    try testing.expectEqual(Error.AssertsInactiveSignedness, init(.{ .signedness = .{ .signed = false } }).eval(i32));
+}
+
+test "fails validation" {
+    try testing.expectEqual(Error.AssertsTypeValue, init(.{}).eval(@as(i32, 0)));
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init(.{}).eval(f128));
 }

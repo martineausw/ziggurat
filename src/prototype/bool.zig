@@ -18,7 +18,7 @@ pub const init: Prototype = .{
     .name = @typeName(Self),
     .eval = struct {
         fn eval(actual: anytype) Error!bool {
-            _ = try has_type_info.eval(actual);
+            _ = try @call(.always_inline, has_type_info.eval, .{actual});
 
             return true;
         }
@@ -41,4 +41,9 @@ pub const init: Prototype = .{
 
 test "is bool" {
     try testing.expectEqual(true, init.eval(bool));
+}
+
+test "fails validation" {
+    try testing.expectEqual(Error.AssertsTypeValue, init.eval(true));
+    try testing.expectEqual(Error.AssertsActiveTypeInfo, init.eval(usize));
 }

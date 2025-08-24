@@ -14,7 +14,7 @@ const HasTagError = error{
 pub const Error = HasTagError || Type.Error;
 
 pub fn Of(comptime T: type) type {
-    return struct {
+    return comptime struct {
         const OfSelf = @This();
         pub const Error = Self.Error;
 
@@ -43,10 +43,10 @@ pub fn Of(comptime T: type) type {
                     .decls = &[0]std.builtin.Type.Declaration{},
                     .is_tuple = false,
                 } }),
-                else => @panic("type must be a tagged union or enum"),
+                else => @compileError("type must be a tagged union or enum"),
             };
 
-        pub fn init(params: Params) Prototype {
+        pub inline fn init(params: Params) Prototype {
             return .{
                 .name = @typeName(Self),
                 .eval = struct {
@@ -117,4 +117,32 @@ test "has tag" {
     try testing.expectEqual(true, Of(Foo).init(.{}).eval(Foo{ .b = false }));
     try testing.expectEqual(true, Of(Foo).init(.{}).eval(Foo{ .x = 0 }));
     try testing.expectEqual(true, Of(Foo).init(.{}).eval(Foo{ .y = 0 }));
+}
+
+test "fails has tag" {
+    const Foo = union(enum) {
+        a: type,
+        b: bool,
+        x: usize,
+        y: i128,
+    };
+
+    try testing.expectEqual(Error.AssertsInactive, Of(Foo).init(.{
+        .a = false,
+    }).eval(Foo{ .a = void }));
+
+    try testing.expectEqual(Error.AssertsActive, Of(Foo).init(.{
+        .a = true,
+    }).eval(Foo{ .b = false }));
+}
+
+test "fails validation" {
+    const Foo = union(enum) {
+        a: type,
+        b: bool,
+        x: usize,
+        y: i128,
+    };
+
+    try testing.expectEqual(Error.AssertsTypeValue, Of(Foo).init(.{}).eval(@as(struct {}, .{})));
 }
