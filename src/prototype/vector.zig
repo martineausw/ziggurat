@@ -76,6 +76,7 @@ pub fn init(params: Params) Prototype {
                         prototype,
                         @typeInfo(actual).vector.child,
                     ),
+                    else => unreachable,
                 }
             }
         }.onError,

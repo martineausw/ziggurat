@@ -34,6 +34,7 @@ pub const init: Prototype = .{
                 Error.AssertsActiveTypeInfo,
                 Error.AssertsInactiveTypeInfo,
                 => has_type_info.onError.?(err, prototype, actual),
+                else => unreachable,
             }
         }
     }.onError,

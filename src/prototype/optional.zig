@@ -54,6 +54,7 @@ pub fn init(params: Params) Prototype {
                         prototype,
                         @typeInfo(actual).optional.child,
                     ),
+                    else => unreachable,
                 }
             }
         }.onError,

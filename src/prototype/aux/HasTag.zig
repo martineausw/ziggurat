@@ -97,6 +97,7 @@ pub fn Of(comptime T: type) type {
                                     @typeName(actual),
                                 },
                             )),
+                            else => unreachable,
                         }
                     }
                 }.onError,

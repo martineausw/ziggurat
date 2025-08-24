@@ -105,6 +105,7 @@ pub fn init(params: Params) Prototype {
                         prototype,
                         @typeInfo(actual).@"struct".is_tuple,
                     ),
+                    else => unreachable,
                 }
             }
         }.onError,

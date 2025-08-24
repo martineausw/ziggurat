@@ -106,6 +106,7 @@ pub fn init(params: Params) Prototype {
                         prototype,
                         @typeInfo(actual).array.child,
                     ),
+                    else => unreachable,
                 }
             }
         }.onError,

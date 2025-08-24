@@ -68,6 +68,7 @@ pub fn init(params: Params) Prototype {
                         "{s}.{s}: {s}",
                         .{ prototype.name, @errorName(err), params.name },
                     )),
+                    else => unreachable,
                 }
             }
         }.onError,

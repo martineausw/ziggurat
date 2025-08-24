@@ -77,6 +77,7 @@ pub fn init(params: Params) Prototype {
                         prototype,
                         @typeInfo(actual).int.signedness,
                     ),
+                    else => unreachable,
                 }
             }
         }.onError,

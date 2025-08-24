@@ -55,6 +55,7 @@ pub fn init(params: HasTag.Params) Prototype {
                             @tagName(@typeInfo(actual)),
                         },
                     )),
+                    else => unreachable,
                 }
             }
         }.onError,

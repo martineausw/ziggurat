@@ -142,12 +142,13 @@ pub fn init(params: Params) Prototype {
                         @typeInfo(actual).pointer.is_volatile,
                     ),
 
-                    PointerError.AssertsNotNullSentinel,
+                    Error.AssertsNotNullSentinel,
                     => sentinel.onError.?(
                         try sentinel.eval(@typeInfo(actual).pointer.sentinel()),
                         prototype,
                         @typeInfo(actual).pointer.sentinel(),
                     ),
+                    else => unreachable,
                 }
             }
         }.onError,

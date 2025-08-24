@@ -60,6 +60,7 @@ pub fn init(params: Params) Prototype {
                             actual,
                         );
                     },
+                    else => unreachable,
                 }
             }
         }.onError,

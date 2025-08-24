@@ -63,7 +63,7 @@ pub fn init(params: Params) Prototype {
                         @typeInfo(actual).float.bits,
                     ),
 
-                    else => @panic("unhandled error"),
+                    else => unreachable,
                 }
             }
         }.onError,

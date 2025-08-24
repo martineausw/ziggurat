@@ -38,6 +38,7 @@ pub fn init(params: Params) Prototype {
                         prototype,
                         actual,
                     ),
+                    else => unreachable,
                 }
             }
         }.onError,

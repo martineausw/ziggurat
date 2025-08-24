@@ -231,6 +231,7 @@ pub fn init(params: Params) Prototype {
                             @typeInfo(actual).@"fn".params[target_param[1]],
                         );
                     },
+                    else => unreachable,
                 }
             }
         }.onError,
