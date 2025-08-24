@@ -20,6 +20,7 @@ pub fn any(prototypes: []const Prototype) Prototype {
 
                 inline for (prototypes, 0..) |prototype, i| {
                     if (comptime prototype.eval(actual)) |result| {
+                        if (result) return true;
                         results[i] = result;
                     } else |err| {
                         errs[i] = err;
