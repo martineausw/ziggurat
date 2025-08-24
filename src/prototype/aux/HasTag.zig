@@ -14,7 +14,7 @@ const HasTagError = error{
 pub const Error = HasTagError || Type.Error;
 
 pub fn Of(comptime T: type) type {
-    return comptime struct {
+    return struct {
         const OfSelf = @This();
         pub const Error = Self.Error;
 

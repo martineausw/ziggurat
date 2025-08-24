@@ -24,7 +24,7 @@ pub fn init(params: Params) Prototype {
         .@"union" = true,
     });
     const on_type = OnType.init(params.type);
-    comptime return .{
+    return .{
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) anyerror!bool {

@@ -18,7 +18,7 @@ pub const Params = HasTag.Params;
 pub fn init(params: HasTag.Params) Prototype {
     const is_type_value = Type.init;
     const has_active_tag = HasTag.init(params);
-    comptime return .{
+    return .{
         .name = @typeName(Self),
         .eval = struct {
             fn eval(actual: anytype) Error!bool {
