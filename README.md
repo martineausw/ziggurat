@@ -7,14 +7,16 @@ Library for defining type constraints and assertions.
 Inspired off of [this brainstorming thread](https://ziggit.dev/t/implementing-generic-concepts-on-function-declarations/1490).
 
 ```zig
-pub fn wrapIndex(
-    data: anytype,
-    index: i128,
-) ziggurat.sign(.any(&.{
+const any_data: ziggurat.Prototype = .any(&.{
     .is_array(.{}),
     .is_vector(.{}),
     .is_pointer(.{ .size = .{ .slice = true } }),
-}))(@TypeOf(data))(usize) {
+})
+
+pub fn wrapIndex(
+    data: anytype,
+    index: i128,
+) ziggurat.sign(any_data)(@TypeOf(data))(usize) {
     return if (index < 0)
         getLen(data) - @as(usize, @intCast(@abs(index)))
     else
@@ -24,21 +26,10 @@ pub fn wrapIndex(
 pub fn at(
     data: anytype,
     index: i128,
-) ziggurat.sign(.any(&.{
-    .is_array(.{}),
-    .is_vector(.{}),
-    .is_pointer(.{ .size = .{
-        .slice = true,
-    } }),
-    .is_pointer(.{ .child = .any(&.{
-        .is_array(.{}),
-        .is_vector(.{}),
-    }), .size = .{ .one = true } }),
-}))(@TypeOf(data))(switch (@typeInfo(@TypeOf(data))) {
+) ziggurat.sign(any_data)(@TypeOf(data))(switch (@typeInfo(@TypeOf(data))) {
     inline .array, .vector => |info| info.child,
 
     .pointer => |info| switch (info.size) {
-        .one => meta.Child(info.child),
         .slice => info.child,
         else => unreachable,
     },
@@ -47,7 +38,6 @@ pub fn at(
 }) {
     return switch (@typeInfo(@TypeOf(data))) {
         .pointer => |info| switch (info.size) {
-            .one => data.*[wrapIndex(data.*, index)],
             .slice => data[wrapIndex(data, index)],
             else => unreachable,
         },
@@ -177,9 +167,7 @@ Intended to be used in _comptime_:
 -   is_type - asserts a type value.
 -   is_vector - asserts a vector type value with child type info filter and length interval assertions.
 
-#### Auxiliary
-
-Intermediate and utility prototypes:
+#### Ancillary
 
 -   equals_bool
 -   has_decl(s)
