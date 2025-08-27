@@ -98,8 +98,8 @@ test "is int" {
 }
 
 test "fails is int" {
-    try testing.expectEqual(Error.AssertsMinBits, init(.{ .bits = .{ .min = 64 } }).eval(i32));
-    try testing.expectEqual(Error.AssertsMaxBits, init(.{ .bits = .{ .max = 16 } }).eval(i32));
+    try testing.expectEqual(Error.AssertsMinBits, init(.{ .bits = .{ .min = .{ .uint = 64 } } }).eval(i32));
+    try testing.expectEqual(Error.AssertsMaxBits, init(.{ .bits = .{ .max = .{ .uint = 16 } } }).eval(i32));
     try testing.expectEqual(Error.AssertsActiveSignedness, init(.{ .signedness = .{ .unsigned = true } }).eval(i32));
     try testing.expectEqual(Error.AssertsInactiveSignedness, init(.{ .signedness = .{ .signed = false } }).eval(i32));
 }

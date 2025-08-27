@@ -125,11 +125,11 @@ test "fails is array" {
     );
     try testing.expectEqual(
         Error.AssertsMinLen,
-        init(.{ .len = .{ .min = 1 } }).eval([0]usize),
+        init(.{ .len = .{ .min = .{ .uint = 1 } } }).eval([0]usize),
     );
     try testing.expectEqual(
         Error.AssertsMaxLen,
-        init(.{ .len = .{ .max = 0 } }).eval([1]usize),
+        init(.{ .len = .{ .max = .{ .uint = 0 } } }).eval([1]usize),
     );
     try testing.expectEqual(
         Error.AssertsNullSentinel,

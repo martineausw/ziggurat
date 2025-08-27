@@ -6,7 +6,7 @@
 
 .zig-cache
 zig-out
-libroot.*
+lib*
 
 # VSCode
 

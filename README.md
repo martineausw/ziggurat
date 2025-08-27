@@ -1,6 +1,6 @@
 # ziggurat
 
-![zig 0.14.1](https://img.shields.io/badge/zig-0.14.1-brightgreen)
+![zig 0.15.1](https://img.shields.io/badge/zig-0.15.1-brightgreen)
 
 Library for defining type constraints and assertions.
 
@@ -12,6 +12,8 @@ const any_data: ziggurat.Prototype = .any(&.{
     .is_vector(.{}),
     .is_pointer(.{ .size = .{ .slice = true } }),
 })
+
+
 
 pub fn wrapIndex(
     data: anytype,

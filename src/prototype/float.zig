@@ -78,8 +78,8 @@ test "is float" {
 }
 
 test "fails is float" {
-    try testing.expectEqual(Error.AssertsMinBits, init(.{ .bits = .{ .min = 64 } }).eval(f32));
-    try testing.expectEqual(Error.AssertsMaxBits, init(.{ .bits = .{ .max = 16 } }).eval(f32));
+    try testing.expectEqual(Error.AssertsMinBits, init(.{ .bits = .{ .min = .{ .uint = 64 } } }).eval(f32));
+    try testing.expectEqual(Error.AssertsMaxBits, init(.{ .bits = .{ .max = .{ .uint = 16 } } }).eval(f32));
 }
 
 test "fails validation" {

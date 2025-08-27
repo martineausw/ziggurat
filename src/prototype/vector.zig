@@ -105,13 +105,13 @@ test "fails is vector" {
     try std.testing.expectEqual(
         Error.AssertsMinLen,
         init(
-            .{ .len = .{ .min = 1 } },
+            .{ .len = .{ .min = .{ .uint = 1 } } },
         ).eval(@Vector(0, u8)),
     );
     try std.testing.expectEqual(
         Error.AssertsMaxLen,
         init(
-            .{ .len = .{ .max = 0 } },
+            .{ .len = .{ .max = .{ .uint = 0 } } },
         ).eval(@Vector(1, bool)),
     );
 }
