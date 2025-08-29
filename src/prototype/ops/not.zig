@@ -17,6 +17,5 @@ pub fn not(prototype: Prototype) Prototype {
                 }
             }
         }.eval,
-        .onError = prototype.onError,
     };
 }
