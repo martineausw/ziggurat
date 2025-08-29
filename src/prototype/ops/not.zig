@@ -12,8 +12,8 @@ pub fn not(prototype: Prototype) Prototype {
             fn eval(actual: anytype) anyerror!bool {
                 if (comptime prototype.eval(actual)) |result| {
                     return !result;
-                } else |err| {
-                    return err;
+                } else |_| {
+                    return true;
                 }
             }
         }.eval,
